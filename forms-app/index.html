@@ -17,7 +17,7 @@
     <a href="mailto:ravenrosescleaning@gmail.com">ravenrosescleaning@gmail.com</a> &middot;
     <a href="https://facebook.com/RavenRosesCleaningCo">Facebook: RavenRosesCleaningCo</a>
   </p>
-  <p class="inquiry-banner"><strong>Inquiry only.</strong> These forms do not book a cleaning, hold a slot, or take payment. Krystal will reply personally. No booking is confirmed until she confirms it. No start date is promised.</p>
+  <p class="inquiry-banner"><strong>Inquiry only.</strong> These forms do not book a cleaning, hold a slot, or take payment. You will be contacted directly.</p>
   <p class="prototype-note">Prototype test mode — submissions on this page are NOT sent anywhere yet. See the confirmation screen after you submit, and the README for how the live version will connect.</p>
 </header>
 
@@ -33,12 +33,12 @@
   <!-- 1. WAITLIST -->
   <section class="panel form-panel" id="panel-waitlist">
     <h2>Join the Waitlist</h2>
-    <p>Friends of current clients get first priority, then the waitlist opens to the public. <strong>No start date is promised.</strong></p>
+    <p>Friends of current clients get first priority, then the waitlist opens to the public. You will be contacted directly.</p>
     <form id="form-waitlist" novalidate>
       <label>Full name * <input name="name" type="text" required autocomplete="name"></label>
       <label>Phone <input name="phone" type="tel" autocomplete="tel"></label>
       <label>Email <input name="email" type="email" autocomplete="email"></label>
-      <p class="hint">Please give at least a phone number or an email address so Krystal can reply.</p>
+      <p class="hint">Please give at least a phone number or an email address so you can be contacted.</p>
       <label>Area / town * <input name="area" type="text" required placeholder="e.g. North Nanaimo"></label>
       <label>Service type *
         <select name="service" required>
@@ -62,12 +62,12 @@
   <!-- 2. QUOTE -->
   <section class="panel form-panel" id="panel-quote" hidden>
     <h2>Request a Quote</h2>
-    <p>Prices are quoted by Krystal personally. Nothing on this form is priced or booked automatically. Guide pricing: Regular cleaning $50/hr + GST, first deep clean $55/hr + GST, 2-hour minimum. Most homes take 2, 2.5, or 3 hours. Every home starts with a walkthrough and a personalized cleaning plan, included in your quote.</p>
+    <p>Prices are quoted personally. Nothing on this form is priced or booked automatically. Guide pricing: Regular cleaning $50/hr + GST, first deep clean $55/hr + GST, 2-hour minimum. Most homes take 2, 2.5, or 3 hours. Every home starts with a walkthrough and a personalized cleaning plan, included in your quote.</p>
     <form id="form-quote" novalidate>
       <label>Full name * <input name="name" type="text" required autocomplete="name"></label>
       <label>Phone <input name="phone" type="tel" autocomplete="tel"></label>
       <label>Email <input name="email" type="email" autocomplete="email"></label>
-      <p class="hint">Please give at least a phone number or an email address so Krystal can reply.</p>
+      <p class="hint">Please give at least a phone number or an email address so you can be contacted.</p>
       <label>Area / town * <input name="area" type="text" required placeholder="e.g. Nanaimo"></label>
       <label>Service type *
         <select name="service" required>
@@ -99,7 +99,7 @@
           <option>5+ bed</option>
         </select>
       </label>
-      <label>Notes <textarea name="notes" rows="3" placeholder="Anything Krystal should know about the home or the clean?"></textarea></label>
+      <label>Notes <textarea name="notes" rows="3" placeholder="Anything we should know about the home or the clean?"></textarea></label>
       <button type="submit" class="primary">Send Quote Request</button>
     </form>
   </section>
@@ -112,7 +112,7 @@
       <label>Full name * <input name="name" type="text" required autocomplete="name"></label>
       <label>Email <input name="email" type="email" autocomplete="email"></label>
       <label>Phone (optional) <input name="phone" type="tel" autocomplete="tel"></label>
-      <p class="hint">Please give at least a phone number or an email address so Krystal can reply.</p>
+      <p class="hint">Please give at least a phone number or an email address so you can be contacted.</p>
       <label>Subject * <input name="subject" type="text" required></label>
       <label>Message * <textarea name="message" rows="4" required></textarea></label>
       <button type="submit" class="primary">Send Message</button>
@@ -127,7 +127,7 @@
       <label>Full name * <input name="name" type="text" required autocomplete="name"></label>
       <label>Phone <input name="phone" type="tel" autocomplete="tel"></label>
       <label>Email <input name="email" type="email" autocomplete="email"></label>
-      <p class="hint">Please give at least a phone number or an email address so Krystal can reply.</p>
+      <p class="hint">Please give at least a phone number or an email address so you can be contacted.</p>
       <label>Availability (Tue–Fri, shifts) * <input name="availability" type="text" required placeholder="e.g. Tue–Fri, mornings"></label>
       <label>Own vehicle? *
         <select name="vehicle" required>
@@ -151,7 +151,7 @@
   <!-- 5. NEWSLETTER -->
   <section class="panel form-panel" id="panel-newsletter" hidden>
     <h2>Newsletter Signup</h2>
-    <p>Opt-in only. Krystal will only email people who sign up here, and you can unsubscribe at any time. This form does NOT send a newsletter by itself — it only records your opt-in, and Krystal will email updates personally.</p>
+    <p>Opt-in only. Only people who sign up here will be emailed, and you can unsubscribe at any time. This form does NOT send a newsletter by itself — it only records your opt-in.</p>
     <form id="form-newsletter" novalidate>
       <label>Full name * <input name="name" type="text" required autocomplete="name"></label>
       <label>Email * <input name="email" type="email" required autocomplete="email"></label>
@@ -164,9 +164,8 @@
   <!-- Confirmation -->
   <section class="panel" id="confirmation" hidden aria-live="polite">
     <h2>Thank you</h2>
-    <p><strong>Thank you — this is an inquiry only. Krystal will reply personally. No booking is confirmed until she confirms it.</strong></p>
-    <p><strong>No start date is promised.</strong></p>
-    <p class="prototype-note"><strong>Prototype test mode — this submission was NOT sent anywhere yet.</strong> In the live version it will go to Krystal's private Google Sheet (Google Apps Script backend under her Raven Google account, to be connected later with her approval).</p>
+    <p><strong>Thank you — this is an inquiry only. You will be contacted directly.</strong></p>
+    <p class="prototype-note"><strong>Prototype test mode — this submission was NOT sent anywhere yet.</strong> In the live version it will go to a private Google Sheet (Google Apps Script backend, to be connected later).</p>
     <h3>Your inquiry summary</h3>
     <div id="summary"></div>
     <p><a id="email-instead" class="button-link" href="mailto:ravenrosescleaning@gmail.com">Email this inquiry instead</a> — this opens your email app with the details above pre-filled, so you can send a real inquiry to ravenrosescleaning@gmail.com right now if you wish.</p>
@@ -178,7 +177,7 @@
 <footer>
   <p>Raven &amp; Roses Cleaning Co. &middot; Based in Nanaimo, BC, Canada</p>
   <p><a href="tel:+17782684183">778-268-4183</a> &middot; <a href="mailto:ravenrosescleaning@gmail.com">ravenrosescleaning@gmail.com</a> &middot; <a href="https://facebook.com/RavenRosesCleaningCo">Facebook</a></p>
-  <p class="small">Inquiry only — no booking, no payment, and no start date is promised until Krystal confirms it personally.</p>
+  <p class="small">Inquiry only — no booking, no payment. You will be contacted directly.</p>
 </footer>
 <script src="app.js"></script>
 </body>
