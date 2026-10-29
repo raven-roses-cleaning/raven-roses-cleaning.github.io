@@ -23,15 +23,16 @@
 
 <main>
   <nav class="tabs" aria-label="Choose a form">
-    <button type="button" class="tab active" data-form="waitlist">Waitlist Signup</button>
-    <button type="button" class="tab" data-form="quote">Request a Walkthrough</button>
+    <!-- Waitlist tab HIDDEN until public opening Mon Nov 9, 2026 — code kept intact for re-adding, do not delete -->
+    <button type="button" class="tab" data-form="waitlist" hidden>Waitlist Signup</button>
+    <button type="button" class="tab active" data-form="quote">Request a Walkthrough</button>
     <button type="button" class="tab" data-form="contact">General Contact</button>
     <button type="button" class="tab" data-form="hiring">Hiring / Resume</button>
     <button type="button" class="tab" data-form="newsletter">Newsletter Signup</button>
   </nav>
 
-  <!-- 1. WAITLIST -->
-  <section class="panel form-panel" id="panel-waitlist">
+  <!-- 1. WAITLIST — HIDDEN until public opening Mon Nov 9, 2026, code kept for re-adding -->
+  <section class="panel form-panel" id="panel-waitlist" hidden>
     <h2>Join the Waitlist</h2>
     <p>Friends of current clients get first priority, then the waitlist opens to the public. You will be contacted directly.</p>
     <form id="form-waitlist" novalidate>
@@ -59,8 +60,8 @@
     </form>
   </section>
 
-  <!-- 2. QUOTE -->
-  <section class="panel form-panel" id="panel-quote" hidden>
+  <!-- 2. QUOTE — default visible form while Waitlist is hidden -->
+  <section class="panel form-panel" id="panel-quote">
     <h2>Request a Walkthrough</h2>
     <p>Request a walkthrough to get your personalized cleaning plan and your price. Walkthroughs usually take 30-45 minutes and are complimentary. Nothing on this form is priced or booked automatically. Guide pricing: Regular cleanings starting at $50/hr + GST, first deep clean $55/hr + GST, 2-hour minimum. Most homes take 2, 2.5, or 3 hours. Prices will be quoted after a walkthrough.</p>
     <form id="form-quote" novalidate>
