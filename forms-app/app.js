@@ -81,7 +81,7 @@
       FORMS[key].fields.forEach(function (f) {
         if (data[f]) lines.push((LABELS[f] || f) + ": " + data[f]);
       });
-      lines.push("", "This is an inquiry only. No booking is confirmed until Krystal confirms it. No start date is promised.");
+      lines.push("", "This is an inquiry only. You will be contacted directly.");
       if (key === "hiring") lines.push("Resume: I will email my resume separately to ravenrosescleaning@gmail.com.");
       var subject = encodeURIComponent("Raven & Roses — " + FORMS[key].title + " — " + data.name);
       var body = encodeURIComponent(lines.join("\n"));

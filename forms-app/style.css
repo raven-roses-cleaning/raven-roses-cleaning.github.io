@@ -1,6 +1,7 @@
 * { box-sizing: border-box; }
-body { margin: 0; background: #0b0b0f; color: #f3e9c8; font-family: "EB Garamond", Georgia, serif; line-height: 1.6; font-size: 18px; }
-header, main, footer { max-width: 760px; margin: 0 auto; padding: 20px 16px; }
+body { margin: 0; background: #1d1d23; color: #f3e9c8; font-family: "EB Garamond", Georgia, serif; line-height: 1.6; font-size: 18px; }
+body::before { content: ""; position: fixed; inset: 0; background-image: url('black-velvet-roses.webp'); background-size: cover; background-position: center; background-repeat: no-repeat; opacity: 0.38; pointer-events: none; z-index: 0; }
+header, main, footer { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 20px 16px; }
 header { text-align: center; }
 .kicker { color: #d4af37; letter-spacing: 0.18em; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
 h1, h2, h3 { font-family: "Cormorant Garamond", Georgia, serif; color: #f5d76e; font-weight: 700; }
@@ -11,11 +12,11 @@ h3 { font-size: 22px; }
 a { color: #f5d76e; }
 .contact-links { overflow-wrap: anywhere; }
 .inquiry-banner { background: #1a1608; border: 1px solid #d4af37; border-radius: 10px; padding: 14px; text-align: left; }
-.prototype-note { background: #16161e; border: 1px solid #6b5a2a; border-radius: 10px; padding: 12px; color: #e8ddb8; font-size: 16px; }
+.prototype-note { background: rgba(22,22,30,0.78); border: 1px solid #6b5a2a; border-radius: 10px; padding: 12px; color: #e8ddb8; font-size: 16px; }
 .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-.tab { flex: 1 1 45%; background: #16161e; color: #f5d76e; border: 1px solid #6b5a2a; border-radius: 8px; padding: 12px 10px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 17px; cursor: pointer; }
+.tab { flex: 1 1 45%; background: rgba(22,22,30,0.78); color: #f5d76e; border: 1px solid #6b5a2a; border-radius: 8px; padding: 12px 10px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 17px; cursor: pointer; }
 .tab.active { background: #4a3a10; border-color: #d4af37; }
-.panel { background: #16161e; border: 1px solid #3a3220; border-radius: 10px; padding: 20px; margin: 18px 0; }
+.panel { background: rgba(22,22,30,0.78); border: 1px solid #3a3220; border-radius: 10px; padding: 20px; margin: 18px 0; }
 label { display: block; margin: 14px 0; color: #e8ddb8; font-weight: 600; }
 input, select, textarea { width: 100%; margin-top: 6px; padding: 12px; background: #0b0b0f; color: #f3e9c8; border: 1px solid #6b5a2a; border-radius: 6px; font-family: "EB Garamond", Georgia, serif; font-size: 18px; }
 .checkbox-label input { width: auto; margin: 0 10px 0 0; transform: scale(1.4); accent-color: #d4af37; }
