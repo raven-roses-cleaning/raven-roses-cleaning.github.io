@@ -1,5 +1,36 @@
 (function () {
   "use strict";
+
+  // Live backend: Google Apps Script web app that appends each submission
+  // to the matching tab of the "Raven Forms — Submissions" Sheet.
+  var FORM_ENDPOINT = "https://script.google.com/macros/s/AKfycbzJSTNksrCbxVDLmZI78JgB72DddKLnCCJlqAmDYnot9UpaV-ditN7ooGRSBIrdPlwt/exec";
+
+  // Sheet column names per form (matches each tab's row-1 headers).
+  var SHEET_FIELDS = {
+    waitlist: { name: "Name", phone: "Phone", email: "Email", area: "Area", service: "Service", frequency: "Frequency", notes: "Home size / notes" },
+    quote: { name: "Name", phone: "Phone", email: "Email", area: "Area", service: "Service", frequency: "Frequency", size: "Home size", notes: "Notes" },
+    contact: { name: "Name", email: "Email", phone: "Phone", subject: "Subject", message: "Message" },
+    hiring: { name: "Name", phone: "Phone", email: "Email", availability: "Availability", vehicle: "Own vehicle", pets: "Comfortable around cats and dogs", experience: "Experience note" },
+    newsletter: { name: "Name", email: "Email", phone: "Phone", optin: "Opt-in" }
+  };
+
+  // POST the submission to the web app. "no-cors" keeps the request simple;
+  // the Apps Script doPost appends the row to the Sheet tab for formType.
+  function sendSubmission(key, data, onDone) {
+    var params = { formType: key };
+    var map = SHEET_FIELDS[key] || {};
+    Object.keys(map).forEach(function (f) { params[map[f]] = data[f] || ""; });
+    var body = Object.keys(params).map(function (k) {
+      return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
+    }).join("&");
+    fetch(FORM_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: body
+    }).then(function () { onDone(true); }, function () { onDone(false); });
+  }
+
   var FORMS = {
     waitlist: { title: "Waitlist Signup", fields: ["name", "phone", "email", "area", "service", "frequency", "notes"] },
     quote: { title: "Quote Request", fields: ["name", "phone", "email", "area", "service", "frequency", "size", "notes"] },
@@ -68,27 +99,47 @@
         form.prepend(p);
         return;
       }
-      // Render summary — prototype mode: nothing is sent anywhere.
-      var html = "<p><strong>Form:</strong> " + esc(FORMS[key].title) + "</p><dl>";
-      FORMS[key].fields.forEach(function (f) {
-        if (data[f]) html += "<dt>" + esc(LABELS[f] || f) + "</dt><dd>" + esc(data[f]) + "</dd>";
+      // Live mode: POST to the backend first, then show the summary + real confirmation.
+      var submitBtn = form.querySelector("button[type=submit]");
+      var btnLabel = submitBtn ? submitBtn.textContent : "";
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Sending…"; }
+      sendSubmission(key, data, function (sent) {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = btnLabel; }
+        // Real sent confirmation.
+        var status = $("send-status");
+        if (!status) {
+          status = document.createElement("p");
+          status.id = "send-status";
+          status.setAttribute("aria-live", "polite");
+          var summary = $("summary");
+          summary.parentNode.insertBefore(status, summary);
+        }
+        status.className = sent ? "sent" : "error";
+        status.textContent = sent
+          ? "Sent — thank you. Your inquiry was received by Raven & Roses and you will be contacted directly."
+          : "We could not send your inquiry just now. Please use the email button below, or call / text 778-268-4183.";
+        // Render summary.
+        var html = "<p><strong>Form:</strong> " + esc(FORMS[key].title) + "</p><dl>";
+        FORMS[key].fields.forEach(function (f) {
+          if (data[f]) html += "<dt>" + esc(LABELS[f] || f) + "</dt><dd>" + esc(data[f]) + "</dd>";
+        });
+        html += "</dl>";
+        $("summary").innerHTML = html;
+        $("resume-reminder").hidden = (key !== "hiring");
+        // Mailto fallback: pre-filled email body, nothing auto-sent.
+        var lines = [FORMS[key].title, ""];
+        FORMS[key].fields.forEach(function (f) {
+          if (data[f]) lines.push((LABELS[f] || f) + ": " + data[f]);
+        });
+        lines.push("", "This is an inquiry only. You will be contacted directly.");
+        if (key === "hiring") lines.push("Resume: I will email my resume separately to ravenrosescleaning@gmail.com.");
+        var subject = encodeURIComponent("Raven & Roses — " + FORMS[key].title + " — " + data.name);
+        var body = encodeURIComponent(lines.join("\n"));
+        $("email-instead").href = "mailto:ravenrosescleaning@gmail.com?subject=" + subject + "&body=" + body;
+        Object.keys(FORMS).forEach(function (k) { $("panel-" + k).hidden = true; });
+        $("confirmation").hidden = false;
+        $("confirmation").scrollIntoView();
       });
-      html += "</dl>";
-      $("summary").innerHTML = html;
-      $("resume-reminder").hidden = (key !== "hiring");
-      // Mailto fallback: pre-filled email body, nothing auto-sent.
-      var lines = [FORMS[key].title, ""];
-      FORMS[key].fields.forEach(function (f) {
-        if (data[f]) lines.push((LABELS[f] || f) + ": " + data[f]);
-      });
-      lines.push("", "This is an inquiry only. You will be contacted directly.");
-      if (key === "hiring") lines.push("Resume: I will email my resume separately to ravenrosescleaning@gmail.com.");
-      var subject = encodeURIComponent("Raven & Roses — " + FORMS[key].title + " — " + data.name);
-      var body = encodeURIComponent(lines.join("\n"));
-      $("email-instead").href = "mailto:ravenrosescleaning@gmail.com?subject=" + subject + "&body=" + body;
-      Object.keys(FORMS).forEach(function (k) { $("panel-" + k).hidden = true; });
-      $("confirmation").hidden = false;
-      $("confirmation").scrollIntoView();
     });
   });
 })();
