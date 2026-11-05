@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Raven &amp; Roses">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.json">
+
+<title>Raven &amp; Roses — Time Card</title>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;max-width:640px;margin:0 auto;padding:16px;line-height:1.45;color:#111}
+  h1{font-size:1.4rem} h2{font-size:1.1rem;margin-top:1.5em}
+  label{display:block;margin:.6em 0 .2em;font-weight:600}
+  input,select,button,textarea{font-size:1rem;padding:.6em;width:100%;box-sizing:border-box}
+  button{margin:.4em 0;background:#111;color:#fff;border:0;border-radius:8px;cursor:pointer}
+  button.secondary{background:#eee;color:#111}
+  button:disabled{opacity:.5}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{border:1px solid #ccc;border-radius:12px;padding:12px;margin:12px 0}
+  .tap{display:inline-block;width:auto;padding:.5em .9em;margin:.25em .25em .25em 0;background:#f2f2f2;border:1px solid #999;border-radius:999px;color:#111}
+  .tap.on{background:#1a7a2e;color:#fff;border-color:#1a7a2e}
+  .picgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .piccard{border:1px solid #999;border-radius:12px;padding:10px;text-align:center;background:#fff}
+  .piccard.need{border:3px solid #b00020;background:#fff0f0}
+  .pic{font-size:3rem;line-height:1.2}
+  .piccard button{width:auto;padding:.5em 1em}
+  .piccard button.needbtn{background:#b00020}
+  .piccard.discontinued{opacity:.75;background:#f2f2f2}
+  .piccard.discontinued .disc{font-weight:700;color:#555}
+  .piccard button.reusebtn{background:#555}
+  .small{font-size:.85rem;color:#555} .ok{color:#1a7a2e;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:.9rem} td,th{border-bottom:1px solid #ddd;padding:.4em;text-align:left}
+  pre{white-space:pre-wrap;background:#f7f7f7;padding:12px;border-radius:8px}
+</style>
+</head>
+<body>
+<h1>🐦‍⬛ Raven &amp; Roses — Time Card</h1>
+<p class="small">Works offline — if you have no signal, your entries save on this phone and will send when you are back online.</p>
+
+<label for="emp">Your name</label>
+<input id="emp" placeholder="e.g. Alex">
+
+<label for="job">Job / client (first name only)</label>
+<input id="job" placeholder="e.g. Maria — do not enter an address">
+<label><input id="trainingFlag" type="checkbox" style="width:auto"> This shift is training ($20/hr, not the regular rate)</label>
+
+<label for="workdate">Date</label>
+<input id="workdate" type="date">
+
+<div class="card" id="clockCard">
+  <h2>Clock in / out</h2>
+  <p id="status">Not clocked in.</p>
+  <div class="row">
+    <button id="inBtn">Clock in</button>
+    <button id="outBtn" class="secondary" disabled>Clock out</button>
+  </div>
+  <p class="small">Times use this phone’s clock. Hours are calculated when you clock out.</p>
+</div>
+
+<div class="card" id="adjustCard">
+  <h2>⏱ Adjust time — request a correction</h2>
+  <p class="small">Forgot to clock in, forgot to clock out, or clocked in at the wrong time? Fill this in. <strong>Nothing changes until Krystal approves it.</strong></p>
+  <label for="adjJob">Job / client (first name only)</label>
+  <input id="adjJob" placeholder="e.g. Maria">
+  <label for="adjDate">Date</label>
+  <input id="adjDate" type="date">
+  <div class="row">
+    <div><label for="adjIn">Correct clock-in time</label><input id="adjIn" type="time"></div>
+    <div><label for="adjOut">Correct clock-out time</label><input id="adjOut" type="time"></div>
+  </div>
+  <label for="adjReason">Why does this need correcting? (required)</label>
+  <input id="adjReason" placeholder="e.g. Forgot to clock in at the start">
+  <p id="adjPreview" class="small"></p>
+  <p id="adjTarget" class="small"></p>
+  <button id="adjSubmitBtn">Send adjustment request to Krystal</button>
+  <button id="adjCancelBtn" class="secondary">Cancel — keep original times</button>
+  <p id="adjStatus" class="small"></p>
+</div>
+
+
+<div class="card" id="issueCard">
+  <h2>⚠️ Job issue note</h2>
+  <p class="small">Something went wrong, couldn’t finish a task, or damage? Write it here before you clock out — Krystal sees it with that job, the same day.</p>
+  <label for="issueNote">Issue note for this job</label>
+  <textarea id="issueNote" rows="3" placeholder="e.g. Vacuum stopped working, could not vacuum living room"></textarea>
+</div>
+
+<div class="card" id="timeOffCard">
+  <h2>🗓️ Time off / sick day request</h2>
+  <p class="small">BC paid sick days: 5 per year. Vacation pay is already paid on every cheque, so vacation time off itself is unpaid time off — sick days are the paid ones, up to 5 per year. Nothing is approved until Krystal approves it.</p>
+  <label for="toDate">Date requested off</label>
+  <input id="toDate" type="date">
+  <label for="toType">Type</label>
+  <select id="toType">
+    <option value="sick">Sick day — paid (BC, up to 5/year)</option>
+    <option value="timeoff">Time off — unpaid</option>
+  </select>
+  <label for="toReason">Reason (optional for sick, helpful for time off)</label>
+  <input id="toReason" placeholder="e.g. Doctor appointment">
+  <button id="toSubmitBtn">Send time off / sick request to Krystal</button>
+  <p id="toStatus" class="small"></p>
+  <div id="toList"></div>
+</div>
+
+<div class="card" id="mileageCard">
+  <h2>🚗 Mileage tracker</h2>
+  <p class="small">Client 1 to Client 2 — kilometres you enter yourself. No Google connection, no GPS.</p>
+  <label for="mileDate">Date</label>
+  <input id="mileDate" type="date">
+  <label for="mileStart">Client 1</label>
+  <select id="mileStart"></select>
+  <label for="mileEnd">Client 2</label>
+  <select id="mileEnd"></select>
+  <label for="mileKm">Km</label>
+  <input id="mileKm" type="number" step="0.1" min="0" placeholder="e.g. 12.4">
+  <button id="mileAddBtn">Add mileage trip</button>
+  <p id="mileStatus" class="small"></p>
+  <div id="mileList"></div>
+  <p id="mileTotals" class="small"></p>
+</div>
+
+<div class="card" id="houseCard">
+  <h2>🏠 House instructions</h2>
+  <p class="small">Pick a job to see what gets done at that house, plus any special instructions. Krystal adds these for each house in her manager app — if nothing shows here yet, she has not added that house’s instructions yet.</p>
+  <label for="houseJob">Job / client (first name only)</label>
+  <select id="houseJob"></select>
+  <label for="houseJobOther">Or type a first name</label>
+  <input id="houseJobOther" placeholder="e.g. Maria">
+  <h3 style="font-size:1rem">What gets done at this house</h3>
+  <pre id="houseTasks">Pick a job above to see its instructions.</pre>
+  <h3 style="font-size:1rem">Special instructions</h3>
+  <pre id="houseSpecial">—</pre>
+</div>
+
+<div class="card" id="suppliesCard">
+  <h2>End of job — no typing required</h2>
+  <p>🔔 Reminder: refill supplies for today’s jobs.</p>
+  <button id="refilledBtn" class="tap">Supplies refilled</button>
+  <p><strong>Running low / needed</strong> — find the picture, tap <b>Refill</b> if you need it. Tap again to undo. No typing needed.</p>
+  <div id="lowList" class="picgrid"></div>
+  <button id="stockedBtn" class="tap">All stocked</button>
+  <p><strong>Cloths</strong> — tap only when actually washed:</p>
+  <button id="clothBtn" class="tap">Cloths washed with provided soap</button>
+  <p class="small">Not washed today? Leave it unchecked — no penalty.</p>
+  <button id="sendBtn">Send to Krystal</button>
+  <p id="sendStatus" class="small"></p>
+</div>
+
+<h2>Today’s entries</h2>
+<div id="entries"></div>
+<p class="small">Need to fix one of these? Tap <strong>Adjust</strong> next to that entry.</p>
+
+<h2>Time adjustments</h2>
+<p class="small">Pending requests do <strong>not</strong> count in your total hours until approved.</p>
+<div id="pending"></div>
+
+<h2>End-of-day summary</h2>
+<button id="summaryBtn" class="secondary">Show summary</button>
+<pre id="summary">Tap “Show summary” to see today’s total hours, supplies refilled, low items, and cloths status.</pre>
+<button id="copyBtn">Copy summary as text</button>
+<button id="csvBtn" class="secondary">Download / copy CSV</button>
+<button id="jsonBtn" class="secondary">Export for Krystal (JSON)</button>
+<p class="small">Export for Krystal: downloads a file for today that you can send to Krystal. She imports it into her manager app. This is the bridge until the apps sync automatically.</p>
+<pre id="csvOut" class="small"></pre>
+
+<script>
+const KIT = [
+  {name:"Cleaning solutions (bulk)", pic:"🧴", best_use:"", photo:""},
+  {name:"Gloves", pic:"🧤", best_use:"", photo:""},
+  {name:"Scrub Daddies / sponges", pic:"🧽", best_use:"", photo:""},
+  {name:"Paper towel", pic:"🧻", best_use:"", photo:""},
+  {name:"Laundry soap (for cloths)", pic:"🫧", best_use:"", photo:""},
+  {name:"Cloths / mop heads", pic:"🧹", best_use:"", photo:""},
+  {name:"Bar Keepers Friend (only if Krystal confirms)", pic:"🫙", discontinued:false},
+  // Example only, not a real discontinued item yet:
+  // {name:"Old cleaner (example)", pic:"🧴", discontinued:true},
+];
+const KEY = "ravenTimeCardDemoV1";
+const ADJKEY = "ravenTimeCardAdjustmentsV1";
+let entries = JSON.parse(localStorage.getItem(KEY) || "[]");
+let adjustments = JSON.parse(localStorage.getItem(ADJKEY) || "[]");
+const MILEKEY = "ravenMileageV1";
+const HOUSEKEY = "ravenHouseInstructionsV1";
+let mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]");
+let houseInstructions = JSON.parse(localStorage.getItem(HOUSEKEY) || "{}");
+const TIMEOFFKEY = "ravenTimeOffV1";
+let timeOff = JSON.parse(localStorage.getItem(TIMEOFFKEY) || "[]");
+let adjustingEntryIdx = -1; // -1 = new / missed shift, otherwise index into entries
+let current = null; // {name, job, date, in, out}
+let refilled = false, low = new Set(), stocked = false, cloth = false;
+
+const $ = id => document.getElementById(id);
+function localDateStr(){ const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+$("workdate").value = localDateStr();
+
+KIT.forEach(item => {
+  const card = document.createElement("div");
+  card.className = "piccard" + (item.discontinued ? " discontinued" : "");
+  card.innerHTML = (item.photo ? "<img src='" + item.photo + "' alt='" + item.name + "' style='width:100%;max-width:140px;border-radius:8px'>" : "<div class='pic'>" + item.pic + "</div>") + "<div><strong>" + item.name + "</strong></div>" + (item.best_use ? "<div class='small'>Best for: " + item.best_use + "</div>" : "") + (item.discontinued ? "<div class='disc'>Discontinued — still available on request</div>" : "");
+  const b = document.createElement("button");
+  if (item.discontinued) {
+    b.textContent = "Request to reuse";
+    b.className = "reusebtn";
+    b.onclick = () => {
+      if (low.has("REUSE REQUEST: " + item.name)) { low.delete("REUSE REQUEST: " + item.name); card.classList.remove("need"); b.classList.remove("needbtn"); b.textContent = "Request to reuse"; }
+      else { low.add("REUSE REQUEST: " + item.name); card.classList.add("need"); b.classList.add("needbtn"); b.textContent = "✓ Reuse requested"; }
+    };
+    card.appendChild(b);
+    $("lowList").appendChild(card);
+    return;
+  }
+  b.textContent = "Refill";
+  b.onclick = () => {
+    if (low.has(item.name)) { low.delete(item.name); card.classList.remove("need"); b.classList.remove("needbtn"); b.textContent = "Refill"; }
+    else { low.add(item.name); card.classList.add("need"); b.classList.add("needbtn"); b.textContent = "✓ Need refill"; stocked = false; $("stockedBtn").classList.remove("on"); }
+  };
+  card.appendChild(b);
+  $("lowList").appendChild(card);
+});
+$("refilledBtn").onclick = e => { refilled = !refilled; e.target.classList.toggle("on", refilled); };
+$("stockedBtn").onclick = e => { stocked = !stocked; e.target.classList.toggle("on", stocked); if (stocked) { low.clear(); document.querySelectorAll("#lowList .piccard").forEach(x=>{x.classList.remove("need"); const bb=x.querySelector("button"); if(bb){bb.classList.remove("needbtn"); bb.textContent="Refill";}}); } };
+$("clothBtn").onclick = e => { cloth = !cloth; e.target.classList.toggle("on", cloth); };
+
+function saveAdj(){ localStorage.setItem(ADJKEY, JSON.stringify(adjustments)); renderPending(); }
+function parseDateTime(date, time){ return new Date(date + "T" + time).getTime(); }
+function updateAdjPreview(){
+  const d = $("adjDate").value, ti = $("adjIn").value, to = $("adjOut").value;
+  if (d && ti && to) {
+    const h = hours(parseDateTime(d, ti), parseDateTime(d, to));
+    $("adjPreview").innerHTML = h >= 0
+      ? "Requested hours: <b>" + (Math.round(h * 100) / 100).toFixed(2) + " hours</b> (" + ti + "–" + to + "). This is a REQUEST only — it will not replace your original hours until Krystal approves it."
+      : "<b>Clock-out must be after clock-in.</b>";
+  } else { $("adjPreview").textContent = ""; }
+}
+["adjDate","adjIn","adjOut"].forEach(id => $(id).addEventListener("change", updateAdjPreview));
+$("adjDate").value = localDateStr();
+window.requestAdjust = function(idx){
+  const e = entries[idx];
+  if (!e) return;
+  adjustingEntryIdx = idx;
+  $("adjJob").value = e.job; $("adjDate").value = e.date;
+  const localHM = t => { const d = new Date(t); return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); };
+  $("adjIn").value = localHM(e.in);
+  $("adjOut").value = e.out ? localHM(e.out) : "";
+  $("adjReason").value = "";
+  $("adjTarget").innerHTML = "Correcting this entry: <b>" + e.job + ", " + e.date + ", " + fmt(e.in) + "–" + (e.out ? fmt(e.out) : "?") + " (" + (e.hours||0).toFixed(2) + "h)</b>. Original stays unchanged until Krystal approves.";
+  $("adjStatus").textContent = "";
+  updateAdjPreview();
+  document.getElementById("adjustCard").scrollIntoView();
+};
+$("adjCancelBtn").onclick = () => {
+  adjustingEntryIdx = -1;
+  $("adjTarget").textContent = ""; $("adjStatus").textContent = "Cancelled — original times kept.";
+  $("adjJob").value = ""; $("adjReason").value = "";
+};
+$("adjSubmitBtn").onclick = () => {
+  const job = $("adjJob").value.trim(), date = $("adjDate").value, ti = $("adjIn").value, to = $("adjOut").value, reason = $("adjReason").value.trim();
+  if (!job || !date || !ti || !to) { alert("Fill in job, date, correct clock-in and clock-out times."); return; }
+  if (!reason) { alert("Please say why this needs correcting — Krystal needs the reason to approve it."); return; }
+  const reqIn = parseDateTime(date, ti), reqOut = parseDateTime(date, to);
+  if (reqOut <= reqIn) { alert("Clock-out must be after clock-in."); return; }
+  const name = $("emp").value.trim() || "(name not entered)";
+  const req = { name, job, date, reqIn, reqOut, reqHours: Math.round(hours(reqIn, reqOut) * 100) / 100, reason, status: "PENDING", entryIdx: adjustingEntryIdx, created: Date.now() };
+  if (adjustingEntryIdx >= 0) { const o = entries[adjustingEntryIdx]; req.origIn = o.in; req.origOut = o.out; req.origHours = o.hours || 0; }
+  adjustments.push(req); adjustingEntryIdx = -1;
+  $("adjTarget").textContent = ""; $("adjStatus").innerHTML = '<span class="ok">Request sent to Krystal for approval — original hours unchanged until she approves it.</span>';
+  saveAdj();
+};
+function renderPending(){
+  const el = $("pending"); if (!el) return;
+  if (!adjustments.length) { el.innerHTML = "<p class='small'>No time adjustment requests yet.</p>"; return; }
+  el.innerHTML = adjustments.map((r, i) => {
+    const orig = (r.entryIdx >= 0 && r.origIn)
+      ? "Original: " + fmt(r.origIn) + "–" + (r.origOut ? fmt(r.origOut) : "?") + " (" + (r.origHours||0).toFixed(2) + "h) → "
+      : "New / missed shift: ";
+    const btns = "";
+    return "<div class='card'><strong>" + r.job + "</strong> — " + r.date + "<br>" + orig + "Requested: " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h)<br>Reason: " + r.reason + "<br>Status: <b>" + r.status + "</b>" + (r.status === "PENDING" ? " — original hours still apply" : "") + btns + "</div>";
+  }).join("");
+}
+
+function fmt(t){ return new Date(t).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
+function hours(a,b){ return ((b-a)/3600000); }
+function save(){ localStorage.setItem(KEY, JSON.stringify(entries)); render(); populateJobSelects(); renderMileage(); renderHouses(); }
+
+$("inBtn").onclick = () => {
+  const name = $("emp").value.trim(), job = $("job").value.trim();
+  if (!name || !job) { alert("Enter your name and the job / client first name first."); return; }
+  current = { name, job, date: $("workdate").value, in: Date.now(), out: null, refilled:false, low:[], stocked:false, cloth:false, training: $("trainingFlag").checked, issue: "" };
+  $("status").innerHTML = "Clocked in at <b>" + fmt(current.in) + "</b> for " + job + ".";
+  $("inBtn").disabled = true; $("outBtn").disabled = false;
+};
+$("outBtn").onclick = () => {
+  if (!current) return;
+  current.out = Date.now();
+  current.refilled = refilled; current.low = [...low]; current.stocked = stocked; current.cloth = cloth; current.issue = $("issueNote").value.trim(); $("issueNote").value = "";
+  current.hours = Math.round(hours(current.in, current.out) * 100) / 100;
+  entries.push(current);
+  $("status").innerHTML = "Clocked out at <b>" + fmt(current.out) + "</b> — " + current.hours.toFixed(2) + " hours.";
+  if (!refilled && !stocked && low.size === 0) { alert("Gentle reminder: supplies screen not answered for this job. You can still tap it above — no penalty."); }
+  current = null; $("inBtn").disabled = false; $("outBtn").disabled = true;
+  save();
+};
+$("sendBtn").onclick = () => {
+  const msg = navigator.onLine
+    ? "Sent to Krystal."
+    : "Saved, will send when back online — nothing lost, no need to resend.";
+  $("sendStatus").innerHTML = '<span class="ok">' + msg + "</span>";
+  // Attach the latest taps to the most recent entry for today, if one exists
+  const today = entries.filter(e => e.date === $("workdate").value);
+  if (today.length) { const last = today[today.length-1]; last.refilled = refilled; last.low = [...low]; last.stocked = stocked; last.cloth = cloth; const iss = $("issueNote").value.trim(); if (iss) { last.issue = iss; $("issueNote").value = ""; } save(); }
+};
+
+function dayEntries(){ return entries.filter(e => e.date === $("workdate").value); }
+function summaryText(){
+  const d = dayEntries();
+  if (!d.length) return "No entries for " + $("workdate").value + ".";
+  const total = d.reduce((s,e)=>s + (e.hours||0), 0);
+  const lines = ["Raven & Roses — End-of-day summary — " + $("workdate").value,
+    "Total hours: " + total.toFixed(2)];
+  d.forEach(e => {
+    lines.push("- " + e.job + ": " + fmt(e.in) + "–" + (e.out ? fmt(e.out) : "?") + " (" + (e.hours||0).toFixed(2) + "h)"
+      + (e.adjustmentApproved ? " [time adjusted, approved: " + e.adjustmentReason + "]" : "")
+      + " | Supplies refilled: " + (e.refilled ? "yes" : "not confirmed")
+      + " | Low: " + (e.low && e.low.length ? e.low.join("; ") : (e.stocked ? "all stocked" : "none noted"))
+      + " | Cloths: " + (e.cloth ? "washed (confirmed)" : "not needed today")
+      + (e.training ? " | TRAINING shift" : "")
+      + (e.issue ? " | Issue: " + e.issue : ""));
+  });
+  const pend = adjustments.filter(r => r.status === "PENDING" && r.date === $("workdate").value);
+  if (pend.length) lines.push("Pending time adjustments (NOT approved, NOT counted above): " + pend.map(r => r.job + " " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h) — " + r.reason).join("; "));
+  return lines.join("\n");
+}
+$("summaryBtn").onclick = () => { $("summary").textContent = summaryText(); };
+$("copyBtn").onclick = async () => {
+  const t = summaryText();
+  try { await navigator.clipboard.writeText(t); alert("Summary copied."); }
+  catch(e){ $("summary").textContent = t; alert("Copy not available in this browser — summary is shown above, select and copy it."); }
+};
+$("jsonBtn").onclick = () => {
+  const data = { entries: dayEntries(), adjustments: adjustments.filter(r => r.date === $("workdate").value), mileage: mileage.filter(m => m.date === $("workdate").value), houseInstructions: houseInstructions, timeOff: timeOff, exported: new Date().toISOString() };
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"})); a.download = "raven-time-card-" + $("workdate").value + ".json"; a.click();
+};
+$("csvBtn").onclick = () => {
+  const d = dayEntries();
+  const head = "date,employee,job_first_name,clock_in,clock_out,hours,supplies_refilled,low_items,cloths_washed";
+  const rows = d.map(e => [e.date, e.name, e.job, fmt(e.in), e.out?fmt(e.out):"", (e.hours||0).toFixed(2), e.refilled?"yes":"no", '"' + (e.low||[]).join("; ") + '"', e.cloth?"yes":"not needed"].join(","));
+  const csv = [head, ...rows].join("\n");
+  $("csvOut").textContent = csv;
+  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"})); a.download = "raven-time-card-" + $("workdate").value + ".csv"; a.click(); } catch(e){}
+};
+
+
+function saveMileage(){ localStorage.setItem(MILEKEY, JSON.stringify(mileage)); renderMileage(); }
+function saveHouses(){ localStorage.setItem(HOUSEKEY, JSON.stringify(houseInstructions)); renderHouses(); }
+// Client dropdowns: addresses ARE listed, like Connecteam — so she can read the address and enter it into Google herself (separately).
+// App does NOT connect to Google Maps, no API, no GPS. Emails are NOT included — name + street address only, from the Raven client list.
+const CLIENTS = [
+  ["Allison & Ross McKenzie", "1316 Langara DR Nanaimo"],
+  ["Gary Scott", "2566 Pylades Drive Ladysmith, BC V9G 1E5"],
+  ["Jessica Phillips", "438 Hamilton Ave"],
+  ["Lee Anne Robichaud", "7271 Aulds road Lantzville"],
+  ["Maria & Terre Gomes", "307 Kennedy St"],
+  ["Maureen Endicott", "38 Front street"],
+  ["Randy and Barbara", "3721 Elworthy Pl"],
+  ["Roy & Marie Hilton", "5024 Vista View Crescent"],
+  ["Shirley & Al Hardy", "# 101 4469 Stonebridge Place Nanaimo"],
+  ["Tanya & Bob", "3069 Alan a Dale Place"],
+  ["Wendy Lim-Connoly", "718 Wentworth St Nanaimo"],
+  ["Kevin & Katie", "234-1130 Resort Drive, Parksville"],
+  ["Caledonia Fire Protection", "290 Fry St. Nanaimo"]
+];
+function clientOptions(){
+  const extra = [...new Set([...entries.map(e => e.job), ...Object.keys(houseInstructions)])];
+  const listed = CLIENTS.map(c => c[0] + " — " + c[1]);
+  const extraOpts = extra.filter(j => !listed.some(l => l.startsWith(j + " ")) && !CLIENTS.some(c => c[0] === j)).map(j => "<option value='" + j + "'>" + j + "</option>").join("");
+  return "<option value=''>Pick a client…</option>" + CLIENTS.map(c => "<option value='" + c[0] + " — " + c[1] + "'>" + c[0] + " — " + c[1] + "</option>").join("") + extraOpts;
+}
+function populateJobSelects(){
+  const jobs = [...new Set(entries.map(e => e.job))];
+  const startSel = $("mileStart");
+  const curS = startSel.value;
+  startSel.innerHTML = clientOptions();
+  if (curS) startSel.value = curS;
+  const endSel = $("mileEnd");
+  const curE = endSel.value;
+  endSel.innerHTML = clientOptions();
+  if (curE) endSel.value = curE;
+  const houseSel = $("houseJob");
+  const curH = houseSel.value;
+  houseSel.innerHTML = "<option value=''>Pick a job…</option>" + jobs.map(j => "<option value='" + j + "'>" + j + "</option>").join("");
+  if (curH) houseSel.value = curH;
+}
+function renderMileage(){
+  const date = $("mileDate").value;
+  const list = mileage.filter(m => m.date === date);
+  const payable = list.filter(m => m.type === "between").reduce((s,m)=>s+m.km, 0);
+  const total = list.reduce((s,m)=>s+m.km, 0);
+  $("mileList").innerHTML = list.length ? "<table><tr><th>Start → End</th><th>Km</th><th>Type</th></tr>" + list.map(m => "<tr><td>" + m.start + " → " + m.end + "</td><td>" + m.km.toFixed(1) + "</td><td>" + (m.type === "between" ? "Between clients — payable" : m.type === "to_first" ? "To first — not payable" : "Home from last — not payable") + "</td></tr>").join("") + "</table>" : "<p class='small'>No mileage trips for this date yet.</p>";
+  $("mileTotals").innerHTML = "Total today: <b>" + payable.toFixed(1) + " km</b> (Client 1 to Client 2, payable).";
+}
+function renderHouses(){
+  const name = $("houseJob").value || $("houseJobOther").value.trim();
+  if (!name) { $("houseTasks").textContent = "Pick a job above to see its instructions."; $("houseSpecial").textContent = "—"; return; }
+  const h = houseInstructions[name];
+  if (!h) { $("houseTasks").textContent = "No instructions added for " + name + " yet — Krystal adds these in her manager app."; $("houseSpecial").textContent = "No special instructions added yet."; return; }
+  $("houseTasks").textContent = h.tasks || "No tasks listed for this house yet.";
+  $("houseSpecial").textContent = h.special || "No special instructions for this house.";
+}
+$("mileDate").value = localDateStr();
+$("mileAddBtn").onclick = () => {
+  const date = $("mileDate").value;
+  const start = $("mileStart").value;
+  const end = $("mileEnd").value;
+  const km = parseFloat($("mileKm").value);
+  const type = "between";
+  if (!date || !start || !end || isNaN(km) || km <= 0) { alert("Fill in date, Client 1, Client 2, and Km."); return; }
+  if (start === end) { alert("Client 1 and Client 2 can’t be the same house."); return; }
+  mileage.push({ date, start, end, km, type, name: $("emp").value.trim() || "(name not entered)" });
+  $("mileKm").value = "";
+  $("mileStatus").innerHTML = '<span class="ok">Mileage trip added.</span>';
+  saveMileage();
+};
+$("houseJob").addEventListener("change", renderHouses);
+$("houseJobOther").addEventListener("input", renderHouses);
+$("mileDate").addEventListener("change", renderMileage);
+
+
+
+
+
+function saveTimeOff(){ localStorage.setItem(TIMEOFFKEY, JSON.stringify(timeOff)); renderTimeOff(); }
+function renderTimeOff(){
+  const el = $("toList"); if (!el) return;
+  const mine = timeOff.filter(r => r.name === $("emp").value.trim());
+  el.innerHTML = mine.length ? mine.map(r => "<div class='card'><strong>" + r.date + " — " + (r.type === "sick" ? "Sick day (paid)" : "Time off (unpaid)") + "</strong><br>Reason: " + (r.reason || "—") + "<br>Status: <b>" + r.status + "</b></div>").join("") : "<p class='small'>No time off / sick requests yet.</p>";
+}
+$("toSubmitBtn").onclick = () => {
+  const name = $("emp").value.trim();
+  const date = $("toDate").value, type = $("toType").value, reason = $("toReason").value.trim();
+  if (!name || !date) { alert("Enter your name and the date requested off first."); return; }
+  timeOff.push({ name, date, type, reason, status: "PENDING", created: Date.now() });
+  $("toStatus").innerHTML = '<span class="ok">Request sent to Krystal — not approved until she approves it.</span>';
+  $("toReason").value = "";
+  saveTimeOff();
+};
+
+function render(){
+  const d = dayEntries();
+  $("entries").innerHTML = d.length ? "<table><tr><th>Job</th><th>In–Out</th><th>Hours</th><th>Supplies</th><th></th></tr>" +
+    d.map(e => { const gi = entries.indexOf(e); return "<tr><td>" + e.job + (e.training ? " <span class='small'>(training)</span>" : "") + (e.adjustmentApproved ? " <span class='small'>(time adjusted, approved)</span>" : "") + (e.issue ? "<br><span class='small'>Issue: " + e.issue + "</span>" : "") + "</td><td>" + fmt(e.in) + "–" + (e.out?fmt(e.out):"") + "</td><td>" + (e.hours||0).toFixed(2) + "</td><td>" + (e.refilled?"refilled":"—") + (e.low&&e.low.length?" · low: "+e.low.join(", "):"") + "</td><td><button class='tap' onclick='requestAdjust(" + gi + ")'>Adjust</button></td></tr>"; }).join("") + "</table>"
+    : "<p class='small'>No entries yet for this date. Clock in above to try it, or use “Adjust time” above if you forgot to clock in entirely.</p>";
+}
+render();
+renderPending();
+renderTimeOff();
+populateJobSelects();
+renderMileage();
+renderHouses();
+</script>
+</body>
+</html>
