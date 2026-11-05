@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Raven &amp; Roses">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.json">
+
+<title>Raven &amp; Roses — Manager App (Krystal only)</title>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;max-width:760px;margin:0 auto;padding:16px;line-height:1.45;color:#111}
+  h1{font-size:1.4rem} h2{font-size:1.1rem;margin-top:1.5em}
+  label{display:block;margin:.6em 0 .2em;font-weight:600}
+  input,select,button{font-size:1rem;padding:.6em;width:100%;box-sizing:border-box}
+  button{margin:.4em 0;background:#111;color:#fff;border:0;border-radius:8px;cursor:pointer}
+  button.secondary{background:#eee;color:#111}
+  button.approve{background:#1a7a2e} button.decline{background:#b00020}
+  button.smallbtn{width:auto;padding:.5em 1em;margin:.25em .25em .25em 0}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{border:1px solid #ccc;border-radius:12px;padding:12px;margin:12px 0}
+  .card.pending{border:2px solid #b58900;background:#fffdf0}
+  .card.approved{border-color:#1a7a2e} .card.declined{opacity:.8}
+  .small{font-size:.85rem;color:#555} .ok{color:#1a7a2e;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:.9rem} td,th{border-bottom:1px solid #ddd;padding:.4em;text-align:left}
+  pre{white-space:pre-wrap;background:#f7f7f7;padding:12px;border-radius:8px}
+</style>
+</head>
+<body>
+<h1>🐦‍⬛ Raven &amp; Roses — Manager</h1>
+<p class="small"><strong>Krystal only — do not give this file to an employee.</strong> No GPS, no payroll calculation in this app — hours only, for now.</p>
+
+<div class="card">
+  <h2>How entries get here — for now</h2>
+  <p class="small">There is no shared server yet. This weekend we will work on that.<br>
+  <strong>Testing on one phone:</strong> open the employee app and the manager app in the same browser on the same phone — they share the same saved entries, so you will see her entries here straight away.<br>
+  <strong>Different phones (manual bridge, until a backend is built):</strong> the employee taps “Export for Krystal (JSON)” in her app, sends you that file, and you tap “Import employee file” below. Approvals you make here will not go back to her phone automatically until the backend is built — tell her the result for now.</p>
+  <label for="viewDate">Date to view</label>
+  <input id="viewDate" type="date">
+  <label for="empFilter">Employee</label>
+  <select id="empFilter"><option value="">All employees</option></select>
+  <button id="refreshBtn" class="secondary">Refresh</button>
+</div>
+
+<div class="card">
+  <h2>Pay settings (Krystal only)</h2>
+  <p class="small">Employee rates come from the rate saved when they clocked out, or from the rate you set here per employee. Mileage pay needs a CRA rate — enter the current CRA rate here, do not guess it. If it is blank, mileage shows kilometres only, no dollars.</p>
+  <label for="craInput">CRA mileage rate ($ per km, Krystal to confirm)</label>
+  <input id="craInput" type="number" step="0.01" min="0" placeholder="e.g. leave blank until confirmed">
+  <button id="craSaveBtn" class="secondary">Save CRA rate</button>
+  <label for="rateEmp">Set rate for employee</label>
+  <select id="rateEmp"></select>
+  <label for="rateEmpOther">Or type an employee first name (for a new hire who hasn’t clocked in yet)</label>
+  <input id="rateEmpOther" placeholder="e.g. Alex">
+  <label for="rateVal">Hourly rate ($)</label>
+  <select id="rateVal">
+    <option value="20">Training — $20/hr</option>
+    <option value="23" selected>Starting — $23/hr</option>
+    <option value="24">After 3-month probation — $24/hr</option>
+    <option value="24.5">$24.50/hr</option>
+    <option value="25">$25/hr</option>
+    <option value="25.5">$25.50/hr</option>
+    <option value="26">Cap — $26/hr</option>
+  </select>
+  <button id="rateSaveBtn" class="secondary">Save employee rate</button>
+  <p id="rateStatus" class="small"></p>
+</div>
+
+<h2>Day total</h2>
+<p id="dayTotal" class="small"></p>
+
+<h2>Today’s entries</h2>
+<div id="entries"></div>
+
+<h2>Low supplies — roll-up for today</h2>
+<div id="lowRollup"></div>
+
+<h2>Time adjustments — approve / decline</h2>
+<p class="small">Pending requests do <strong>not</strong> count in totals until you approve them. Approving replaces the original times. Declining leaves the original times untouched.</p>
+<div id="pending"></div>
+
+<h2>Approved / declined history</h2>
+<div id="history"></div>
+
+
+<h2>Mileage — for this date</h2>
+<div id="mileageView"></div>
+<p id="mileageTotals" class="small"></p>
+
+
+<h2>Time off / sick requests — approve / decline (Krystal only)</h2>
+<div id="timeOffMgr"></div>
+
+<h2>Employee onboarding checklist — Krystal only (NO SIN in this app)</h2>
+<p class="small">Pay method: <strong>e-transfer, morning of payday</strong> (Krystal, 2026-11-03). Krystal keeps a copy of the employee’s information herself, separately — that copy is NOT stored in this app, and a SIN is NEVER entered here. In the backend version, a SIN will be held in an encrypted, masked vault for T4 filing only (see payroll file note) — in this draft, the SIN vault is NOT built, so do not type a SIN anywhere in these draft files.</p>
+<label for="obEmp">Employee (first name)</label>
+<input id="obEmp" placeholder="e.g. Alex">
+<div id="obChecks"></div>
+<p class="small">Checklist items: Federal TD1 received · BC TD1 received · E-transfer info received (pay morning of payday) · Criminal record check received / clean, before solo work · Training completed · Probation start date recorded · Review dates recorded (3-month, then every 6 months) · Employee information copy kept by Krystal (separately, not in app) · SIN vault status: NOT in draft — backend only, masked, filing only.</p>
+<button id="obSaveBtn" class="secondary">Save onboarding checklist</button>
+<p id="obStatus" class="small"></p>
+
+<h2>House instructions — edit (Krystal only)</h2>
+<p class="small">Add what gets done at each house, plus special instructions. The employee sees this read-only in her app, by first name only. Do not put anything here you would not want the cleaner for that house to see.</p>
+<label for="hiName">Client first name</label>
+<input id="hiName" placeholder="e.g. Maria">
+<label for="hiTasks">What gets done at this house</label>
+<textarea id="hiTasks" rows="5" placeholder="e.g. Kitchen, bathrooms, floors, dusting… — write it as you want her to see it"></textarea>
+<label for="hiSpecial">Special instructions</label>
+<textarea id="hiSpecial" rows="4" placeholder="e.g. Dog in backyard, key under mat, no bleach on…"></textarea>
+<button id="hiSaveBtn">Save house instructions</button>
+<p id="hiStatus" class="small"></p>
+<div id="hiList"></div>
+
+<h2>Export / import</h2>
+<button id="copyBtn">Copy day summary as text</button>
+<button id="csvBtn" class="secondary">Download day CSV</button>
+<button id="jsonBtn" class="secondary">Export day as JSON (for records)</button>
+<label for="importFile">Import employee file (JSON from her app)</label>
+<input id="importFile" type="file" accept=".json,application/json">
+<p id="importStatus" class="small"></p>
+<pre id="summary"></pre>
+<button id="clearBtn" class="secondary">Clear test entries on this device</button>
+<p class="small">Weekend work still to do: shared backend so phones sync automatically, employee codes so multiple employees stay separate, a decline-reason field that is saved (not just a pop-up), notifications when a new request arrives, and a weekly / payroll view. None of that is in this file yet.</p>
+
+<script>
+const KEY = "ravenTimeCardDemoV1";
+const ADJKEY = "ravenTimeCardAdjustmentsV1";
+let entries = JSON.parse(localStorage.getItem(KEY) || "[]");
+let adjustments = JSON.parse(localStorage.getItem(ADJKEY) || "[]");
+const MILEKEY = "ravenMileageV1";
+const HOUSEKEY = "ravenHouseInstructionsV1";
+let mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]");
+let houseInstructions = JSON.parse(localStorage.getItem(HOUSEKEY) || "{}");
+const TIMEOFFKEY = "ravenTimeOffV1";
+const ONBOARDKEY = "ravenOnboardV1";
+let timeOff = JSON.parse(localStorage.getItem(TIMEOFFKEY) || "[]");
+let onboard = JSON.parse(localStorage.getItem(ONBOARDKEY) || "{}");
+const RATEKEY = "ravenEmployeeRatesV1";
+const CRAKEY = "ravenCraRateV1";
+let employeeRates = JSON.parse(localStorage.getItem(RATEKEY) || "{}");
+let craRate = parseFloat(localStorage.getItem(CRAKEY) || "");
+const $ = id => document.getElementById(id);
+const localDate = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
+$("viewDate").value = localDate();
+function fmt(t){ return new Date(t).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
+function hours(a,b){ return ((b-a)/3600000); }
+function saveAll(){ localStorage.setItem(TIMEOFFKEY, JSON.stringify(timeOff)); localStorage.setItem(ONBOARDKEY, JSON.stringify(onboard)); localStorage.setItem(KEY, JSON.stringify(entries)); localStorage.setItem(ADJKEY, JSON.stringify(adjustments)); localStorage.setItem(MILEKEY, JSON.stringify(mileage)); localStorage.setItem(HOUSEKEY, JSON.stringify(houseInstructions)); localStorage.setItem(RATEKEY, JSON.stringify(employeeRates)); if (!isNaN(craRate)) localStorage.setItem(CRAKEY, String(craRate)); render(); }
+function reload(){ timeOff = JSON.parse(localStorage.getItem(TIMEOFFKEY) || "[]"); onboard = JSON.parse(localStorage.getItem(ONBOARDKEY) || "{}"); entries = JSON.parse(localStorage.getItem(KEY) || "[]"); adjustments = JSON.parse(localStorage.getItem(ADJKEY) || "[]"); mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]"); houseInstructions = JSON.parse(localStorage.getItem(HOUSEKEY) || "{}"); employeeRates = JSON.parse(localStorage.getItem(RATEKEY) || "{}"); craRate = parseFloat(localStorage.getItem(CRAKEY) || ""); render(); }
+
+function mgrRate(e){
+  if (e.rate != null) return e.rate;
+  if (e.name && employeeRates[e.name]) return employeeRates[e.name];
+  return 23;
+}
+function mgrEntryPay(e){
+  // Vacation pay is paid on every cheque at 4% (Krystal, 2026-11-03), so pay is always recomputed here:
+  // hours pay + $1/hr refill, plus 4% vacation pay on those two, not the old stored pay without vacation.
+  const rate = mgrRate(e);
+  const base = (e.hours||0) * rate + (e.refilled ? (e.hours||0) * 1 : 0);
+  return Math.round((base * 1.04) * 100) / 100;
+}
+
+
+function renderTimeOffMgr(){
+  const el = $("timeOffMgr"); if (!el) return;
+  const list = timeOff.filter(r => !$("empFilter") || !$("empFilter").value || r.name === $("empFilter").value);
+  el.innerHTML = list.length ? list.map((r,i) => {
+    const idx = timeOff.indexOf(r);
+    return "<div class='card'><strong>" + r.name + " — " + r.date + " — " + (r.type === "sick" ? "Sick day (paid)" : "Time off (unpaid)") + "</strong><br>Reason: " + (r.reason || "—") + "<br>Status: <b>" + r.status + "</b>" + (r.status === "PENDING" ? " <button class='smallbtn' onclick='decideTimeOff(" + idx + ", \"APPROVED\")'>Approve</button> <button class='smallbtn' onclick='decideTimeOff(" + idx + ", \"DECLINED\")'>Decline</button>" : "") + "</div>";
+  }).join("") : "<p class='small'>No time off / sick requests yet.</p>";
+}
+window.decideTimeOff = function(idx, status){ timeOff[idx].status = status; saveAll(); renderTimeOffMgr(); };
+function renderOnboard(){
+  const el = $("obChecks"); if (!el) return;
+  const items = ["Federal TD1 received","BC TD1 received","E-transfer info received (pay morning of payday)","Criminal record check received / clean, before solo work","Training completed","Probation start date recorded","Review dates recorded (3-month, then every 6 months)","Employee information copy kept by Krystal (separately, not in app)"];
+  const cur = onboard[$("obEmp").value.trim()] || {};
+  el.innerHTML = items.map((it,i) => "<label><input type='checkbox' class='obItem' data-i='" + i + "' " + (cur[i] ? "checked" : "") + " style='width:auto'> " + it + "</label>").join("");
+}
+$("obEmp").addEventListener("input", renderOnboard);
+$("obSaveBtn").onclick = () => {
+  const n = $("obEmp").value.trim();
+  if (!n) { alert("Enter an employee first name first."); return; }
+  const vals = {};
+  document.querySelectorAll(".obItem").forEach(cb => { vals[cb.dataset.i] = cb.checked; });
+  onboard[n] = vals;
+  $("obStatus").innerHTML = '<span class="ok">Onboarding checklist saved for ' + n + '. SIN is NOT stored here.</span>';
+  saveAll();
+};
+
+function filtered(){
+  const date = $("viewDate").value, emp = $("empFilter").value;
+  return entries.filter(e => e.date === date && (!emp || e.name === emp));
+}
+function dayAdjustments(){
+  const date = $("viewDate").value, emp = $("empFilter").value;
+  return adjustments.filter(r => r.date === date && (!emp || r.name === emp));
+}
+function render(){
+  // employee filter
+  const names = [...new Set(entries.map(e => e.name))];
+  const cur = $("empFilter").value;
+  $("empFilter").innerHTML = "<option value=''>All employees</option>" + names.map(n => "<option value='" + n + "'>" + n + "</option>").join("");
+  $("empFilter").value = names.includes(cur) ? cur : "";
+  const d = filtered();
+  const total = d.reduce((s,e)=>s + (e.hours||0), 0);
+  const payTotal = d.reduce((s,e)=>s + mgrEntryPay(e), 0);
+  $("dayTotal").innerHTML = "<b>" + $("viewDate").value + "</b> — " + d.length + " entr" + (d.length===1?"y":"ies") + ", total <b>" + total.toFixed(2) + " hours</b>, estimated pay <b>$" + payTotal.toFixed(2) + "</b> (hours + $1/hr refill + 4% vacation pay on every cheque, pending adjustments not counted, mileage pay added below if CRA rate is set).";
+  $("entries").innerHTML = d.length ? "<table><tr><th>Employee</th><th>Job</th><th>In–Out</th><th>Hours</th><th>Pay (est.)</th><th>Supplies</th><th>Cloths</th></tr>" +
+    d.map(e => "<tr><td>" + e.name + "</td><td>" + e.job + (e.adjustmentApproved ? " <span class='small'>(adjusted, approved)</span>" : "") + "</td><td>" + fmt(e.in) + "–" + (e.out?fmt(e.out):"") + "</td><td>" + (e.hours||0).toFixed(2) + "</td><td>" + (e.refilled?"refilled":"—") + (e.low&&e.low.length?" · low: "+e.low.join(", "):"") + "</td><td>" + (e.cloth?"washed":"not needed") + "</td></tr>").join("") + "</table>"
+    : "<p class='small'>No entries for this date / employee yet. If you are testing on one phone, clock in/out in the employee app first, then tap Refresh here.</p>";
+  const lows = [];
+  d.forEach(e => (e.low||[]).forEach(x => { if (!lows.includes(x)) lows.push(x); }));
+  $("lowRollup").innerHTML = lows.length ? "<ul>" + lows.map(x => "<li>" + x + "</li>").join("") + "</ul>" : "<p class='small'>No low-supply items noted for this date.</p>";
+  const pend = dayAdjustments().filter(r => r.status === "PENDING");
+  const hist = dayAdjustments().filter(r => r.status !== "PENDING");
+  $("pending").innerHTML = pend.length ? pend.map(r => {
+    const gi = adjustments.indexOf(r);
+    const orig = (r.entryIdx >= 0 && r.origIn) ? "Original: " + fmt(r.origIn) + "–" + (r.origOut ? fmt(r.origOut) : "?") + " (" + (r.origHours||0).toFixed(2) + "h) → " : "New / missed shift: ";
+    return "<div class='card pending'><strong>" + r.name + " — " + r.job + "</strong> — " + r.date + "<br>" + orig + "Requested: " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h)<br>Reason: " + r.reason + "<br><button class='smallbtn approve' onclick='decide(" + gi + ", true)'>Approve</button><button class='smallbtn decline' onclick='decide(" + gi + ", false)'>Decline</button></div>";
+  }).join("") : "<p class='small'>No pending time adjustments for this date.</p>";
+  $("history").innerHTML = hist.length ? hist.map(r => "<div class='card " + r.status.toLowerCase() + "'><strong>" + r.name + " — " + r.job + "</strong> — " + r.date + " — Requested " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h) — <b>" + r.status + "</b>" + (r.declineReason ? " — Reason: " + r.declineReason : "") + " — Employee reason: " + r.reason + "</div>").join("") : "<p class='small'>No approved / declined adjustments for this date yet.</p>";
+  const miles = mileage.filter(m => m.date === $("viewDate").value && (! $("empFilter").value || m.name === $("empFilter").value));
+  const payKm = miles.filter(m => m.type === "between").reduce((s,m)=>s+m.km, 0);
+  const allKm = miles.reduce((s,m)=>s+m.km, 0);
+  $("mileageView").innerHTML = miles.length ? "<table><tr><th>Employee</th><th>Start → End</th><th>Km</th><th>Type</th></tr>" + miles.map(m => "<tr><td>" + m.name + "</td><td>" + m.start + " → " + m.end + "</td><td>" + m.km.toFixed(1) + "</td><td>" + (m.type === "between" ? "Between clients — payable" : m.type === "to_first" ? "To first — not payable" : "Home from last — not payable") + "</td></tr>").join("") + "</table>" : "<p class='small'>No mileage trips for this date yet.</p>";
+  $("mileageTotals").innerHTML = "Payable today (between clients only): <b>" + payKm.toFixed(1) + " km</b> · All trips today: " + allKm.toFixed(1) + " km" + ((!isNaN(craRate) && craRate > 0) ? " · Mileage pay (est.): $" + (payKm * craRate).toFixed(2) : " · Mileage pay not shown — CRA rate not set above.") + ".";
+  const hiNames = Object.keys(houseInstructions);
+  $("hiList").innerHTML = hiNames.length ? hiNames.map(n => "<div class='card'><strong>" + n + "</strong><br><em>What gets done:</em> " + (houseInstructions[n].tasks || "—") + "<br><em>Special:</em> " + (houseInstructions[n].special || "—") + "<br><button class='smallbtn secondary' onclick='loadHouse(\"" + n + "\")'>Edit</button></div>").join("") : "<p class='small'>No house instructions saved yet. Add the first house above — this is the weekend job, house by house, not invented here.</p>";
+  renderTimeOffMgr();
+  renderOnboard();
+  populateRateEmp();
+  if (!isNaN(craRate) && craRate > 0 && document.activeElement !== $("craInput")) $("craInput").value = String(craRate);
+  const lines = ["Raven & Roses — Manager day summary — " + $("viewDate").value, "Total hours: " + total.toFixed(2)];
+  d.forEach(e => lines.push("- " + e.name + " / " + e.job + ": " + fmt(e.in) + "–" + (e.out?fmt(e.out):"?") + " (" + (e.hours||0).toFixed(2) + "h)" + (e.adjustmentApproved ? " [adjusted, approved]" : "") + " | Supplies refilled: " + (e.refilled?"yes":"not confirmed") + " | Low: " + (e.low&&e.low.length?e.low.join("; "):"none") + " | Cloths: " + (e.cloth?"washed":"not needed")));
+  const pendLines = pend.map(r => r.name + " / " + r.job + " " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h) — " + r.reason);
+  if (pendLines.length) lines.push("Pending adjustments (NOT counted): " + pendLines.join("; "));
+  lines.push("Mileage today: payable " + payKm.toFixed(1) + " km, all trips " + allKm.toFixed(1) + " km" + ((!isNaN(craRate) && craRate > 0) ? ", mileage pay (est.) $" + (payKm * craRate).toFixed(2) : "") + ".");
+  lines.push("Estimated pay today (hours + refill + 4% vacation pay, before mileage): $" + payTotal.toFixed(2) + " — estimate only, Krystal confirms final pay. Payroll file is the pay authority (taxes, net, remittance).");
+  $("summary").textContent = lines.join("\n");
+}
+window.decide = function(gi, approve){
+  const r = adjustments[gi]; if (!r || r.status !== "PENDING") return;
+  if (approve) {
+    r.status = "APPROVED";
+    if (r.entryIdx >= 0 && entries[r.entryIdx]) {
+      const e = entries[r.entryIdx];
+      e.in = r.reqIn; e.out = r.reqOut; e.hours = r.reqHours; e.adjustmentApproved = true; e.adjustmentReason = r.reason; e._payStale = true; e.pay = mgrEntryPay(e); delete e._payStale;
+    } else {
+      entries.push({ name: r.name, job: r.job, date: r.date, in: r.reqIn, out: r.reqOut, hours: r.reqHours, refilled:false, low:[], stocked:false, cloth:false, adjustmentApproved:true, adjustmentReason:r.reason });
+    }
+  } else {
+    r.status = "DECLINED";
+    const reason = prompt("Decline reason (optional, for your records):", "");
+    if (reason) r.declineReason = reason;
+  }
+  saveAll();
+};
+$("refreshBtn").onclick = reload;
+$("viewDate").addEventListener("change", render);
+$("empFilter").addEventListener("change", render);
+$("copyBtn").onclick = async () => { try { await navigator.clipboard.writeText($("summary").textContent); alert("Summary copied."); } catch(e){ alert("Copy not available — select the summary below and copy it."); } };
+$("csvBtn").onclick = () => {
+  const d = filtered();
+  const head = "date,employee,job_first_name,clock_in,clock_out,hours,pay_estimate,supplies_refilled,low_items,cloths_washed,adjusted_approved";
+  const rows = d.map(e => [e.date, e.name, e.job, fmt(e.in), e.out?fmt(e.out):"", (e.hours||0).toFixed(2), mgrEntryPay(e).toFixed(2), e.refilled?"yes":"no", '"' + (e.low||[]).join("; ") + '"', e.cloth?"yes":"not needed", e.adjustmentApproved?"yes":"no"].join(","));
+  const csv = [head, ...rows].join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"})); a.download = "raven-manager-" + $("viewDate").value + ".csv"; a.click();
+};
+$("jsonBtn").onclick = () => {
+  const data = { entries: filtered(), adjustments: dayAdjustments(), mileage: mileage.filter(m => m.date === $("viewDate").value), houseInstructions: houseInstructions, employeeRates: employeeRates, craRate: craRate, exported: new Date().toISOString() };
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"})); a.download = "raven-manager-" + $("viewDate").value + ".json"; a.click();
+};
+$("importFile").addEventListener("change", async (ev) => {
+  const f = ev.target.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    const inEntries = data.entries || (Array.isArray(data) ? data : []);
+    const inAdj = data.adjustments || [];
+    const key = e => [e.name, e.job, e.date, e.in].join("|");
+    const have = new Set(entries.map(key));
+    let addedE = 0, addedA = 0;
+    inEntries.forEach(e => { if (!have.has(key(e))) { entries.push(e); have.add(key(e)); addedE++; } });
+    inAdj.forEach(r => { const rk = [r.name, r.job, r.date, r.reqIn, r.reason].join("|"); if (!adjustments.some(x => [x.name, x.job, x.date, x.reqIn, x.reason].join("|") === rk)) { adjustments.push(r); addedA++; } });
+    const inMiles = data.mileage || [];
+    inMiles.forEach(m => { const mk = [m.name, m.date, m.start, m.end, m.km].join("|"); if (!mileage.some(x => [x.name, x.date, x.start, x.end, x.km].join("|") === mk)) { mileage.push(m); } });
+    if (data.houseInstructions) { Object.assign(houseInstructions, data.houseInstructions); }
+    if (data.employeeRates) { Object.assign(employeeRates, data.employeeRates); }
+    if (data.timeOff) { data.timeOff.forEach(r => { if (!timeOff.some(x => x.name === r.name && x.date === r.date && x.type === r.type)) timeOff.push(r); }); }
+    if (data.craRate && !isNaN(parseFloat(data.craRate))) { craRate = parseFloat(data.craRate); localStorage.setItem(CRAKEY, String(craRate)); }
+    saveAll();
+    $("importStatus").innerHTML = '<span class="ok">Imported: ' + addedE + ' new entries, ' + addedA + ' new adjustment requests, plus any mileage / house instructions in the file. Duplicates skipped.</span>';
+  } catch(e) { $("importStatus").textContent = "Could not read that file — it needs to be a JSON export from the employee app."; }
+  ev.target.value = "";
+});
+$("clearBtn").onclick = () => { if (confirm("Clear all test entries and adjustments on this device?")) { entries = []; adjustments = []; mileage = []; saveAll(); } };
+
+window.loadHouse = function(n){
+  $("hiName").value = n;
+  $("hiTasks").value = houseInstructions[n] ? houseInstructions[n].tasks : "";
+  $("hiSpecial").value = houseInstructions[n] ? houseInstructions[n].special : "";
+};
+$("hiSaveBtn").onclick = () => {
+  const n = $("hiName").value.trim();
+  if (!n) { alert("Enter a client first name first."); return; }
+  houseInstructions[n] = { tasks: $("hiTasks").value.trim(), special: $("hiSpecial").value.trim() };
+  $("hiStatus").innerHTML = '<span class="ok">Saved instructions for ' + n + '.</span>';
+  saveAll();
+};
+
+function populateRateEmp(){
+  const names = [...new Set(entries.map(e => e.name))];
+  const cur = $("rateEmp").value;
+  if (!names.length) {
+    $("rateEmp").innerHTML = "<option value=''>No employees yet — clock in first, or type a name below</option>";
+    return;
+  }
+  $("rateEmp").innerHTML = "<option value=''>Pick an employee…</option>" + names.map(n => "<option value='" + n + "'>" + n + "</option>").join("");
+  if (names.includes(cur)) $("rateEmp").value = cur;
+}
+$("craSaveBtn").onclick = () => {
+  const v = parseFloat($("craInput").value);
+  if (isNaN(v) || v <= 0) { craRate = NaN; localStorage.removeItem(CRAKEY); }
+  else { craRate = v; localStorage.setItem(CRAKEY, String(v)); }
+  render();
+};
+$("rateSaveBtn").onclick = () => {
+  const n = $("rateEmpOther").value.trim() || $("rateEmp").value;
+  if (!n) { alert("Pick an employee above, or type a first name below, first."); return; }
+  employeeRates[n] = parseFloat($("rateVal").value);
+  $("rateStatus").innerHTML = '<span class="ok">Rate for ' + n + ' set to $' + employeeRates[n].toFixed(2) + '/hr for future calculations (jobs already clocked out keep their saved rate unless adjusted).</span>';
+  $("rateEmpOther").value = "";
+  saveAll();
+};
+
+render();
+</script>
+</body>
+</html>

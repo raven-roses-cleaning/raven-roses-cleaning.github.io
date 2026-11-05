@@ -1,0 +1,9 @@
+{
+  "name": "Raven & Roses \u2014 Raven Manager",
+  "short_name": "Manager",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111111",
+  "icons": []
+}
