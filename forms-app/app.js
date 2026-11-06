@@ -14,21 +14,143 @@
     newsletter: { name: "Name", email: "Email", phone: "Phone", optin: "Opt-in" }
   };
 
-  // POST the submission to the web app. "no-cors" keeps the request simple;
-  // the Apps Script doPost appends the row to the Sheet tab for formType.
+  // ---- Failure logging, added 2026-11-05 (Coopers) ----
+  // The Coopers tried to sign up and got a failure message, and left NO
+  // trace anywhere — no sheet row, no email, no log — so Krystal had no
+  // way to know, or to contact them. From now on EVERY submit attempt is
+  // logged, not just successes.
+  // Layers (honest limits — read the handover note):
+  //  1. Client log: every attempt is written to localStorage on the
+  //     visitor's own device (key ravenFormsAttemptsV1) as "pending",
+  //     then updated to "sent" or "unconfirmed". This alone does NOT
+  //     reach Krystal — it is only visible on that device.
+  //  2. Failure report to the server: on timeout / unconfirmed, the app
+  //     posts a second, separate form (formType "attempt-log") to the
+  //     same Apps Script endpoint, with AttemptStatus "FAILED_UNCONFIRMED".
+  //     The Apps Script MUST be updated to handle formType "attempt-log"
+  //     (append to a "Failed attempts" tab + email Krystal) — the exact
+  //     Code.gs snippet is in gazette-signup-fix-2026-11-05.md. Until
+  //     that script change is deployed, that report POST may be ignored
+  //     by the script, so it is NOT the only channel.
+  //  3. User fallback (works today, no script change needed): on
+  //     unconfirmed, the confirmation screen tells the visitor plainly
+  //     to tap "Email this inquiry instead" — that mailto opens with
+  //     their details pre-filled, so Krystal receives their signup by
+  //     email even if the form failed.
+  var ATTEMPT_LOG_KEY = "ravenFormsAttemptsV1";
+  function logAttempt(attempt) {
+    try {
+      var list = JSON.parse(localStorage.getItem(ATTEMPT_LOG_KEY) || "[]");
+      var i, found = false;
+      for (i = 0; i < list.length; i++) {
+        if (list[i].id === attempt.id) { list[i] = attempt; found = true; break; }
+      }
+      if (!found) list.push(attempt);
+      localStorage.setItem(ATTEMPT_LOG_KEY, JSON.stringify(list.slice(-50)));
+    } catch (e) { /* private mode / storage blocked — do not break submit */ }
+  }
+  function sendFailureReport(attempt) {
+    // Second hidden-iframe POST, separate from the original submission,
+    // so a failed attempt is reported even if the first POST never ran.
+    try {
+      var iframe = document.createElement("iframe");
+      iframe.name = "raven-forms-failure-target";
+      iframe.style.display = "none";
+      iframe.setAttribute("aria-hidden", "true");
+      document.body.appendChild(iframe);
+      var f = document.createElement("form");
+      f.method = "POST";
+      f.action = FORM_ENDPOINT;
+      f.target = "raven-forms-failure-target";
+      f.style.display = "none";
+      var fields = {
+        formType: "attempt-log",
+        "AttemptStatus": "FAILED_UNCONFIRMED",
+        "AttemptId": attempt.id,
+        "AttemptTime": attempt.time,
+        "OriginalForm": attempt.form,
+        "Name": attempt.name,
+        "Email": attempt.email,
+        "Error": attempt.error || "iframe did not confirm within 20 seconds"
+      };
+      Object.keys(fields).forEach(function (k) {
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = k;
+        input.value = fields[k];
+        f.appendChild(input);
+      });
+      document.body.appendChild(f);
+      f.submit();
+    } catch (e) { /* reporting must never break the user message */ }
+  }
+
+  // POST the submission to the web app via a hidden iframe + plain form.
+  // FIX 2026-11-05 (Gazette signup failure — Coopers / Randy & Barbara):
+  // the old code used fetch(..., { mode: "no-cors" }). The Apps Script
+  // endpoint answers a POST with a 302 redirect to script.googleusercontent.com,
+  // and following that redirect with a POST returns HTTP 411 Length Required
+  // (verified 2026-11-05 with curl -L). In several browsers that redirect
+  // chain makes fetch reject, so the user saw "We could not send your inquiry
+  // just now" even though the Apps Script doPost had already run — or, with
+  // an opaque no-cors response, the user could see "Sent" when the save had
+  // actually failed. Either way the code could not tell success from failure.
+  // A plain form POST targeted at a hidden iframe does not use fetch/CORS at
+  // all: the browser posts the form, the Apps Script runs and appends the row,
+  // and its response page loads in the iframe. The iframe load event is the
+  // real "it arrived" signal. If the iframe has not loaded after 20 seconds,
+  // we say so honestly instead of claiming success or failure.
   function sendSubmission(key, data, onDone) {
     var params = { formType: key };
     var map = SHEET_FIELDS[key] || {};
     Object.keys(map).forEach(function (f) { params[map[f]] = data[f] || ""; });
-    var body = Object.keys(params).map(function (k) {
-      return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
-    }).join("&");
-    fetch(FORM_ENDPOINT, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body: body
-    }).then(function () { onDone(true); }, function () { onDone(false); });
+    // Log EVERY attempt before trying to save — see Failure logging above.
+    var attempt = {
+      id: "att-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+      time: new Date().toISOString(),
+      form: key,
+      name: data.name || "",
+      email: data.email || "",
+      status: "pending",
+      error: ""
+    };
+    logAttempt(attempt);
+    var done = false;
+    function finish(ok) {
+      if (done) return;
+      done = true;
+      if (timer) clearTimeout(timer);
+      attempt.status = ok ? "sent" : "unconfirmed";
+      if (!ok) attempt.error = "iframe did not confirm within 20 seconds";
+      logAttempt(attempt);
+      if (!ok) sendFailureReport(attempt);
+      onDone(ok);
+    }
+    var timer = setTimeout(function () { finish(false); }, 20000);
+    var iframe = document.createElement("iframe");
+    iframe.name = "raven-forms-target";
+    iframe.style.display = "none";
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.addEventListener("load", function () {
+      // Ignore the initial about:blank load; only count a load after submit.
+      if (iframe.getAttribute("data-submitted") === "1") finish(true);
+    });
+    document.body.appendChild(iframe);
+    var f = document.createElement("form");
+    f.method = "POST";
+    f.action = FORM_ENDPOINT;
+    f.target = "raven-forms-target";
+    f.style.display = "none";
+    Object.keys(params).forEach(function (k) {
+      var input = document.createElement("input");
+      input.type = "hidden";
+      input.name = k;
+      input.value = params[k];
+      f.appendChild(input);
+    });
+    document.body.appendChild(f);
+    iframe.setAttribute("data-submitted", "1");
+    f.submit();
   }
 
   var FORMS = {
@@ -117,7 +239,7 @@
         status.className = sent ? "sent" : "error";
         status.textContent = sent
           ? "Sent — thank you. Your inquiry was received by Raven & Roses and you will be contacted directly."
-          : "We could not send your inquiry just now. Please use the email button below, or call / text 778-268-4183.";
+          : "We could not confirm your inquiry was received just now — it may still have saved. We tried to send Krystal a note that this attempt did not confirm, so she can follow up. To be sure she sees it, please tap \"Email this inquiry instead\" below — that opens your email app with your details pre-filled. Or call / text 778-268-4183.";
         // Render summary.
         var html = "<p><strong>Form:</strong> " + esc(FORMS[key].title) + "</p><dl>";
         FORMS[key].fields.forEach(function (f) {
