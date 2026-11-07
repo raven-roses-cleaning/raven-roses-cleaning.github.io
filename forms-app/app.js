@@ -71,7 +71,7 @@
         "OriginalForm": attempt.form,
         "Name": attempt.name,
         "Email": attempt.email,
-        "Error": attempt.error || "iframe did not confirm within 20 seconds"
+        "Error": attempt.error || "iframe did not confirm within 60 seconds"
       };
       Object.keys(fields).forEach(function (k) {
         var input = document.createElement("input");
@@ -98,8 +98,17 @@
   // A plain form POST targeted at a hidden iframe does not use fetch/CORS at
   // all: the browser posts the form, the Apps Script runs and appends the row,
   // and its response page loads in the iframe. The iframe load event is the
-  // real "it arrived" signal. If the iframe has not loaded after 20 seconds,
+  // real "it arrived" signal. If the iframe has not loaded after the timeout,
   // we say so honestly instead of claiming success or failure.
+  // TIMEOUT 2026-11-07: raised 20s -> 60s. Curl timing probes on 2026-11-07
+  // showed doPost itself takes 9-31s to answer (and sometimes hangs >90s),
+  // across ALL formTypes including quote — so the old 20s timeout fired
+  // before the server had even answered, even when the row then saved.
+  // 60s covers the observed 23-31s cases; it cannot fix a server hang
+  // (>90s). The real fix is server-side: make doPost fast — see
+  // forms-fix-diagnosis-2026-11-07.md. Do NOT auto-retry a timed-out
+  // submit: the first POST may already have saved, and a retry would
+  // create a duplicate row.
   function sendSubmission(key, data, onDone) {
     var params = { formType: key };
     var map = SHEET_FIELDS[key] || {};
@@ -121,12 +130,12 @@
       done = true;
       if (timer) clearTimeout(timer);
       attempt.status = ok ? "sent" : "unconfirmed";
-      if (!ok) attempt.error = "iframe did not confirm within 20 seconds";
+      if (!ok) attempt.error = "iframe did not confirm within 60 seconds";
       logAttempt(attempt);
       if (!ok) sendFailureReport(attempt);
       onDone(ok);
     }
-    var timer = setTimeout(function () { finish(false); }, 20000);
+    var timer = setTimeout(function () { finish(false); }, 60000);
     var iframe = document.createElement("iframe");
     iframe.name = "raven-forms-target";
     iframe.style.display = "none";
