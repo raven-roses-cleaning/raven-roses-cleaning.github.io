@@ -1233,6 +1233,18 @@ function updateBanner() {
     b.className = "connected";
     b.innerHTML = "<strong>Connected to the shared backend</strong> — signed in as <strong>" + esc(session ? session.name : "") + "</strong>. Your entries sync to Krystal automatically.";
   }
+  // Quarterly duties due this month also show in the banner, so they
+  // cannot be missed. Rotation entries start with "Month Year — ...".
+  var due = dueThisMonth();
+  if (due.length) {
+    b.innerHTML += "<br><strong>🔔 This month:</strong> " + due.map(function (r) { return esc(r); }).join("<br>");
+  }
+}
+// Rotation entries start with "Month Year — ...". Returns the ones due now.
+function dueThisMonth() {
+  var now = new Date();
+  var label = now.toLocaleString("en-US", { month: "long" }) + " " + now.getFullYear();
+  return (monthlyFocus.rotation || []).filter(function (r) { return String(r).indexOf(label) === 0; });
 }
 $("loginBtn").onclick = function () {
   var name = $("loginName").value.trim();
