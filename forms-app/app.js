@@ -71,7 +71,7 @@
         "OriginalForm": attempt.form,
         "Name": attempt.name,
         "Email": attempt.email,
-        "Error": attempt.error || "iframe did not confirm within 60 seconds"
+        "Error": attempt.error || "confirmation not received within 60 seconds"
       };
       Object.keys(fields).forEach(function (k) {
         var input = document.createElement("input");
@@ -85,7 +85,9 @@
     } catch (e) { /* reporting must never break the user message */ }
   }
 
-  // POST the submission to the web app via a hidden iframe + plain form.
+  // POST the submission to the web app via a hidden iframe + plain form,
+  // and CONFIRM it by polling the server for the saved row — NOT by
+  // waiting for the iframe to load.
   // FIX 2026-11-05 (Gazette signup failure — Coopers / Randy & Barbara):
   // the old code used fetch(..., { mode: "no-cors" }). The Apps Script
   // endpoint answers a POST with a 302 redirect to script.googleusercontent.com,
@@ -96,19 +98,99 @@
   // an opaque no-cors response, the user could see "Sent" when the save had
   // actually failed. Either way the code could not tell success from failure.
   // A plain form POST targeted at a hidden iframe does not use fetch/CORS at
-  // all: the browser posts the form, the Apps Script runs and appends the row,
-  // and its response page loads in the iframe. The iframe load event is the
-  // real "it arrived" signal. If the iframe has not loaded after the timeout,
-  // we say so honestly instead of claiming success or failure.
-  // TIMEOUT 2026-11-07: raised 20s -> 60s. Curl timing probes on 2026-11-07
-  // showed doPost itself takes 9-31s to answer (and sometimes hangs >90s),
-  // across ALL formTypes including quote — so the old 20s timeout fired
-  // before the server had even answered, even when the row then saved.
-  // 60s covers the observed 23-31s cases; it cannot fix a server hang
-  // (>90s). The real fix is server-side: make doPost fast — see
-  // forms-fix-diagnosis-2026-11-07.md. Do NOT auto-retry a timed-out
-  // submit: the first POST may already have saved, and a retry would
-  // create a duplicate row.
+  // all: the browser posts the form and the Apps Script runs and appends the
+  // row. That part still holds — the iframe POST is still how the data is
+  // SENT (a fetch POST would hit the 411 redirect problem).
+  // WHY THE IFRAME LOAD EVENT CANNOT BE THE CONFIRMATION (found 2026-11-07):
+  // the server was fixed to answer in ~2s (Version 5: append first, email
+  // via queue), yet Contact/Hiring/Newsletter still timed out at 60s even
+  // though every row had saved. The iframe load event intermittently never
+  // fires. Verified 2026-11-07 with curl: the final googleusercontent
+  // response carries "X-Frame-Options: SAMEORIGIN" and
+  // "Content-Security-Policy: frame-ancestors 'self'" — Google's response
+  // page is NOT frameable cross-origin, so the browser cannot reliably load
+  // it in the hidden iframe. The POST still executes server-side; only the
+  // confirmation signal is lost. So the iframe load is kept only as a fast
+  // path (if it happens to fire, confirm at once) and is NEVER the only
+  // signal any more.
+  // CONFIRMATION FIX 2026-11-07 — poll for the saved row:
+  // every submission carries a unique AttemptId (already generated for the
+  // local log and the failure report; now also sent with the POST). doPost
+  // records that AttemptId in a new "Attempts" tab when it saves the row.
+  // The client then polls doGet (?attemptId=...) every 3 seconds until the
+  // row is found, or the 60s deadline passes. A GET is safe here: it is
+  // followed as a plain GET (no 411 — that only ever applied to POST
+  // redirects), and the endpoint answers GET with
+  // "Access-Control-Allow-Origin: *" on both the 302 and the final
+  // response (verified 2026-11-07 with curl), so fetch works cross-origin.
+  // If fetch fails or the server still returns the old plain-text doGet,
+  // the poll falls back to a JSONP <script> tag (?callback=...), which
+  // needs no CORS at all. Polling only READS; it never re-sends the form.
+  // TIMEOUT 2026-11-07: 60s overall deadline (raised from 20s — curl
+  // timing probes showed doPost itself took 9-31s before the Version 5
+  // server fix; doPost is now ~1-2s, so a found row should normally
+  // confirm in ~5-8s). Do NOT auto-retry a timed-out submit: the first
+  // POST may already have saved, and a retry would create a duplicate row.
+  // The server also dedupes on AttemptId — see
+  // forms-confirmation-fix-2026-11-07.md.
+  function pollForSavedRow(attemptId, onFound) {
+    // One poll cycle: try fetch GET first, fall back to JSONP.
+    // Calls onFound(true) if the row is found, onFound(false) if the
+    // server answered "not found yet" (or the check was inconclusive —
+    // keep polling until the 60s deadline either way).
+    var url = FORM_ENDPOINT + "?attemptId=" + encodeURIComponent(attemptId) + "&_=" + Date.now();
+    var settled = false;
+    function settle(found) {
+      if (settled) return;
+      settled = true;
+      onFound(found);
+    }
+    function pollViaJsonp(onResult) {
+      // JSONP fallback: a <script> tag is not subject to CORS.
+      // doGet must support ?callback=... — see the fix note.
+      var cbName = "ravenFormsCheck_" + String(attemptId).replace(/[^a-zA-Z0-9]/g, "") + "_" + Date.now().toString(36);
+      var script = document.createElement("script");
+      var jsonpDone = false;
+      function jsonpSettle(result) {
+        if (jsonpDone) return;
+        jsonpDone = true;
+        try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+        onResult(result);
+      }
+      window[cbName] = function (payload) { jsonpSettle(payload && payload.found ? true : false); };
+      script.onerror = function () { jsonpSettle(null); };
+      script.src = FORM_ENDPOINT + "?attemptId=" + encodeURIComponent(attemptId) + "&callback=" + encodeURIComponent(cbName) + "&_=" + Date.now();
+      document.body.appendChild(script);
+      setTimeout(function () { jsonpSettle(null); }, 6000); // JSONP timeout: inconclusive
+    }
+    var controller = null;
+    var fetchTimer = null;
+    try {
+      if (typeof AbortController !== "undefined") {
+        controller = new AbortController();
+        fetchTimer = setTimeout(function () { try { controller.abort(); } catch (e) {} }, 5000);
+      }
+      fetch(url, controller ? { signal: controller.signal } : {})
+        .then(function (resp) { return resp.json(); })
+        .catch(function () { return null; }) // bad / plain-text JSON -> fall through to JSONP
+        .then(function (payload) {
+          if (fetchTimer) clearTimeout(fetchTimer);
+          if (payload && payload.found) { settle(true); return; }
+          if (payload && typeof payload.found === "boolean") { settle(false); return; }
+          // Fetch worked but gave no usable JSON (e.g. the old plain-text
+          // doGet is still deployed) — try JSONP once this cycle.
+          pollViaJsonp(function (result) { settle(result === true); });
+        })
+        .catch(function () {
+          if (fetchTimer) clearTimeout(fetchTimer);
+          pollViaJsonp(function (result) { settle(result === true); });
+        });
+    } catch (e) {
+      pollViaJsonp(function (result) { settle(result === true); });
+    }
+  }
+
   function sendSubmission(key, data, onDone) {
     var params = { formType: key };
     var map = SHEET_FIELDS[key] || {};
@@ -124,18 +206,28 @@
       error: ""
     };
     logAttempt(attempt);
+    // Send the AttemptId with the POST so doPost can record it in the
+    // "Attempts" tab — that is what the confirmation poll looks up.
+    params.AttemptId = attempt.id;
     var done = false;
+    var pollTimer = null;
+    function stopPolling() {
+      if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+    }
     function finish(ok) {
       if (done) return;
       done = true;
       if (timer) clearTimeout(timer);
+      stopPolling();
       attempt.status = ok ? "sent" : "unconfirmed";
-      if (!ok) attempt.error = "iframe did not confirm within 60 seconds";
+      if (!ok) attempt.error = "confirmation not received within 60 seconds";
       logAttempt(attempt);
       if (!ok) sendFailureReport(attempt);
       onDone(ok);
     }
     var timer = setTimeout(function () { finish(false); }, 60000);
+    // Fast path (kept): if the iframe happens to load, confirm at once.
+    // It is no longer the only signal — the poll below is the real one.
     var iframe = document.createElement("iframe");
     iframe.name = "raven-forms-target";
     iframe.style.display = "none";
@@ -160,6 +252,22 @@
     document.body.appendChild(f);
     iframe.setAttribute("data-submitted", "1");
     f.submit();
+    // Real confirmation: poll doGet for the saved row. First poll 2s
+    // after submit (doPost takes ~1-2s), then every 3s until found or
+    // the 60s deadline. Each cycle settles exactly once, so polls never
+    // overlap and never re-send the form.
+    function schedulePoll(delayMs) {
+      if (done) return;
+      pollTimer = setTimeout(function () {
+        if (done) return;
+        pollForSavedRow(attempt.id, function (found) {
+          if (done) return;
+          if (found) { finish(true); return; }
+          schedulePoll(3000);
+        });
+      }, delayMs);
+    }
+    schedulePoll(2000);
   }
 
   var FORMS = {
