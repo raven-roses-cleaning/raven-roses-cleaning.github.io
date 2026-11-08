@@ -138,8 +138,10 @@
     <option value="25.5">$25.50/hr</option>
     <option value="26">Cap — $26/hr</option>
   </select>
-  <label for="empNewCode">Personal code (leave blank and set it later if you like)</label>
+  <label for="empNewCode">First-time code (temporary)</label>
   <input id="empNewCode" type="password" autocomplete="off" placeholder="Blank until you set it">
+  <button id="empGenCodeBtn" class="secondary" style="width:auto;padding:.4em 1em">Generate a random code</button>
+  <p class="small">This is a first-time code only. Tell it to them in person — when they first sign in, the app asks them to create their own 4-digit code.</p>
   <button id="empAddBtn" class="secondary">Add employee</button>
   <p id="empStatus" class="small"></p>
 </div>
@@ -614,8 +616,8 @@ let mgrSession = null; // {name:"Krystal McGee", token, role:"Manager"} or {role
 let backendSubs = []; // mileage submissions pulled from the backend
 const EMPKEY = "ravenEmployeesV1";
 let employees = JSON.parse(localStorage.getItem(EMPKEY) || "null") || [
-  { name: "Ramona Cyre", role: "Employee", rate: 20, active: true, code: "" },
-  { name: "Krystal McGee", role: "Manager", rate: "", active: true, code: "" }
+  { name: "Ramona Cyre", role: "Employee", rate: 20, active: true, code: "", tempCode: true },
+  { name: "Krystal McGee", role: "Manager", rate: "", active: true, code: "", tempCode: false }
 ];
 function saveEmployees() { localStorage.setItem(EMPKEY, JSON.stringify(employees)); }
 
@@ -692,7 +694,8 @@ function pullMgrBackendData() {
       // does not need them stored on this phone. Code fields stay blank.
       employees = d.employees.map(function (r) {
         return { name: r.Name, role: r.Role || "Employee", rate: r.Rate === "" ? "" : Number(r.Rate),
-          active: String(r.Active || "").toLowerCase() === "yes", code: "" };
+          active: String(r.Active || "").toLowerCase() === "yes", code: "",
+          tempCode: String(r.TempCode || "").toLowerCase() === "yes" };
       });
       saveEmployees();
     }
@@ -924,10 +927,12 @@ function renderEmployees() {
   }).join("");
   el.innerHTML = employees.map(function (emp, i) {
     var rateLabel = (emp.rate === "" || emp.rate == null) ? "Rate not set" : "$" + Number(emp.rate).toFixed(2) + "/hr";
+    var tempNote = emp.tempCode ? "<br><span class='warn'>Temporary code — they have not set their own code yet.</span>" : "";
     return "<div class='emp-row" + (emp.active ? "" : " revoked") + "'><strong>" + esc(emp.name) + "</strong> — " + esc(emp.role || "Employee") +
-      " · " + rateLabel + " · <b>" + (emp.active ? "Active" : "REVOKED") + "</b>" +
+      " · " + rateLabel + " · <b>" + (emp.active ? "Active" : "REVOKED") + "</b>" + tempNote +
       "<br><label>Personal code</label><input type='password' id='empCode-" + i + "' autocomplete='off' placeholder='" + (emp.code ? "Code set — type a new one to change it" : "Blank — no code set yet") + "'>" +
       "<button class='smallbtn secondary' onclick='empSaveCode(" + i + ")'>Save code</button>" +
+      "<button class='smallbtn secondary' onclick='empGenCode(" + i + ")'>Generate random code</button>" +
       "<br><label>Hourly rate ($)</label><select id='empRate-" + i + "'>" + rateOptions + "</select>" +
       "<button class='smallbtn secondary' onclick='empSaveRate(" + i + ")'>Save rate</button>" +
       "<br><button class='smallbtn " + (emp.active ? "revoke" : "restore") + "' onclick='empToggleActive(" + i + ")'>" + (emp.active ? "Revoke access" : "Restore access") + "</button></div>";
@@ -937,6 +942,25 @@ function renderEmployees() {
     if (sel && emp.rate !== "" && emp.rate != null) sel.value = String(emp.rate);
   });
 }
+// Random first-time code: 4 digits, 1000–9999, never 0000 or 1234.
+// Any code Krystal sets is temporary — the employee replaces it with
+// their own 4-digit code the first time they sign in.
+function randomCode() {
+  var c;
+  do { c = String(Math.floor(1000 + Math.random() * 9000)); } while (c === "1234");
+  return c;
+}
+window.empGenCode = function (i) {
+  var emp = employees[i]; if (!emp) return;
+  var code = randomCode();
+  $("empCode-" + i).value = code;
+  $("empStatus").innerHTML = '<span class="ok">Random first-time code generated for ' + esc(emp.name) + ' — tap "Save code", then tell it to them in person. They will create their own code when they first sign in.</span>';
+};
+$("empGenCodeBtn").onclick = function () {
+  var code = randomCode();
+  $("empNewCode").value = code;
+  $("empStatus").innerHTML = '<span class="ok">Random first-time code generated — tell it to them in person when you add them. They will create their own code when they first sign in.</span>';
+};
 window.empSaveCode = function (i) {
   var emp = employees[i]; if (!emp) return;
   var code = $("empCode-" + i).value;
@@ -944,9 +968,10 @@ window.empSaveCode = function (i) {
     if (!confirm("Clear " + emp.name + "'s code? They will not be able to sign in until you set a new one.")) return;
   }
   emp.code = code;
+  emp.tempCode = !!code;
   saveEmployees();
   mgrBackendPost({ action: "employeeSave", employee: emp.name, code: code });
-  $("empStatus").innerHTML = '<span class="ok">Code ' + (code ? "set" : "cleared") + ' for ' + esc(emp.name) + '. Tell it to them in person.</span>';
+  $("empStatus").innerHTML = '<span class="ok">Code ' + (code ? "set" : "cleared") + ' for ' + esc(emp.name) + '. ' + (code ? "It is a first-time code — tell it to them in person. They will create their own code when they first sign in." : "") + '</span>';
   renderEmployees();
 };
 window.empSaveRate = function (i) {
@@ -976,7 +1001,7 @@ $("empAddBtn").onclick = function () {
   var name = $("empNewName").value.trim();
   if (!name) { alert("Enter the employee's name first."); return; }
   if (employees.some(function (e) { return e.name.toLowerCase() === name.toLowerCase(); })) { alert(name + " is already in the list — use the row above to change their code or rate."); return; }
-  var emp = { name: name, role: $("empNewRole").value, rate: parseFloat($("empNewRate").value), active: true, code: $("empNewCode").value || "" };
+  var emp = { name: name, role: $("empNewRole").value, rate: parseFloat($("empNewRate").value), active: true, code: $("empNewCode").value || "", tempCode: !!$("empNewCode").value };
   employees.push(emp);
   employeeRates[name] = emp.rate;
   saveEmployees();
