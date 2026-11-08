@@ -68,6 +68,31 @@
 <p class="small"><strong>Krystal only — do not give this file to an employee.</strong> No GPS, no payroll calculation in this app — hours only, for now.</p>
 <div id="backendBanner"></div>
 <button id="signOutBtn" class="secondary" style="width:auto;padding:.4em 1em">Sign out</button>
+<div id="sectionNav" style="position:sticky;top:0;z-index:200;background:#111;color:#fff;padding:10px 12px;border-radius:0 0 10px 10px;margin:12px 0">
+<label for="sectionJump" style="color:#fff;margin:0 0 .2em">Go to section:</label>
+<select id="sectionJump" onchange="jumpToSection(this)" style="margin-top:.3em">
+<option value="">— Pick a section —</option>
+<option>Top of the page</option>
+<option>How entries get here — for now</option>
+<option>Employees — codes, rates &amp; access (Krystal only)</option>
+<option>Pay settings (Krystal only)</option>
+<option>Day total</option>
+<option>Weekly view</option>
+<option>Today’s entries</option>
+<option>Low supplies — roll-up for today</option>
+<option>Time adjustments — approve / decline</option>
+<option>Approved / declined history</option>
+<option>Mileage — for this date</option>
+<option>Mileage submissions</option>
+<option>Time off / sick requests — approve / decline (Krystal only)</option>
+<option>Employee onboarding checklist — Krystal only (NO SIN in this app)</option>
+<option>House instructions — edit (Krystal only)</option>
+<option>This Month’s Focus — set the monthly tasks (Krystal only)</option>
+<option>What to use — Supplies Guide — edit (Krystal only)</option>
+<option>Export / import</option>
+</select>
+</div>
+
 
 <div class="card">
   <h2>How entries get here — for now</h2>
@@ -303,6 +328,25 @@
 // ============================================================================
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec"; // <-- PASTE THE BACKEND /exec URL HERE after deployment
 const BACKEND_ENABLED = BACKEND_URL !== "";
+// Section jump menu — Krystal: no long scrolling to find a section.
+function jumpToSection(sel){
+  var label = sel.value;
+  if(!label){ return; }
+  sel.value = "";
+  if(label === "Top of the page"){ window.scrollTo({top:0, behavior:"smooth"}); return; }
+  var norm = function(s){ return s.replace(/\s+/g, " ").trim(); };
+  var heads = document.querySelectorAll("h2");
+  for(var i=0;i<heads.length;i++){
+    if(norm(heads[i].textContent) === norm(label)){
+      heads[i].scrollIntoView({behavior:"smooth", block:"start"});
+      heads[i].style.outline = "3px solid #b58900";
+      heads[i].style.outlineOffset = "4px";
+      (function(h){ setTimeout(function(){ h.style.outline=""; h.style.outlineOffset=""; }, 2000); })(heads[i]);
+      return;
+    }
+  }
+}
+
 const KEY = "ravenTimeCardDemoV1";
 const ADJKEY = "ravenTimeCardAdjustmentsV1";
 let entries = JSON.parse(localStorage.getItem(KEY) || "[]");
