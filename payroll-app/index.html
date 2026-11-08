@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Raven &amp; Roses">
+<meta name="theme-color" content="#111111">
+<title>Raven &amp; Roses — Payroll (Krystal only)</title>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;max-width:820px;margin:0 auto;padding:16px;line-height:1.45;color:#111}
+  h1{font-size:1.4rem} h2{font-size:1.1rem;margin-top:1.5em}
+  label{display:block;margin:.6em 0 .2em;font-weight:600}
+  input,select,button,textarea{font-size:1rem;padding:.6em;width:100%;box-sizing:border-box}
+  button{margin:.4em 0;background:#111;color:#fff;border:0;border-radius:8px;cursor:pointer}
+  button.secondary{background:#eee;color:#111} button.smallbtn{width:auto;padding:.5em 1em;margin:.25em .25em .25em 0}
+  button.sendbtn{background:#1a7a2e}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{border:1px solid #ccc;border-radius:12px;padding:12px;margin:12px 0}
+  .card.sent{border-color:#1a7a2e;background:#f0f8f0}
+  .card.warncard{border:2px solid #b58900;background:#fffdf0}
+  .small{font-size:.85rem;color:#555} .ok{color:#1a7a2e;font-weight:700} .warn{color:#b00020;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:.9rem} td,th{border-bottom:1px solid #ddd;padding:.4em;text-align:left}
+  pre{white-space:pre-wrap;background:#f7f7f7;padding:12px;border-radius:8px}
+  #loginOverlay{position:fixed;inset:0;background:#fff;z-index:9999;padding:24px;overflow:auto}
+  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #111;border-radius:12px;padding:20px}
+  #backendBanner{border:2px solid #b58900;background:#fffdf0;border-radius:10px;padding:10px;margin:12px 0}
+  #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
+  @media print { button, input, select, textarea, .noprint, #loginOverlay, #signOutBtn { display:none !important; } }
+</style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div class="login-box">
+    <h1>🐦‍⬛ Raven &amp; Roses — Payroll</h1>
+    <p class="small"><strong>Krystal only — do not give this app to an employee.</strong> This is where pay is calculated and paystubs are sent. It never shows in the employee app.</p>
+    <p id="loginBackendNote" class="small"></p>
+    <label for="loginCode">Manager code</label>
+    <input id="loginCode" type="password" inputmode="numeric" autocomplete="off" placeholder="Your manager code">
+    <button id="loginBtn">Sign in as Krystal</button>
+    <p id="loginError" class="small" style="color:#b00020;font-weight:700"></p>
+    <div id="reviewModeBox" style="display:none">
+      <p class="small">The backend is not connected yet, so there is no manager code to check against. Review mode is <strong>local only</strong> — runs save on this phone, and paystub emails open in your email app instead of sending automatically. Do not use this as the live payroll app until the backend is connected and the manager code is set.</p>
+      <button id="reviewBtn" class="secondary">Continue in review mode</button>
+    </div>
+  </div>
+</div>
+
+<p style="background:#fff3cd;border:2px solid #b58900;border-radius:8px;padding:12px;font-weight:700">DRAFT — Krystal only, NOT a filing tool yet. Do NOT use this to pay or remit until you check the first pay run against CRA’s Payroll Deductions Online Calculator (PDOC) / T4032 tables and White Rapids Books confirms it. This file does NOT submit anything to CRA, and does NOT store SINs — never enter a SIN here.</p>
+<h1>🐦‍⬛ Raven &amp; Roses — Payroll</h1>
+<p class="small">Hours and mileage come in from the time-card backend automatically — no re-typing, no JSON import — once the backend is connected. Employee apps show <strong>hours, mileage and supplies only — no pay</strong>. Pay is calculated here, and the employee gets a paystub by email from you.</p>
+<div id="backendBanner"></div>
+<button id="signOutBtn" class="secondary" style="width:auto;padding:.4em 1em">Sign out</button>
+
+<h2>0. Pay data — from the backend</h2>
+<div class="card">
+  <p id="backendStatus" class="small">Checking the backend…</p>
+  <button id="pullBtn" class="secondary">Pull hours &amp; mileage from the backend</button>
+  <p id="pullStatus" class="small"></p>
+  <p class="small">When the backend is connected, this pulls the time entries, mileage trips, employee rates and the CRA rate straight from the shared Sheet — then "Pull into this pay run" below fills the pay run for you. Until then, use "Import time-card JSON" under the pay run (the employee app's export file), exactly like the draft did.</p>
+</div>
+
+<h2>1. This pay run</h2>
+<div class="row">
+  <div><label for="empName">Employee</label><select id="empName"></select></div>
+  <div><label for="freq">Pay frequency</label><select id="freq"><option value="52">Weekly — 52</option><option value="26" selected>Bi-weekly — 26</option><option value="24">Semi-monthly — 24</option><option value="12">Monthly — 12</option></select></div>
+</div>
+<label for="empNameOther">Or type an employee first name (for a name not in the list above)</label><input id="empNameOther" placeholder="e.g. Ramona">
+<div class="row">
+  <div><label for="ppStart">Pay period start</label><input id="ppStart" type="date"></div>
+  <div><label for="ppEnd">Pay period end (Friday)</label><input id="ppEnd" type="date"></div>
+</div>
+<label for="payDate">Pay date (Friday — payday, e-transfer morning)</label><input id="payDate" type="date">
+<p class="small">Payment method: <strong>e-transfer, morning of payday</strong> (Krystal, 2026-11-03). Paystub below shows this. No direct deposit is set up in this app.</p>
+<button id="pullRunBtn" class="secondary">Pull this employee + period into the pay run</button>
+<p id="otNote" class="small"></p>
+<p id="trainingNote" class="small" style="color:#b00020;font-weight:700"></p>
+<div class="row">
+  <div><label for="hours">Regular hours worked this period (not counting overtime or sick hours below)</label><input id="hours" type="number" step="0.01" min="0" placeholder="e.g. 24"></div>
+  <div><label for="rate">Hourly rate ($)</label><select id="rate"><option value="20">Training — $20</option><option value="23" selected>Starting — $23</option><option value="24">After probation — $24</option><option value="24.5">$24.50</option><option value="25">$25</option><option value="25.5">$25.50</option><option value="26">Cap — $26</option></select></div>
+</div>
+<div class="row">
+  <div><label for="ot15">Overtime hours at 1.5× (BC: over 8 hrs/day or 40 hrs/week)</label><input id="ot15" type="number" step="0.01" min="0" value="0"></div>
+  <div><label for="ot20">Overtime hours at 2× (BC: over 12 hrs/day)</label><input id="ot20" type="number" step="0.01" min="0" value="0"></div>
+</div>
+<div class="row">
+  <div><label for="statPay">Stat holiday pay for this period ($, if eligible — enter amount, 0 if none)</label><input id="statPay" type="number" step="0.01" min="0" value="0"></div>
+  <div><label for="sickHours">Paid sick hours this period (BC: up to 5 paid sick days/year, at regular rate)</label><input id="sickHours" type="number" step="0.01" min="0" value="0"></div>
+</div>
+<p id="sickHint" class="small"></p>
+<div class="row">
+  <div><label for="refillHours">Hours where supplies were refilled ($1/hr)</label><input id="refillHours" type="number" step="0.01" min="0" placeholder="Same as hours if refilled every job"></div>
+  <div><label for="vacPct">Vacation pay % — paid on every cheque (default 4%)</label><input id="vacPct" type="number" step="0.1" min="0" value="4"></div>
+</div>
+<div class="row">
+  <div><label for="mileKm">Mileage payable (km, between clients only)</label><input id="mileKm" type="number" step="0.1" min="0" placeholder="e.g. 42.5"></div>
+  <div><label for="craRate">CRA mileage rate ($/km, Krystal to confirm)</label><input id="craRate" type="number" step="0.01" min="0" placeholder="Leave blank = no mileage dollars"></div>
+</div>
+<label for="otherDed">Other deductions this period ($, e.g. garnishment — 0 if none)</label><input id="otherDed" type="number" step="0.01" min="0" value="0">
+
+<h2>2. Year-to-date BEFORE this pay (for CPP / EI caps)</h2>
+<p class="small">These must be accurate, or the caps will be wrong. At the start of the year they are all $0. After each pay run, save it below and the year-to-date totals update. Tap "Fill from saved runs" to add up this employee's saved runs for the year so far.</p>
+<button id="ytdAutoBtn" class="secondary">Fill year-to-date from this employee's saved runs</button>
+<p id="ytdStatus" class="small"></p>
+<div class="row">
+  <div><label for="ytdGross">YTD gross pay before this run ($)</label><input id="ytdGross" type="number" step="0.01" min="0" value="0"></div>
+  <div><label for="ytdCpp">YTD CPP paid before this run ($)</label><input id="ytdCpp" type="number" step="0.01" min="0" value="0"></div>
+</div>
+<div class="row">
+  <div><label for="ytdCpp2">YTD CPP2 paid before this run ($)</label><input id="ytdCpp2" type="number" step="0.01" min="0" value="0"></div>
+  <div><label for="ytdEi">YTD EI paid before this run ($)</label><input id="ytdEi" type="number" step="0.01" min="0" value="0"></div>
+</div>
+<label for="ytdTax">YTD income tax withheld before this run ($, for records only)</label><input id="ytdTax" type="number" step="0.01" min="0" value="0">
+
+<h2>3. TD1 claims (employee’s signed TD1 forms — basic only by default)</h2>
+<p class="small">If the employee claims more than the basic amount on a TD1 (disability, tuition, etc.), enter the <strong>total</strong> claim amount from that TD1 form here, not just the extra. Collect a signed federal TD1 and a signed BC TD1 before the first paycheque. Do not enter a SIN in this file. These amounts are saved (backend Settings, or on this phone if the backend is not connected) so you do not have to re-enter them every run.</p>
+<div class="row">
+  <div><label for="td1Fed">Federal TD1 total claim ($)</label><input id="td1Fed" type="number" step="1" value="16452"></div>
+  <div><label for="td1Bc">BC TD1 total claim ($)</label><input id="td1Bc" type="number" step="1" value="13216"></div>
+</div>
+<button id="td1SaveBtn" class="secondary">Save TD1 claim amounts</button>
+<p id="td1Status" class="small"></p>
+
+<button id="calcBtn">Calculate this pay run</button>
+<button id="importBtn" class="secondary">Import time-card JSON (fills hours, mileage, employee, period from her export)</button>
+<input id="importFile" type="file" accept=".json" style="display:none">
+<p id="calcStatus" class="small"></p>
+
+<h2>Paystub — for the employee (copy / print / email)</h2>
+<pre id="paystub">Calculate a pay run above to see the paystub here.</pre>
+<button id="copyStubBtn" class="secondary">Copy paystub as text (for email)</button>
+<button id="printStubBtn" class="secondary" onclick="window.print()">Print paystub</button>
+
+<h2>Remittance — for Krystal / CRA (does NOT submit to CRA)</h2>
+<pre id="remit">Calculate a pay run above to see the remittance breakdown here.</pre>
+<p class="small">To actually remit: pay via CRA My Business Account or your bank as “CRA Payroll (PD7A)” using your 15-digit payroll (RP) account number. Regular / new remitters are normally due the <strong>15th of the following month</strong> — confirm your remitter type with CRA, because accelerated schedules apply at higher withholding levels. Your old payroll account was closed — it must be reopened / a new RP account opened before the first pay. This app does not pay CRA for you.</p>
+
+<button id="saveRunBtn">Save this pay run (updates year-to-date list below)</button>
+
+<h2>Email paystubs for this pay period</h2>
+<div class="card">
+  <p class="small">One tap, once per payday. Each employee gets <strong>only their own paystub</strong>, by email — nothing about any other employee is in any email. This uses the <strong>saved pay runs</strong> for the pay period in section 1 above (<span id="emailPeriodLabel">—</span>), so calculate and save each employee's run first. If an employee has no email on file, they are skipped and shown plainly — the rest still go out.</p>
+  <div id="emailList"></div>
+  <label><input id="emailResendCheck" type="checkbox" style="width:auto"> Re-send to employees already sent for this period (shows a warning first — normally leave this off)</label>
+  <button id="emailSendBtn" class="sendbtn">Email paystubs for this pay period</button>
+  <p id="emailStatus" class="small"></p>
+  <p class="small">How it sends: with the backend connected, the backend emails each paystub from the app with one tap, and records every send in the Sheet (PaystubSends tab) so you can see what went out and do not send the same period twice by accident. Without the backend, each employee gets a "Send by email" button instead — it opens a pre-filled email in your email app, and you tap "Mark as sent" after you send it. No SIN is in any paystub or email, ever.</p>
+</div>
+
+<h2>Year-end totals — for T4 (Krystal / bookkeeper, NOT a filed T4)</h2>
+<p class="small">Totals from saved runs, grouped by employee and year. This is a totals sheet for White Rapids Books / CRA filing — it is NOT itself a T4 slip or a CRA XML filing. Bookkeeper maps these totals to the correct T4 boxes (gross, CPP, CPP2, EI, income tax). Do not send a T4 from this app alone.</p>
+<div id="t4totals"></div>
+
+<h2>Saved pay runs + monthly remittance totals</h2>
+<div id="runs"></div>
+<button id="exportRunsBtn" class="secondary">Export saved runs as CSV</button>
+<button id="clearRunsBtn" class="secondary">Clear saved runs on this device</button>
+
+<h2>Monthly CRA remittance report</h2>
+<div class="card">
+  <p class="small">One report per month, for the month you actually pay CRA. The totals come from the saved pay runs above — the same numbers, one source of truth — so this report always matches the runs for that month. It does <strong>not</strong> file anything to CRA: you pay it yourself, online or at the bank, using the report below.</p>
+  <label for="craMonth">Month to report</label>
+  <input id="craMonth" type="month">
+  <button id="craShowBtn" class="secondary">Show this month's remittance report</button>
+  <div id="craReport"></div>
+  <div id="craFields" style="display:none">
+    <h3 style="font-size:1rem">Your CRA numbers (enter once, saved for next time)</h3>
+    <div class="row">
+      <div><label for="bnInput">CRA business number</label><input id="bnInput" placeholder="e.g. 123456789 — leave blank until you enter it" autocomplete="off"></div>
+      <div><label for="rpInput">Payroll (RP) account number (15 digits)</label><input id="rpInput" placeholder="Leave blank until you enter it" autocomplete="off"></div>
+    </div>
+    <button id="bnRpSaveBtn" class="secondary">Save these numbers</button>
+    <p id="bnRpStatus" class="small"></p>
+    <p class="small">These numbers are saved in the backend Settings (or on this phone if the backend is not connected). They are shown on the report only — they are never put in a paystub, an email to an employee, or an export.</p>
+  </div>
+  <div id="craRemitBox" style="display:none">
+    <h3 style="font-size:1rem">Mark this month as remitted</h3>
+    <div class="row">
+      <div><label for="remitPaidDate">Date paid</label><input id="remitPaidDate" type="date"></div>
+      <div><label for="remitAmount">Amount paid ($)</label><input id="remitAmount" type="number" step="0.01" min="0"></div>
+    </div>
+    <label for="remitConfirm">Confirmation / receipt number (from CRA or your bank)</label><input id="remitConfirm" placeholder="e.g. the confirmation number on your receipt">
+    <button id="remitSaveBtn" class="sendbtn">Mark this month as remitted</button>
+    <p id="remitStatus" class="small"></p>
+  </div>
+  <h3 style="font-size:1rem">Months already remitted</h3>
+  <div id="remitList"></div>
+</div>
+
+<h2>Rates used — 2026, BC, outside Quebec</h2>
+<pre> CPP: 5.95% on pensionable earnings, $3,500 basic exemption prorated per pay period, YMPE $74,600, max $4,230.45 each (employee + employer).
+ CPP2: 4% on earnings $74,600–$85,000 (YAMPE), max $416 each.
+ EI: 1.63% employee, up to $68,900 insurable, max $1,123.07 employee; employer 1.4× = 2.282%, max $1,572.30.
+ Federal tax 2026: 14% to $58,523; 20.5% to $117,045; 26% to $181,440; 29% to $258,482; 33% above. Basic personal $16,452 (phases to $14,829 at high income — this app uses $16,452 / TD1 amount entered). Canada employment amount max $1,501, credit at 14% = $210.14.
+ BC tax 2026: 5.6% to $50,363; 7.7% to $100,728; 10.5% to $115,648; 12.29% to $140,430; 14.7% to $190,405; 16.8% to $265,545; 20.5% above. Basic personal $13,216 at 5.6% = $740.10. BC tax reduction up to $690, clawed back 3.56% over $25,570 net income, gone at about $44,952.
+ Method: income tax is annualised (this period’s gross × periods per year), run through the brackets, minus non-refundable credits (basic personal, Canada employment amount, base CPP and EI credits), then divided back by periods. That is the CRA table method in outline — it is NOT the full T4127 formula, and it does not include other TD1 credits, bonuses, taxable benefits, or province-of-employment changes. Verify against CRA PDOC before paying.
+ NOT included here: BC Employer Health Tax (check if BC remuneration exceeds $500,000 — most small employers are below it), WorkSafeBC premiums (separate, by classification), and GST/HST (not a payroll deduction).
+</pre>
+
+<script>
+// ============================================================================
+// Raven & Roses — Payroll (Krystal only)
+// BACKEND — shared Google Sheet backend (free route, like Raven Forms).
+// BACKEND_URL is EMPTY until the Apps Script web app is deployed (see
+// backend/BACKEND-SETUP.md). With it empty the app runs in local-only mode:
+// the draft's manual JSON import still works, paystub emails open in your
+// email app instead of sending automatically, and a banner says so.
+// When it is set, hours, mileage, rates, TD1 amounts, paystub sends and
+// remittance records all sync to the shared backend automatically.
+// ============================================================================
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec"; // <-- PASTE THE BACKEND /exec URL HERE after deployment
+const BACKEND_ENABLED = BACKEND_URL !== "";
+const KEY = "ravenPayrollRunsV1";            // saved pay runs (same as the draft)
+const TD1KEY = "ravenPayrollTd1V1";          // {fed, bc} — local fallback
+const BNKEY = "ravenPayrollBnV1";            // {bn, rp} — local fallback (Krystal's own phone only)
+const SENDKEY = "ravenPayrollSendsV1";       // paystub sends — local fallback
+const REMITKEY = "ravenPayrollRemitV1";      // remittance records — local fallback
+// Same local keys as the employee + manager apps, so data saved on this
+// phone (or imported from the employee app) is shared, not duplicated.
+const ENTRYKEY = "ravenTimeCardDemoV1";
+const MILEKEY = "ravenMileageV1";
+const RATEKEY = "ravenEmployeeRatesV1";
+const CRAKEY = "ravenCraRateV1";
+let runs = JSON.parse(localStorage.getItem(KEY) || "[]");
+let entries = JSON.parse(localStorage.getItem(ENTRYKEY) || "[]");
+let mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]");
+let employeeRates = JSON.parse(localStorage.getItem(RATEKEY) || "{}");
+let employees = [];                          // from backend: [{Name, Role, Rate, Active, Code, Email}]
+let timeOff = JSON.parse(localStorage.getItem("ravenTimeOffV1") || "[]");
+let paystubSends = JSON.parse(localStorage.getItem(SENDKEY) || "[]");
+let remittances = JSON.parse(localStorage.getItem(REMITKEY) || "[]");
+let td1Saved = JSON.parse(localStorage.getItem(TD1KEY) || "null");
+let bnSaved = JSON.parse(localStorage.getItem(BNKEY) || "null");
+let craRateSaved = localStorage.getItem(CRAKEY) || "";
+let lastCalc = null;
+const $ = id => document.getElementById(id);
+const r2 = x => Math.round(x * 100) / 100;
+const money = x => "$" + r2(x).toFixed(2);
+function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function localDateStr(){ const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+// Default pay period: the 14 days ending on the coming Friday (payday).
+// Bi-weekly, pay date = that Friday, e-transfer in the morning.
+function defaultPeriod(){
+  const d = new Date();
+  const add = (5 - d.getDay() + 7) % 7; // days until Friday (day 5); 0 if today is Friday
+  const fri = new Date(d.getFullYear(), d.getMonth(), d.getDate() + add);
+  const end = fri.getFullYear() + "-" + String(fri.getMonth()+1).padStart(2,"0") + "-" + String(fri.getDate()).padStart(2,"0");
+  const st = new Date(fri); st.setDate(st.getDate() - 13);
+  const start = st.getFullYear() + "-" + String(st.getMonth()+1).padStart(2,"0") + "-" + String(st.getDate()).padStart(2,"0");
+  return { start: start, end: end, payDate: end };
+}
+function bracketTax(income, brackets){
+  let tax = 0, prev = 0;
+  for (const [limit, rate] of brackets) {
+    if (income <= prev) break;
+    tax += (Math.min(income, limit) - prev) * rate;
+    prev = limit;
+  }
+  return tax;
+}
+const FED = [[58523,0.14],[117045,0.205],[181440,0.26],[258482,0.29],[Infinity,0.33]];
+const BCB = [[50363,0.056],[100728,0.077],[115648,0.105],[140430,0.1229],[190405,0.147],[265545,0.168],[Infinity,0.205]];
+
+// ============================================================================
+// BACKEND PLUMBING — same pattern as the employee + manager apps.
+// Reads use JSONP (doGet + callback=), writes use fetch mode:'no-cors'.
+// The payroll app logs in as Krystal (manager code) — the backend checks
+// it the same way the manager app does. Session in sessionStorage only.
+// ============================================================================
+const PAYROLL_SESSION_KEY = "ravenPayrollSessionV1";
+let mgrSession = null; // {name:"Krystal McGee", token, role:"Manager"} or {name:"", token:"", role:"review"}
+function backendJsonp(action, params) {
+  return new Promise(function (resolve) {
+    if (!BACKEND_ENABLED) { resolve({ ok: false, error: "Backend not connected" }); return; }
+    var cb = "ravenCb" + Date.now() + Math.floor(Math.random() * 10000);
+    var q = Object.keys(params || {}).map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
+    var url = BACKEND_URL + "?action=" + encodeURIComponent(action) + "&callback=" + cb + (q ? "&" + q : "");
+    var s = document.createElement("script");
+    var done = false;
+    window[cb] = function (data) {
+      if (done) return; done = true;
+      delete window[cb]; s.remove();
+      resolve(data || { ok: false, error: "Empty reply from backend" });
+    };
+    s.onerror = function () {
+      if (done) return; done = true;
+      delete window[cb]; s.remove();
+      resolve({ ok: false, error: "Could not reach the backend" });
+    };
+    s.src = url;
+    document.body.appendChild(s);
+    setTimeout(function () {
+      if (!done) { done = true; try { delete window[cb]; } catch (e) {} s.remove(); resolve({ ok: false, error: "Backend timed out" }); }
+    }, 20000);
+  });
+}
+function backendPost(payload) {
+  if (!BACKEND_ENABLED || !mgrSession || !mgrSession.token) return;
+  try {
+    fetch(BACKEND_URL, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(Object.assign({ name: mgrSession.name, token: mgrSession.token }, payload))
+    }).catch(function () {});
+  } catch (e) {}
+}
+function mergeByKey(localArr, remoteArr, keyFn) {
+  var seen = {};
+  var out = [];
+  (remoteArr || []).forEach(function (r) { var k = keyFn(r); if (!seen[k]) { seen[k] = true; out.push(r); } });
+  (localArr || []).forEach(function (r) { var k = keyFn(r); if (!seen[k]) { seen[k] = true; out.push(r); } });
+  return out;
+}
+function saveLocals() {
+  localStorage.setItem(KEY, JSON.stringify(runs));
+  localStorage.setItem(ENTRYKEY, JSON.stringify(entries));
+  localStorage.setItem(MILEKEY, JSON.stringify(mileage));
+  localStorage.setItem(SENDKEY, JSON.stringify(paystubSends));
+  localStorage.setItem(REMITKEY, JSON.stringify(remittances));
+}
+function normEntry(r) {
+  return {
+    name: r.Employee || r.name, job: r.Job || r.job, date: r.Date || r.date,
+    in: r.ClockIn ? Number(r.ClockIn) : r.in, out: r.ClockOut ? Number(r.ClockOut) : (r.out || null),
+    hours: r.Hours === "" || r.Hours == null ? (r.hours || 0) : Number(r.Hours),
+    training: r.Training === "Yes" || r.training === true,
+    issue: r.Issue || r.issue || "", refilled: r.Refilled === "Yes" || r.refilled === true,
+    low: r.LowItems ? String(r.LowItems).split(";").map(function (x) { return x.trim(); }).filter(Boolean) : (r.low || []),
+    stocked: r.Stocked === "Yes" || r.stocked === true,
+    cloth: r.Cloths === "Yes" || r.cloth === true,
+    checklistDone: r.ChecklistDone || r.checklistDone || "",
+    adjustmentApproved: r.AdjustmentApproved === "Yes" || r.adjustmentApproved === true
+  };
+}
+function pullBackendData() {
+  if (!BACKEND_ENABLED || !mgrSession || !mgrSession.token) return Promise.resolve();
+  return backendJsonp("getData", { name: mgrSession.name, token: mgrSession.token }).then(function (d) {
+    if (!d || !d.ok) { $("backendStatus").innerHTML = "Could not pull from the backend: " + esc((d && d.error) || "no reply") + ". The manual JSON import below still works."; return; }
+    if (d.entries) entries = mergeByKey(entries, d.entries.map(normEntry), function (e) { return [e.name, e.job, e.date, e.in].join("|"); });
+    if (d.mileage) mileage = mergeByKey(mileage, d.mileage.map(function (r) {
+      return { date: r.Date || r.date, start: r.Start || r.start, end: r.End || r.end,
+        km: Number(r.Km || r.km), type: "between", name: r.Employee || r.name };
+    }), function (m) { return [m.name, m.date, m.start, m.end, m.km].join("|"); });
+    if (d.timeOff) timeOff = mergeByKey(timeOff, d.timeOff.map(function (r) {
+      return { name: r.Employee || r.name, date: r.Date || r.date, type: (r.Type || r.type || "timeoff"),
+        reason: r.Reason || r.reason || "", status: r.Status || r.status || "PENDING",
+        declineReason: r.DeclineReason || r.declineReason || "", created: Date.now() };
+    }), function (r) { return [r.name, r.date, r.type].join("|"); });
+    if (d.employees) employees = d.employees;
+    if (d.rates) employeeRates = d.rates;
+    if (d.craRate !== undefined && d.craRate !== "") { craRateSaved = String(d.craRate); localStorage.setItem(CRAKEY, craRateSaved); }
+    if (d.td1Fed) { td1Saved = { fed: Number(d.td1Fed), bc: Number(d.td1Bc || 13216) }; localStorage.setItem(TD1KEY, JSON.stringify(td1Saved)); }
+    if (d.businessNumber !== undefined || d.rpAccount !== undefined) {
+      bnSaved = { bn: d.businessNumber || "", rp: d.rpAccount || "" };
+      localStorage.setItem(BNKEY, JSON.stringify(bnSaved));
+    }
+    if (d.paystubSends) paystubSends = mergeByKey(paystubSends, d.paystubSends.map(function (r) {
+      return { periodStart: r.PeriodStart || r.periodStart, periodEnd: r.PeriodEnd || r.periodEnd,
+        payDate: r.PayDate || r.payDate, employee: r.Employee || r.employee,
+        email: r.Email || r.email, sentAt: r.SentAt || r.sentAt };
+    }), function (s) { return [s.employee, s.periodStart, s.periodEnd].join("|"); });
+    if (d.remittances) remittances = mergeByKey(remittances, d.remittances.map(function (r) {
+      return { month: r.Month || r.month, dueDate: r.DueDate || r.dueDate,
+        remitTotal: Number(r.RemitTotal || r.remitTotal || 0), paidDate: r.PaidDate || r.paidDate || "",
+        confirmation: r.Confirmation || r.confirmation || "",
+        paidAmount: r.PaidAmount === "" || r.PaidAmount == null ? null : Number(r.PaidAmount) };
+    }), function (r) { return [r.month].join("|"); });
+    saveLocals();
+    localStorage.setItem(RATEKEY, JSON.stringify(employeeRates));
+    localStorage.setItem("ravenTimeOffV1", JSON.stringify(timeOff));
+    populateEmployees();
+    applySavedSettings();
+    $("backendStatus").innerHTML = '<span class="ok">Connected to the shared backend.</span> Pulled ' + entries.length + ' time entries, ' + mileage.length + ' mileage trips, ' + employees.length + ' employee(s)' + (craRateSaved ? ', CRA rate $' + craRateSaved + '/km' : ', CRA rate not set yet — mileage shows km only') + '.';
+    $("pullStatus").textContent = "";
+    renderEmailList();
+    renderRemitList();
+  });
+}
+function showLogin() {
+  $("loginOverlay").style.display = "block";
+  $("loginError").textContent = "";
+  if (BACKEND_ENABLED) {
+    $("loginBackendNote").textContent = "Connected to the shared backend — your manager code is checked with the backend.";
+    $("reviewModeBox").style.display = "none";
+  } else {
+    $("loginBackendNote").textContent = "Not connected to the shared backend yet — there is no manager code to check against. Use review mode below.";
+    $("reviewModeBox").style.display = "block";
+  }
+}
+function hideLogin() { $("loginOverlay").style.display = "none"; }
+function updateBanner() {
+  var b = $("backendBanner"); if (!b) return;
+  if (!BACKEND_ENABLED) {
+    b.className = "";
+    b.innerHTML = "<strong>Not connected to the shared backend yet — import the time-card JSON to run a pay.</strong> Hours, mileage and paystub sends save on this phone only until the backend is connected. Review mode only — do not treat this as the live payroll app.";
+  } else if (mgrSession && mgrSession.role === "review") {
+    b.className = "";
+    b.innerHTML = "<strong>Review mode</strong> — backend is set but you are not signed in with your manager code. Sign out and sign in with your code to pull from the backend and send paystubs.";
+  } else {
+    b.className = "connected";
+    b.innerHTML = "<strong>Connected to the shared backend</strong> — signed in as Krystal. Hours and mileage pull in automatically; paystub emails send with one tap.";
+  }
+}
+$("loginBtn").onclick = function () {
+  var code = $("loginCode").value;
+  if (!code) { $("loginError").textContent = "Enter your manager code."; return; }
+  $("loginError").textContent = "Checking…";
+  backendJsonp("login", { name: "Krystal McGee", code: code }).then(function (d) {
+    if (d && d.ok && d.role === "Manager") {
+      mgrSession = { name: "Krystal McGee", token: d.token, role: "Manager" };
+      sessionStorage.setItem(PAYROLL_SESSION_KEY, JSON.stringify(mgrSession));
+      $("loginCode").value = "";
+      hideLogin();
+      updateBanner();
+      pullBackendData();
+    } else {
+      $("loginError").textContent = (d && d.error) || "Could not sign in. Check your manager code and try again.";
+    }
+  });
+};
+$("loginCode").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
+$("reviewBtn").onclick = function () {
+  mgrSession = { name: "", token: "", role: "review" };
+  sessionStorage.setItem(PAYROLL_SESSION_KEY, JSON.stringify(mgrSession));
+  hideLogin();
+  updateBanner();
+  populateEmployees();
+  applySavedSettings();
+};
+$("signOutBtn").onclick = function () {
+  mgrSession = null;
+  try { sessionStorage.removeItem(PAYROLL_SESSION_KEY); } catch (e) {}
+  location.reload();
+};
+function initLoginGate() {
+  try {
+    var saved = JSON.parse(sessionStorage.getItem(PAYROLL_SESSION_KEY) || "null");
+    if (saved && saved.role) {
+      mgrSession = saved;
+      if (BACKEND_ENABLED && mgrSession.token) {
+        backendJsonp("getData", { name: mgrSession.name, token: mgrSession.token }).then(function (d) {
+          if (d && d.ok) { hideLogin(); updateBanner(); pullBackendData(); }
+          else { mgrSession = null; try { sessionStorage.removeItem(PAYROLL_SESSION_KEY); } catch (e) {} showLogin(); }
+        });
+      } else { hideLogin(); updateBanner(); populateEmployees(); applySavedSettings(); }
+      return;
+    }
+  } catch (e) {}
+  showLogin();
+}
+// ============================================================================
+// PULL HOURS + MILEAGE INTO THE PAY RUN (BC overtime auto-split)
+// The time card gives clock-in/out times. This splits them the way BC
+// requires: per day, first 8 hrs regular, next 4 at 1.5×, over 12 at 2×;
+// then per Monday–Sunday week, regular hours over 40 move to 1.5×.
+// The split is shown below the button so Krystal can check it — and the
+// fields stay editable, so she can correct it before calculating.
+// Training shifts are NEVER mixed into the regular rate: they are shown
+// separately and must be run at $20 in their own pay run.
+// ============================================================================
+function currentEmployee() {
+  return $("empNameOther").value.trim() || $("empName").value || "";
+}
+// The time card stores first names ("Ramona"); the Employees tab stores
+// full names ("Ramona Cyre"). Match on the full name, or when one is the
+// first word of the other. (With one or two employees this is unambiguous;
+// if two employees ever share a first name, use full names everywhere and
+// this still matches exactly.)
+function samePerson(a, b) {
+  var x = String(a || "").trim().toLowerCase(), y = String(b || "").trim().toLowerCase();
+  if (!x || !y) return false;
+  if (x === y) return true;
+  return x.indexOf(y + " ") === 0 || y.indexOf(x + " ") === 0;
+}
+// Rate for an employee, by name — checks the rates list (keyed by first
+// name) and the Employees tab (full name) so either spelling works.
+function rateFor(name) {
+  var k = Object.keys(employeeRates).find(function (key) { return samePerson(key, name); });
+  if (k) return employeeRates[k];
+  var e = employees.find(function (x) { return samePerson(x.Name, name); });
+  return e ? e.Rate : null;
+}
+function populateEmployees() {
+  var names = [];
+  employees.forEach(function (e) {
+    if (String(e.Role || "").toLowerCase() === "employee" && String(e.Active || "").toLowerCase() === "yes" && !names.some(function (n) { return samePerson(n, e.Name); })) names.push(e.Name);
+  });
+  entries.forEach(function (e) { if (e.name && !names.some(function (n) { return samePerson(n, e.name); })) names.push(e.name); });
+  runs.forEach(function (r) { if (r.emp && !names.some(function (n) { return samePerson(n, r.emp); })) names.push(r.emp); });
+  var sel = $("empName");
+  var cur = sel.value;
+  sel.innerHTML = "<option value=''>Pick an employee…</option>" + names.map(function (n) { return "<option value='" + esc(n) + "'>" + esc(n) + "</option>"; }).join("");
+  if (names.some(function (n) { return samePerson(n, cur); })) sel.value = names.find(function (n) { return samePerson(n, cur); });
+  var rate = rateFor(currentEmployee());
+  if (rate) $("rate").value = String(rate);
+}
+function splitOvertime(dayHoursList) {
+  // dayHoursList: [{date, hours}] for non-training entries in the period.
+  // Returns {regular, ot15, ot20, note}.
+  var perDay = dayHoursList.map(function (d) {
+    var h = d.hours;
+    return { date: d.date, regular: Math.min(h, 8), ot15: Math.min(Math.max(h - 8, 0), 4), ot20: Math.max(h - 12, 0) };
+  });
+  var regular = 0, ot15 = 0, ot20 = 0;
+  perDay.forEach(function (d) { regular += d.regular; ot15 += d.ot15; ot20 += d.ot20; });
+  // Weekly: Monday–Sunday weeks, regular over 40 moves to 1.5×.
+  var weeks = {};
+  perDay.forEach(function (d) {
+    var dt = new Date(d.date + "T12:00:00");
+    var monday = new Date(dt); monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+    var k = monday.toISOString().slice(0, 10);
+    if (!weeks[k]) weeks[k] = 0;
+    weeks[k] += d.regular;
+  });
+  var weeklyNote = "";
+  Object.keys(weeks).sort().forEach(function (k) {
+    if (weeks[k] > 40) {
+      var excess = weeks[k] - 40;
+      regular -= excess; ot15 += excess;
+      weeklyNote += " Week of " + k + ": " + weeks[k].toFixed(2) + " regular hours — " + excess.toFixed(2) + " hrs over 40 moved to 1.5×.";
+    }
+  });
+  return { regular: r2(regular), ot15: r2(ot15), ot20: r2(ot20),
+    note: "Split from the time card: " + perDay.map(function (d) { return d.date + " " + (d.regular + d.ot15 + d.ot20).toFixed(2) + "h (reg " + d.regular.toFixed(2) + ", 1.5× " + d.ot15.toFixed(2) + ", 2× " + d.ot20.toFixed(2) + ")"; }).join("; ") + "." + weeklyNote };
+}
+$("pullRunBtn").onclick = function () {
+  var emp = currentEmployee();
+  var start = $("ppStart").value, end = $("ppEnd").value;
+  if (!emp) { alert("Pick an employee first."); return; }
+  if (!start || !end) { alert("Pick the pay period start and end first."); return; }
+  var inPeriod = entries.filter(function (e) {
+    return samePerson(e.name, emp) && e.date >= start && e.date <= end && e.out && (e.hours || 0) > 0;
+  });
+  var training = inPeriod.filter(function (e) { return e.training; });
+  var regular = inPeriod.filter(function (e) { return !e.training; });
+  var dayHours = {};
+  regular.forEach(function (e) { dayHours[e.date] = (dayHours[e.date] || 0) + (e.hours || 0); });
+  var days = Object.keys(dayHours).sort().map(function (d) { return { date: d, hours: dayHours[d] }; });
+  var split = splitOvertime(days);
+  $("hours").value = split.regular.toFixed(2);
+  $("ot15").value = split.ot15.toFixed(2);
+  $("ot20").value = split.ot20.toFixed(2);
+  $("otNote").textContent = split.note + " Check it, then Calculate — the fields stay editable.";
+  var trainingHours = training.reduce(function (s, e) { return s + (e.hours || 0); }, 0);
+  if (training.length) {
+    $("trainingNote").textContent = "TRAINING in this period: " + trainingHours.toFixed(2) + " hrs at $20/hr — NOT included above. Run training hours as a separate pay run at $20 (change the rate above), or they will be paid at the regular rate by mistake.";
+  } else { $("trainingNote").textContent = ""; }
+  var refilledHours = regular.filter(function (e) { return e.refilled; }).reduce(function (s, e) { return s + (e.hours || 0); }, 0);
+  $("refillHours").value = refilledHours.toFixed(2);
+  var km = mileage.filter(function (m) { return samePerson(m.name, emp) && m.date >= start && m.date <= end && m.type === "between"; })
+    .reduce(function (s, m) { return s + (m.km || 0); }, 0);
+  $("mileKm").value = km.toFixed(1);
+  if (craRateSaved) $("craRate").value = craRateSaved;
+  var rate = rateFor(emp);
+  if (rate) $("rate").value = String(rate);
+  var sickDays = timeOff.filter(function (r) { return samePerson(r.name, emp) && r.type === "sick" && r.status === "APPROVED" && r.date >= start && r.date <= end; });
+  $("sickHint").textContent = sickDays.length
+    ? sickDays.length + " approved paid sick day(s) in this period (" + sickDays.map(function (r) { return r.date; }).join(", ") + "). Enter the paid sick hours above at the regular rate — a sick day is paid at the employee's usual shift hours, so check how many hours that day would have been."
+    : "No approved paid sick days in this period.";
+  $("pullStatus").textContent = "Pulled for " + emp + ": " + inPeriod.length + " clocked entries (" + split.regular.toFixed(2) + " regular hrs, " + split.ot15.toFixed(2) + " hrs at 1.5×, " + split.ot20.toFixed(2) + " hrs at 2×), " + km.toFixed(1) + " payable km. Check the fields, then Calculate.";
+};
+$("pullBtn").onclick = function () {
+  if (!BACKEND_ENABLED) { $("pullStatus").textContent = "The backend is not connected yet — use the time-card JSON import below instead."; return; }
+  $("pullStatus").textContent = "Pulling from the backend…";
+  pullBackendData();
+};
+$("empName").addEventListener("change", function () {
+  $("empNameOther").value = "";
+  var rate = rateFor($("empName").value);
+  if (rate) $("rate").value = String(rate);
+  fillYtdFromRuns();
+});
+function applySavedSettings() {
+  if (td1Saved) { $("td1Fed").value = td1Saved.fed; $("td1Bc").value = td1Saved.bc; }
+  if (bnSaved) { $("bnInput").value = bnSaved.bn || ""; $("rpInput").value = bnSaved.rp || ""; }
+  if (craRateSaved) $("craRate").value = craRateSaved;
+}
+function fillYtdFromRuns() {
+  var emp = currentEmployee();
+  if (!emp) { $("ytdStatus").textContent = "Pick an employee first."; return; }
+  var year = ($("payDate").value || $("ppEnd").value || localDateStr()).slice(0, 4);
+  var mine = runs.filter(function (r) { return samePerson(r.emp, emp) && (r.payDate || r.ppEnd || "").slice(0, 4) === year; });
+  var tot = { gross: 0, cpp: 0, cpp2: 0, ei: 0, tax: 0 };
+  mine.forEach(function (r) { tot.gross += r.gross; tot.cpp += r.cpp; tot.cpp2 += r.cpp2; tot.ei += r.ei; tot.tax += r.incomeTax; });
+  $("ytdGross").value = tot.gross.toFixed(2);
+  $("ytdCpp").value = tot.cpp.toFixed(2);
+  $("ytdCpp2").value = tot.cpp2.toFixed(2);
+  $("ytdEi").value = tot.ei.toFixed(2);
+  $("ytdTax").value = tot.tax.toFixed(2);
+  $("ytdStatus").textContent = "Filled from " + mine.length + " saved run(s) for " + emp + " in " + year + ". Check these before calculating — if any run was paid outside this app, add it in by hand.";
+}
+$("ytdAutoBtn").onclick = fillYtdFromRuns;
+$("td1SaveBtn").onclick = function () {
+  var fed = parseFloat($("td1Fed").value) || 16452;
+  var bc = parseFloat($("td1Bc").value) || 13216;
+  td1Saved = { fed: fed, bc: bc };
+  localStorage.setItem(TD1KEY, JSON.stringify(td1Saved));
+  backendPost({ action: "settingsSave", td1Fed: fed, td1Bc: bc });
+  $("td1Status").innerHTML = '<span class="ok">TD1 claim amounts saved: federal $' + fed.toLocaleString() + ', BC $' + bc.toLocaleString() + '.</span>';
+};
+
+// ============================================================================
+// CALCULATE — the draft's maths, unchanged (2026 rates from the draft +
+// checklist section F). Verified against the draft file line by line.
+// ============================================================================
+function calculate(){
+  const periods = parseFloat($("freq").value);
+  const hours = parseFloat($("hours").value) || 0;
+  const rate = parseFloat($("rate").value) || 0;
+  const refillH = parseFloat($("refillHours").value);
+  const refillHours = isNaN(refillH) ? hours : refillH;
+  const vacPct = parseFloat($("vacPct").value) || 0;
+  const ot15 = parseFloat($("ot15").value) || 0;
+  const ot20 = parseFloat($("ot20").value) || 0;
+  const statPayIn = parseFloat($("statPay").value) || 0;
+  const sickHours = parseFloat($("sickHours").value) || 0;
+  const hoursPay = hours * rate + ot15 * rate * 1.5 + ot20 * rate * 2 + sickHours * rate + statPayIn;
+  const refillPay = refillHours * 1;
+  const vacPay = (hoursPay + refillPay) * vacPct / 100;
+  const gross = r2(hoursPay + refillPay + vacPay);
+  const ytdGross = parseFloat($("ytdGross").value) || 0;
+  const ytdCpp = parseFloat($("ytdCpp").value) || 0;
+  const ytdCpp2 = parseFloat($("ytdCpp2").value) || 0;
+  const ytdEi = parseFloat($("ytdEi").value) || 0;
+  const ytdTax = parseFloat($("ytdTax").value) || 0;
+  // CPP per period, with YTD caps
+  const exemptionPeriod = 3500 / periods;
+  const cppRaw = Math.max(0, gross - exemptionPeriod) * 0.0595;
+  const cpp = r2(Math.min(cppRaw, Math.max(0, 4230.45 - ytdCpp)));
+  // CPP2: portion of YTD gross above YMPE, up to YAMPE
+  const ytdAfter = ytdGross + gross;
+  const cpp2Base = Math.max(0, Math.min(ytdAfter, 85000) - Math.max(74600, ytdGross));
+  const cpp2 = r2(Math.min(cpp2Base * 0.04, Math.max(0, 416 - ytdCpp2)));
+  const eiRaw = gross * 0.0163;
+  const ei = r2(Math.min(eiRaw, Math.max(0, 1123.07 - ytdEi)));
+  // Income tax estimate, annualised
+  const annGross = gross * periods;
+  const addCppAnnual = Math.min(Math.max(0, annGross - 3500), 71100) * 0.01 + Math.max(0, Math.min(annGross, 85000) - 74600) * 0.04;
+  const baseCppAnnual = Math.min(Math.max(0, annGross - 3500), 71100) * 0.0495;
+  const eiAnnual = Math.min(annGross, 68900) * 0.0163;
+  const td1Fed = parseFloat($("td1Fed").value) || 16452;
+  const td1Bc = parseFloat($("td1Bc").value) || 13216;
+  const fedTaxable = Math.max(0, annGross - addCppAnnual);
+  const fedBefore = bracketTax(fedTaxable, FED);
+  const fedCredits = td1Fed * 0.14 + Math.min(1501, annGross) * 0.14 + baseCppAnnual * 0.14 + eiAnnual * 0.14;
+  const fedAnnual = Math.max(0, fedBefore - fedCredits);
+  const fed = r2(fedAnnual / periods);
+  const bcTaxable = Math.max(0, annGross - addCppAnnual);
+  const bcBefore = bracketTax(bcTaxable, BCB);
+  const bcCredits = td1Bc * 0.056 + baseCppAnnual * 0.056 + eiAnnual * 0.056;
+  let bcAnnual = Math.max(0, bcBefore - bcCredits);
+  const bcNet = annGross; // approximation for tax reduction, using gross as net income
+  let bcReduction = 0;
+  if (bcNet <= 25570) bcReduction = Math.min(690, bcAnnual);
+  else if (bcNet < 44952) bcReduction = Math.max(0, 690 - 0.0356 * (bcNet - 25570));
+  bcAnnual = Math.max(0, bcAnnual - bcReduction);
+  const bc = r2(bcAnnual / periods);
+  const incomeTax = r2(fed + bc);
+  const otherDed = parseFloat($("otherDed").value) || 0;
+  const mileKm = parseFloat($("mileKm").value) || 0;
+  const craRate = parseFloat($("craRate").value);
+  const milePay = (!isNaN(craRate) && craRate > 0) ? r2(mileKm * craRate) : 0;
+  const net = r2(gross - cpp - cpp2 - ei - incomeTax - otherDed + milePay);
+  const empCpp = r2(cpp + cpp2);
+  const empEi = r2(ei * 1.4);
+  const remitTotal = r2(incomeTax + cpp + cpp2 + ei + empCpp + empEi);
+  lastCalc = {
+    emp: currentEmployee() || "(name not entered)",
+    ppStart: $("ppStart").value, ppEnd: $("ppEnd").value, payDate: $("payDate").value,
+    freq: periods, hours, rate, ot15, ot20, statPay: statPayIn, sickHours, refillHours, vacPct, hoursPay: r2(hoursPay), refillPay: r2(refillPay), vacPay: r2(vacPay),
+    gross, cpp, cpp2, ei, fed, bc, incomeTax, otherDed, mileKm, craRate: isNaN(craRate) ? null : craRate, milePay,
+    net, empCpp, empEi, remitTotal,
+    ytdGrossAfter: r2(ytdGross + gross), ytdCppAfter: r2(ytdCpp + cpp), ytdCpp2After: r2(ytdCpp2 + cpp2), ytdEiAfter: r2(ytdEi + ei), ytdTaxAfter: r2(ytdTax + incomeTax)
+  };
+  $("paystub").textContent = paystubText(lastCalc);
+  $("remit").textContent = [
+    "Remittance for this pay run — to CRA, NOT submitted by this app:",
+    "  Employee income tax withheld: " + money(incomeTax) + " (federal " + money(fed) + " + BC " + money(bc) + ")",
+    "  Employee CPP: " + money(cpp) + " + CPP2: " + money(cpp2),
+    "  Employee EI: " + money(ei),
+    "  Employer CPP: " + money(empCpp) + " (matched) + Employer EI: " + money(empEi) + " (1.4× employee EI)",
+    "  TOTAL TO REMIT FOR THIS RUN: " + money(remitTotal),
+    "",
+    "Pay this total with your other runs for the same month, by the 15th of the following month (regular / new remitter — confirm your type with CRA).",
+    "Mileage reimbursement (" + money(milePay) + ") is NOT part of the remittance — it is paid to the employee, not to CRA."
+  ].join("\n");
+  $("calcStatus").innerHTML = '<span class="ok">Calculated: gross ' + money(gross) + ', deductions ' + money(cpp + cpp2 + ei + incomeTax + otherDed) + ', net ' + money(net) + ', total to remit ' + money(remitTotal) + '.</span>';
+  renderEmailList();
+  return lastCalc;
+}
+// One paystub-text builder, used by the on-screen paystub AND by the
+// paystub emails — so what Krystal sees is exactly what the employee gets.
+// Built per employee from that employee's own saved run only: no other
+// employee's name, hours or pay ever appears in it.
+function paystubText(c) {
+  return [
+    "Raven & Roses Cleaning Co. — PAYSTUB (DRAFT — verify against CRA PDOC before paying)",
+    "Employee: " + c.emp,
+    "Pay period: " + (c.ppStart || "?") + " to " + (c.ppEnd || "?") + "  |  Pay date: " + (c.payDate || "?"),
+    "",
+    "Hours: " + c.hours.toFixed(2) + " regular × $" + c.rate.toFixed(2) + (c.ot15 ? " + " + c.ot15.toFixed(2) + " hrs overtime at 1.5×" : "") + (c.ot20 ? " + " + c.ot20.toFixed(2) + " hrs overtime at 2×" : "") + (c.sickHours ? " + " + c.sickHours.toFixed(2) + " hrs paid sick" : "") + (c.statPay ? " + stat holiday pay " + money(c.statPay) : "") + " = " + money(c.hoursPay),
+    "Paid by: e-transfer, morning of payday",
+    "Supply-refill pay: " + c.refillHours.toFixed(2) + " hrs × $1.00 = " + money(c.refillPay),
+    (c.vacPct ? "Vacation pay, paid on every cheque (" + c.vacPct + "%): " + money(c.vacPay) : ""),
+    "GROSS PAY: " + money(c.gross),
+    "",
+    "Deductions:",
+    "  CPP: " + money(c.cpp),
+    "  CPP2: " + money(c.cpp2),
+    "  EI: " + money(c.ei),
+    "  Federal income tax (est.): " + money(c.fed),
+    "  BC income tax (est.): " + money(c.bc),
+    "  Total income tax (est.): " + money(c.incomeTax),
+    (c.otherDed ? "  Other deductions: " + money(c.otherDed) : ""),
+    "",
+    "NET PAY: " + money(c.net),
+    (c.milePay ? "Mileage reimbursement (separate, non-taxable at CRA rate): " + c.mileKm.toFixed(1) + " km = " + money(c.milePay) + " — included in net above, NOT in gross / CPP / EI / tax." : "Mileage: none this run, or CRA rate not entered."),
+    "",
+    "Year-to-date after this run: Gross " + money(c.ytdGrossAfter) + " | CPP " + money(c.ytdCppAfter) + " | CPP2 " + money(c.ytdCpp2After) + " | EI " + money(c.ytdEiAfter) + " | Income tax " + money(c.ytdTaxAfter),
+    "",
+    "This is an estimate. Income tax uses 2026 federal + BC brackets, basic TD1 claims entered, Canada employment amount, and base CPP/EI credits. It does not include other TD1 credits, bonuses, or taxable benefits. Check it against CRA PDOC before paying."
+  ].filter(function (x) { return x !== ""; }).join("\n");
+}
+$("calcBtn").onclick = calculate;
+$("copyStubBtn").onclick = async () => {
+  if (!lastCalc) { alert("Calculate a pay run first."); return; }
+  try { await navigator.clipboard.writeText($("paystub").textContent); alert("Paystub copied — paste it into an email to the employee."); }
+  catch(e){ alert("Copy not available — select the paystub above and copy it manually."); }
+};
+// ============================================================================
+// MONTHLY TOTALS — ONE source of truth.
+// monthlyTotals() adds up the saved runs once. The "Saved pay runs +
+// monthly remittance totals" section AND the Monthly CRA remittance
+// report both read from it — the totals are never calculated twice.
+// ============================================================================
+function monthlyTotals() {
+  var byMonth = {};
+  runs.forEach(function (r) {
+    var m = (r.payDate || r.ppEnd || "?").slice(0, 7);
+    if (!byMonth[m]) byMonth[m] = { runs: 0, remit: 0, tax: 0, fed: 0, bc: 0, empCpp: 0, empEi: 0, cpp: 0, cpp2: 0, ei: 0, gross: 0, net: 0, milePay: 0 };
+    var b = byMonth[m]; b.runs++; b.remit += r.remitTotal; b.tax += r.incomeTax; b.fed += r.fed; b.bc += r.bc; b.empCpp += r.empCpp; b.empEi += r.empEi; b.cpp += r.cpp; b.cpp2 += r.cpp2; b.ei += r.ei; b.gross += r.gross; b.net += r.net; b.milePay += r.milePay || 0;
+  });
+  return byMonth;
+}
+function renderT4(){
+  const el = $("t4totals"); if (!el) return;
+  if (!runs.length) { el.innerHTML = "<p class='small'>No saved pay runs yet.</p>"; return; }
+  const by = {};
+  runs.forEach(r => {
+    const y = (r.payDate || r.ppEnd || "?").slice(0,4);
+    const k = r.emp + " — " + y;
+    if (!by[k]) by[k] = { gross:0, cpp:0, cpp2:0, ei:0, tax:0, net:0, count:0 };
+    const b = by[k]; b.gross += r.gross; b.cpp += r.cpp; b.cpp2 += r.cpp2; b.ei += r.ei; b.tax += r.incomeTax; b.net += r.net; b.count++;
+  });
+  el.innerHTML = Object.keys(by).sort().map(k => { const b = by[k]; return "<div class='card'><strong>" + esc(k) + "</strong> — " + b.count + " run(s)<br>Gross (employment income): " + money(b.gross) + "<br>CPP: " + money(b.cpp) + " | CPP2: " + money(b.cpp2) + "<br>EI premiums: " + money(b.ei) + "<br>Income tax deducted: " + money(b.tax) + "<br>Net paid: " + money(b.net) + "</div>"; }).join("");
+}
+function renderRuns(){
+  if (!runs.length) { $("runs").innerHTML = "<p class='small'>No saved pay runs yet.</p>"; renderT4(); return; }
+  var byMonth = monthlyTotals();
+  renderT4();
+  $("runs").innerHTML = runs.map((r,i) => "<div class='card'><strong>" + esc(r.emp) + "</strong> — " + (r.ppStart||"?") + " to " + (r.ppEnd||"?") + ", pay date " + (r.payDate||"?") + "<br>Gross " + money(r.gross) + " | CPP " + money(r.cpp) + " | CPP2 " + money(r.cpp2) + " | EI " + money(r.ei) + " | Tax " + money(r.incomeTax) + " | Net " + money(r.net) + " | Remit " + money(r.remitTotal) + "</div>").join("") +
+    "<h3>Monthly remittance totals (for PD7A / CRA payment)</h3>" + Object.keys(byMonth).sort().map(m => { const b = byMonth[m]; return "<div class='card'><strong>" + m + "</strong> — " + b.runs + " run(s), gross " + money(b.gross) + ", net " + money(b.net) + "<br>Remit total " + money(b.remit) + " (tax " + money(b.tax) + " + employee CPP " + money(b.cpp) + " + CPP2 " + money(b.cpp2) + " + EI " + money(b.ei) + " + employer CPP " + money(b.empCpp) + " + employer EI " + money(b.empEi) + ")<br>Due (regular): 15th of the month after " + m + "</div>"; }).join("");
+}
+$("saveRunBtn").onclick = () => {
+  const c = calculate();
+  if (!c) return;
+  runs.push(c);
+  localStorage.setItem(KEY, JSON.stringify(runs));
+  $("ytdGross").value = c.ytdGrossAfter.toFixed(2);
+  $("ytdCpp").value = c.ytdCppAfter.toFixed(2);
+  $("ytdCpp2").value = c.ytdCpp2After.toFixed(2);
+  $("ytdEi").value = c.ytdEiAfter.toFixed(2);
+  $("ytdTax").value = c.ytdTaxAfter.toFixed(2);
+  renderRuns();
+  renderEmailList();
+  renderCraReport();
+};
+$("exportRunsBtn").onclick = () => {
+  const head = "employee,pay_period_start,pay_period_end,pay_date,hours,rate,gross,cpp,cpp2,ei,federal_tax,bc_tax,income_tax,net,employer_cpp,employer_ei,remit_total";
+  const rows = runs.map(r => [r.emp, r.ppStart, r.ppEnd, r.payDate, r.hours, r.rate, r.gross, r.cpp, r.cpp2, r.ei, r.fed, r.bc, r.incomeTax, r.net, r.empCpp, r.empEi, r.remitTotal].join(","));
+  const csv = [head, ...rows].join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"})); a.download = "raven-payroll-runs.csv"; a.click();
+};
+$("clearRunsBtn").onclick = () => { if (confirm("Clear all saved pay runs on this device?")) { runs = []; localStorage.setItem(KEY, JSON.stringify(runs)); renderRuns(); renderEmailList(); renderCraReport(); } };
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    const ents = data.entries || [];
+    const totalHours = ents.reduce((s, x) => s + (x.hours || 0), 0);
+    const payKm = (data.mileage || []).filter(m => m.type === "between").reduce((s, m) => s + m.km, 0);
+    if (ents.length) {
+      var name = ents[0].name || "";
+      $("empNameOther").value = name;
+      $("hours").value = totalHours.toFixed(2);
+      if (ents.some(x => x.training)) $("calcStatus").innerHTML = '<span class="warn">Import note: this export includes training shift(s) at $20/hr. Split training hours into a separate pay run at $20, or adjust the rate — this import used the regular rate for all hours.</span>';
+      const dates = ents.map(x => x.date).sort();
+      if (dates.length) { $("ppStart").value = dates[0]; $("ppEnd").value = dates[dates.length-1]; }
+    }
+    $("mileKm").value = payKm.toFixed(1);
+    $("calcStatus").innerHTML += "<br>Imported: " + totalHours.toFixed(2) + " hours, " + payKm.toFixed(1) + " payable km. Check the period and rate, then Calculate.";
+    populateEmployees();
+  } catch(err) { alert("Could not read that JSON file — use the employee app’s “Export for Krystal (JSON)” file."); }
+  e.target.value = "";
+});
+
+// ============================================================================
+// EMAIL PAYSTUBS — one tap per payday.
+// Each employee gets ONLY their own paystub (built from their own saved
+// run, by the same paystubText() the screen uses). Nothing about any
+// other employee is in any email, and no SIN is in any paystub or email.
+// With the backend connected, the backend emails each stub and records
+// every send in the Sheet (PaystubSends tab). Without it, each employee
+// gets a mailto button instead, and Krystal taps "Mark as sent" after
+// sending it. An employee with no email on file is skipped plainly —
+// the rest still go out. Re-sending the same period needs the checkbox.
+// ============================================================================
+function runsForPeriod() {
+  var start = $("ppStart").value, end = $("ppEnd").value;
+  if (!start || !end) return [];
+  return runs.filter(function (r) { return r.ppStart === start && r.ppEnd === end; });
+}
+function employeeEmail(name) {
+  // Same first-name/full-name matching as the time card (see samePerson):
+  // a run saved as "Ramona" must find the Employees-tab email for
+  // "Ramona Cyre", or the paystub would never send.
+  var e = employees.find(function (x) { return samePerson(x.Name, name); });
+  return e ? String(e.Email || "").trim() : "";
+}
+function sendRecordFor(emp, start, end) {
+  return paystubSends.find(function (s) { return s.employee === emp && s.periodStart === start && s.periodEnd === end; });
+}
+function renderEmailList() {
+  var el = $("emailList"); if (!el) return;
+  var start = $("ppStart").value, end = $("ppEnd").value;
+  $("emailPeriodLabel").textContent = (start && end) ? start + " to " + end : "pick a pay period in section 1 above";
+  var list = runsForPeriod();
+  if (!list.length) { el.innerHTML = "<p class='small'>No saved pay runs for this period yet — calculate and save each employee's run first, then come back here.</p>"; return; }
+  el.innerHTML = list.map(function (r) {
+    var email = employeeEmail(r.emp);
+    var sent = sendRecordFor(r.emp, r.ppStart, r.ppEnd);
+    var status = sent
+      ? "<span class='ok'>Sent on " + esc(String(sent.sentAt || "").slice(0, 10)) + " to " + esc(sent.email || email || "") + (sent.via ? " (" + esc(sent.via) + ")" : "") + ".</span>"
+      : "<span class='warn'>Not sent yet.</span>";
+    var mailto = "";
+    if (!BACKEND_ENABLED && email) {
+      var subject = "Your Raven & Roses paystub — " + r.ppStart + " to " + r.ppEnd;
+      var href = "mailto:" + encodeURIComponent(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(paystubText(r));
+      mailto = "<br><a href='" + href + "'><button class='smallbtn secondary' type='button'>Send by email</button></a> <button class='smallbtn secondary' onclick='markSent(\"" + esc(r.emp).replace(/"/g, "") + "\")'>Mark as sent</button>";
+    }
+    return "<div class='card" + (sent ? " sent" : "") + "'><strong>" + esc(r.emp) + "</strong> — net " + money(r.net) + " for " + esc(r.ppStart) + " to " + esc(r.ppEnd) +
+      "<br>Email on file: " + (email ? esc(email) : "<span class='warn'><strong>NO EMAIL ON FILE — will be skipped.</strong> Add it in the manager app → Employees, or in the Sheet's Employees tab.</span>") +
+      "<br>" + status + mailto + "</div>";
+  }).join("");
+}
+window.markSent = function (emp) {
+  var run = runsForPeriod().find(function (r) { return r.emp === emp; });
+  if (!run) return;
+  var email = employeeEmail(emp);
+  paystubSends = paystubSends.filter(function (s) { return !(s.employee === emp && s.periodStart === run.ppStart && s.periodEnd === run.ppEnd); });
+  paystubSends.push({ periodStart: run.ppStart, periodEnd: run.ppEnd, payDate: run.payDate, employee: emp, email: email, sentAt: new Date().toISOString(), via: "mailto — marked by Krystal" });
+  saveLocals();
+  renderEmailList();
+  $("emailStatus").innerHTML = '<span class="ok">Marked as sent for ' + esc(emp) + ' (mailto — you sent it from your email app).</span>';
+};
+$("emailSendBtn").onclick = function () {
+  var start = $("ppStart").value, end = $("ppEnd").value;
+  var list = runsForPeriod();
+  if (!list.length) { $("emailStatus").textContent = "No saved pay runs for this period yet — calculate and save each employee's run first."; return; }
+  var allowResend = $("emailResendCheck").checked;
+  var stubs = [], skipped = [];
+  list.forEach(function (r) {
+    var email = employeeEmail(r.emp);
+    if (!email) { skipped.push(r.emp + " — no email on file, skipped"); return; }
+    var sent = sendRecordFor(r.emp, start, end);
+    if (sent && !allowResend) { skipped.push(r.emp + " — already sent on " + String(sent.sentAt || "").slice(0, 10) + ", skipped (tick Re-send to send again)"); return; }
+    stubs.push({ employee: r.emp, email: email, text: paystubText(r) });
+  });
+  if (!BACKEND_ENABLED) {
+    $("emailStatus").innerHTML = "Backend not connected — tap <strong>Send by email</strong> next to each employee below, then <strong>Mark as sent</strong> after you send it." + (skipped.length ? "<br>Skipped: " + skipped.map(esc).join("; ") + "." : "");
+    return;
+  }
+  if (!stubs.length) {
+    $("emailStatus").innerHTML = "Nothing to send." + (skipped.length ? "<br>Skipped: " + skipped.map(esc).join("; ") + "." : "");
+    return;
+  }
+  var payDate = $("payDate").value;
+  backendPost({ action: "emailPaystubs", periodStart: start, periodEnd: end, payDate: payDate, stubs: stubs });
+  // No-cors means no reply: record the send locally now, and the backend
+  // records it in the Sheet's PaystubSends tab too — that tab is the
+  // source of truth, and the next pull brings its records back here.
+  var now = new Date().toISOString();
+  stubs.forEach(function (s) {
+    paystubSends = paystubSends.filter(function (x) { return !(x.employee === s.employee && x.periodStart === start && x.periodEnd === end); });
+    paystubSends.push({ periodStart: start, periodEnd: end, payDate: payDate, employee: s.employee, email: s.email, sentAt: now, via: "backend" });
+  });
+  saveLocals();
+  renderEmailList();
+  $("emailStatus").innerHTML = '<span class="ok">Sent ' + stubs.length + ' paystub(s) via the backend: ' + stubs.map(function (s) { return esc(s.employee); }).join(", ") + '.</span> Confirm them in the Sheet’s PaystubSends tab — that is the record.' + (skipped.length ? "<br>Skipped: " + skipped.map(esc).join("; ") + "." : "");
+};
+// ============================================================================
+// MONTHLY CRA REMITTANCE REPORT — one report per month, for the month
+// Krystal actually pays CRA. Totals come from monthlyTotals() — the same
+// numbers as the saved-runs section above — so the report always matches
+// the runs for that month. It does NOT file anything to CRA.
+// ============================================================================
+function dueDateForMonth(ym) {
+  var parts = ym.split("-");
+  var y = Number(parts[0]), m = Number(parts[1]); // m is 1–12
+  var next = m === 12 ? { y: y + 1, m: 1 } : { y: y, m: m + 1 };
+  return next.y + "-" + String(next.m).padStart(2, "0") + "-15";
+}
+function monthName(ym) {
+  var parts = ym.split("-");
+  var d = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+  return d.toLocaleDateString([], { month: "long", year: "numeric" });
+}
+function craReportText(month, b, rpBlank) {
+  var lines = [
+    "Raven & Roses Cleaning Co. — CRA Source Deductions Remittance",
+    "Remittance period: " + monthName(month) + " (" + month + ")",
+    "Due date: " + dueDateForMonth(month) + " (15th of the following month — regular / new remitter; confirm your remitter type with CRA)",
+    "Business number: " + ((bnSaved && bnSaved.bn) ? bnSaved.bn : "(not entered)"),
+    "Payroll (RP) account number: " + ((bnSaved && bnSaved.rp) ? bnSaved.rp : "(not entered)"),
+    ""
+  ];
+  if (rpBlank) lines.push("*** Your old payroll (RP) account was closed and needs reopening before you can remit. Do not pay until the account is open, or CRA cannot match the payment. ***", "");
+  lines.push(
+    "Gross pay (all employees): " + money(b.gross),
+    "Employee CPP withheld: " + money(b.cpp),
+    "Employee CPP2 withheld: " + money(b.cpp2),
+    "Employee EI withheld: " + money(b.ei),
+    "Income tax withheld — federal: " + money(b.fed),
+    "Income tax withheld — BC: " + money(b.bc),
+    "Income tax withheld — total: " + money(b.tax),
+    "Employer CPP: " + money(b.empCpp),
+    "Employer EI: " + money(b.empEi),
+    "TOTAL TO REMIT TO CRA: " + money(b.remit),
+    "",
+    "Mileage paid to employees this month (NOT part of the remittance): " + money(b.milePay),
+    "",
+    "Pay via CRA My Business Account or your bank as “CRA Payroll (PD7A)” using your RP account number. This report does not file anything to CRA."
+  );
+  return lines.join("\n");
+}
+window.craCopyReport = function () {
+  var t = $("craReportText") ? $("craReportText").textContent : "";
+  if (!t) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(function () { alert("Remittance report copied."); }, function () { alert("Copy not available — select the report above and copy it manually."); });
+  } else { alert("Copy not available — select the report above and copy it manually."); }
+};
+window.craPrintReport = function () { window.print(); };
+function renderCraReport() {
+  var month = $("craMonth").value;
+  var box = $("craReport");
+  var fields = $("craFields"), remitBox = $("craRemitBox");
+  if (!month) { box.innerHTML = "<p class='small'>Pick a month above.</p>"; fields.style.display = "none"; remitBox.style.display = "none"; return; }
+  var byMonth = monthlyTotals();
+  var b = byMonth[month];
+  fields.style.display = "block";
+  remitBox.style.display = "block";
+  var already = remittances.find(function (r) { return r.month === month; });
+  if (!b) {
+    box.innerHTML = "<p class='small'>No saved pay runs for " + esc(monthName(month)) + " yet — save the month's pay runs first, then this report fills in from them.</p>";
+  } else {
+    var rpBlank = !(bnSaved && bnSaved.rp);
+    var txt = craReportText(month, b, rpBlank);
+    box.innerHTML =
+      (rpBlank ? "<p class='warn' style='border:2px solid #b00020;border-radius:8px;padding:10px'><strong>Your old payroll (RP) account was closed and needs reopening before you can remit.</strong> Do not pay until the account is open, or CRA cannot match the payment.</p>" : "") +
+      (already ? "<p class='warn' style='border:2px solid #b58900;border-radius:8px;padding:10px'><strong>Already remitted on " + esc(String(already.paidDate || "?")) + (already.confirmation ? " — confirmation " + esc(already.confirmation) : "") + (already.paidAmount != null ? " — amount " + money(already.paidAmount) : "") + ".</strong> Do not remit this month again unless this is a correction.</p>" : "") +
+      "<pre id='craReportText'>" + esc(txt) + "</pre>" +
+      "<button class='secondary' onclick='craCopyReport()'>Copy report as text</button> <button class='secondary' onclick='craPrintReport()'>Print this report</button>";
+    $("remitAmount").value = b.remit.toFixed(2);
+  }
+  if (!already) {
+    $("remitConfirm").value = "";
+    if (!$("remitPaidDate").value) $("remitPaidDate").value = localDateStr();
+  } else {
+    $("remitPaidDate").value = already.paidDate || "";
+    $("remitAmount").value = (already.paidAmount != null ? already.paidAmount : (b ? b.remit : 0)).toFixed(2);
+    $("remitConfirm").value = already.confirmation || "";
+  }
+  renderRemitList();
+}
+function renderRemitList() {
+  var el = $("remitList"); if (!el) return;
+  if (!remittances.length) { el.innerHTML = "<p class='small'>No months marked as remitted yet.</p>"; return; }
+  el.innerHTML = remittances.slice().sort(function (a, b) { return String(b.month).localeCompare(String(a.month)); }).map(function (r) {
+    return "<div class='card sent'><strong>" + esc(monthName(r.month)) + " (" + esc(r.month) + ")</strong> — due " + esc(r.dueDate || dueDateForMonth(r.month)) +
+      "<br>Remit total " + money(r.remitTotal) +
+      "<br>Paid: " + esc(r.paidDate || "?") + (r.paidAmount != null ? " — amount " + money(r.paidAmount) : "") + (r.confirmation ? " — confirmation " + esc(r.confirmation) : "") + "</div>";
+  }).join("");
+}
+$("craShowBtn").onclick = renderCraReport;
+$("bnRpSaveBtn").onclick = function () {
+  var bn = $("bnInput").value.trim();
+  var rp = $("rpInput").value.trim().replace(/\s+/g, "");
+  bnSaved = { bn: bn, rp: rp };
+  localStorage.setItem(BNKEY, JSON.stringify(bnSaved));
+  backendPost({ action: "settingsSave", businessNumber: bn, rpAccount: rp });
+  $("bnRpStatus").innerHTML = '<span class="ok">Saved. Business number ' + (bn ? "entered" : "still blank") + ', RP account ' + (rp ? "entered" : "still blank — remember, the old account was closed and needs reopening before you can remit.") + '.</span>';
+  renderCraReport();
+};
+$("remitSaveBtn").onclick = function () {
+  var month = $("craMonth").value;
+  if (!month) { alert("Pick a month first."); return; }
+  var paidDate = $("remitPaidDate").value;
+  var amount = parseFloat($("remitAmount").value);
+  var conf = $("remitConfirm").value.trim();
+  if (!paidDate) { alert("Enter the date you paid."); return; }
+  if (isNaN(amount) || amount < 0) { alert("Enter the amount you paid."); return; }
+  var byMonth = monthlyTotals();
+  var b = byMonth[month];
+  var rec = { month: month, dueDate: dueDateForMonth(month), remitTotal: b ? r2(b.remit) : amount, paidDate: paidDate, confirmation: conf, paidAmount: r2(amount) };
+  remittances = remittances.filter(function (r) { return r.month !== month; });
+  remittances.push(rec);
+  saveLocals();
+  backendPost({ action: "remittanceSave", month: month, dueDate: rec.dueDate, remitTotal: rec.remitTotal, paidDate: paidDate, confirmation: conf, paidAmount: rec.paidAmount });
+  $("remitStatus").innerHTML = '<span class="ok">' + esc(monthName(month)) + ' marked as remitted — paid ' + esc(paidDate) + ', ' + money(rec.paidAmount) + (conf ? ', confirmation ' + esc(conf) : '') + '.</span>';
+  renderCraReport();
+};
+// ============================================================================
+// INIT
+// ============================================================================
+(function init() {
+  var dp = defaultPeriod();
+  $("ppStart").value = dp.start;
+  $("ppEnd").value = dp.end;
+  $("payDate").value = dp.payDate;
+  $("craMonth").value = localDateStr().slice(0, 7);
+  $("remitPaidDate").value = localDateStr();
+  populateEmployees();
+  applySavedSettings();
+  renderRuns();
+  renderEmailList();
+  renderCraReport();
+  renderRemitList();
+  initLoginGate();
+})();
+</script>
+</body>
+</html>
