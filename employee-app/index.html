@@ -6,72 +6,76 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Raven &amp; Roses">
-<meta name="theme-color" content="#111111">
+<meta name="theme-color" content="#f7f1e3">
 <link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
 
 <title>Raven &amp; Roses — Time Card</title>
 <style>
-  body{font-family:system-ui,-apple-system,sans-serif;max-width:640px;margin:0 auto;padding:16px;line-height:1.45;color:#111}
-  h1{font-size:1.4rem} h2{font-size:1.1rem;margin-top:1.5em}
+  body{font-family:"EB Garamond",Georgia,serif;max-width:640px;margin:0 auto;padding:16px;line-height:1.5;background:#f7f1e3;color:#221f1a}
+  body::before{content:"";position:fixed;inset:0;background-image:url('../cream-velvet-roses.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;opacity:.5;pointer-events:none;z-index:0}
+  #appContent{position:relative;z-index:1}
+  h1{font-family:"Cormorant Garamond",serif;font-size:1.6rem;color:#7a5c14;border-bottom:2px solid #d4af37;padding-bottom:.2em}
+  h2{font-family:"Cormorant Garamond",serif;font-size:1.25rem;margin-top:1.5em;color:#7a5c14}
   label{display:block;margin:.6em 0 .2em;font-weight:600}
-  input,select,button,textarea{font-size:1rem;padding:.6em;width:100%;box-sizing:border-box}
-  button{margin:.4em 0;background:#111;color:#fff;border:0;border-radius:8px;cursor:pointer}
-  button.secondary{background:#eee;color:#111}
+  input,select,button,textarea{font-family:inherit;font-size:1rem;padding:.6em;width:100%;box-sizing:border-box;background:#fffdf7;border:1px solid #c9a86a;border-radius:8px;color:#221f1a}
+  button{margin:.4em 0;background:#1d1d23;color:#f5d76e;border:1px solid #d4af37;border-radius:8px;cursor:pointer}
+  button.secondary{background:#f3e9c8;color:#221f1a;border:1px solid #b58900}
   button:disabled{opacity:.5}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .card{border:1px solid #ccc;border-radius:12px;padding:12px;margin:12px 0}
-  .tap{display:inline-block;width:auto;padding:.5em .9em;margin:.25em .25em .25em 0;background:#f2f2f2;border:1px solid #999;border-radius:999px;color:#111}
-  .tap.on{background:#1a7a2e;color:#fff;border-color:#1a7a2e}
+  .card{border:1px solid #c9a86a;border-radius:12px;padding:12px;margin:12px 0;background:rgba(255,253,247,.94);box-shadow:0 1px 4px rgba(122,92,20,.12)}
+  .small{font-size:.85rem;color:#5a5346} .ok{color:#1a7a2e;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:.9rem} td,th{border-bottom:1px solid #ddd2b8;padding:.4em;text-align:left}
+  pre{white-space:pre-wrap;background:#f3e9c8;padding:12px;border-radius:8px}
+  .tap{display:inline-block;width:auto;padding:.5em .9em;margin:.25em .25em .25em 0;background:#f3e9c8;border:1px solid #b58900;border-radius:999px;color:#221f1a}
+  .tap.on{background:#1d1d23;color:#f5d76e;border-color:#d4af37}
   .picgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .piccard{border:1px solid #999;border-radius:12px;padding:10px;text-align:center;background:#fff}
+  .piccard{border:1px solid #c9a86a;border-radius:12px;padding:10px;text-align:center;background:rgba(255,253,247,.94)}
   .piccard.need{border:3px solid #b00020;background:#fff0f0}
   .pic{font-size:3rem;line-height:1.2}
   .piccard button{width:auto;padding:.5em 1em}
   .piccard button.needbtn{background:#b00020}
-  .piccard.discontinued{opacity:.75;background:#f2f2f2}
-  .piccard.discontinued .disc{font-weight:700;color:#555}
-  .piccard button.reusebtn{background:#555}
-  .small{font-size:.85rem;color:#555} .ok{color:#1a7a2e;font-weight:700}
+  .piccard.discontinued{opacity:.75;background:#efe8d6}
+  .piccard.discontinued .disc{font-weight:700;color:#5a5346}
+  .piccard button.reusebtn{background:#5a5346}
   .submit-big{background:#1a7a2e;font-size:1.1rem;padding:.9em;margin:.8em 0}
   .submit-box{border:2px solid #1a7a2e;border-radius:10px;padding:12px;margin:12px 0;background:#f0f8f0}
-  .submitted{border:1px solid #999;border-radius:10px;padding:10px;margin:10px 0;background:#fffdf0}
-  .monthly-task{border:1px solid #999;border-radius:10px;padding:10px;margin:10px 0;background:#fffdf0}
+  .submitted{border:1px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:#fffdf0}
+  .monthly-task{border:1px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
   .monthly-task.done{border-color:#1a7a2e;background:#f0f8f0}
-  .monthly-task h3{margin:.2em 0;font-size:1rem}
+  .monthly-task h3{margin:.2em 0;font-size:1rem;font-family:"Cormorant Garamond",serif;color:#7a5c14}
   .monthly-task .donebtn{width:auto;padding:.5em 1em;background:#1a7a2e}
-  .monthly-task .donebtn.undobtn{background:#555}
-  .guide-room{border:1px solid #999;border-radius:10px;padding:10px;margin:10px 0;background:#fff}
-  .guide-room h3{margin:.2em 0;font-size:1rem}
+  .monthly-task .donebtn.undobtn{background:#5a5346}
+  .guide-room{border:1px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
+  .guide-room h3{margin:.2em 0;font-size:1rem;font-family:"Cormorant Garamond",serif;color:#7a5c14}
   .guide-room input{margin:.4em 0}
-  .guide-item{width:100%;text-align:left;background:#f2f2f2;border:1px solid #999;border-radius:8px;padding:.7em;margin:.3em 0;color:#111}
-  .guide-item small{color:#555}
+  .guide-item{width:100%;text-align:left;background:#f3e9c8;border:1px solid #c9a86a;border-radius:8px;padding:.7em;margin:.3em 0;color:#221f1a}
+  .guide-item small{color:#5a5346}
   .guide-detail{border:1px solid #1a7a2e;border-radius:10px;padding:10px;margin:10px 0;background:#f0f8f0}
-  .guide-detail h3{margin:.2em 0}
-  .guide-chip{display:inline-block;width:auto;padding:.5em .9em;margin:.25em .25em .25em 0;background:#f2f2f2;border:1px solid #999;border-radius:999px;color:#111}
-  .guide-chip.on{background:#111;color:#fff;border-color:#111}
-  .service-note{border:2px solid #999;border-radius:10px;padding:10px;margin:10px 0;background:#fff}
+  .guide-detail h3{margin:.2em 0;font-family:"Cormorant Garamond",serif;color:#7a5c14}
+  .guide-chip{display:inline-block;width:auto;padding:.5em .9em;margin:.25em .25em .25em 0;background:#f3e9c8;border:1px solid #b58900;border-radius:999px;color:#221f1a}
+  .guide-chip.on{background:#1d1d23;color:#f5d76e;border-color:#d4af37}
+  .service-note{border:2px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
   .service-note.good{border-color:#1a7a2e;background:#f0f8f0}
   .service-note.okay{border-color:#b58900;background:#fffdf0}
   .service-note.notgood{border-color:#b00020;background:#fff0f0}
   .guide-search{margin:.5em 0}
-  table{width:100%;border-collapse:collapse;font-size:.9rem} td,th{border-bottom:1px solid #ddd;padding:.4em;text-align:left}
-  pre{white-space:pre-wrap;background:#f7f7f7;padding:12px;border-radius:8px}
-  /* --- Login gate, backend banner, watermark, privacy --- */
-  #loginOverlay{position:fixed;inset:0;background:#fff;z-index:9999;padding:24px;overflow:auto}
-  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #111;border-radius:12px;padding:20px}
-  #backendBanner{border:2px solid #b58900;background:#fffdf0;border-radius:10px;padding:10px;margin:12px 0}
-  #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
   #privacyNote{border:2px solid #b00020;background:#fff0f0;border-radius:10px;padding:10px;margin:12px 0;font-weight:700}
-  #watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);transform-origin:center;z-index:9998;pointer-events:none;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#111;opacity:.055;letter-spacing:.05em}
   #copyWarning{position:fixed;left:12px;right:12px;top:12px;z-index:9997;background:#fff0f0;border:2px solid #b00020;border-radius:10px;padding:12px;display:none;font-weight:700}
-  body.app-hidden #appContent{filter:blur(10px)}
   .protect{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-  .codes-box{border:2px solid #999;border-radius:10px;padding:12px;margin:10px 0;background:#fffdf0}
+  .codes-box{border:2px solid #c9a86a;border-radius:10px;padding:12px;margin:10px 0;background:#fffdf0}
   .codes-blurred{filter:blur(7px);-webkit-user-select:none;user-select:none;cursor:pointer}
   .codes-revealed{cursor:pointer}
-  .check-item{display:block;width:100%;text-align:left;background:#f2f2f2;border:1px solid #999;border-radius:8px;padding:.7em;margin:.3em 0;color:#111}
-  .check-item.on{background:#1a7a2e;color:#fff;border-color:#1a7a2e}
+  .check-item{display:block;width:100%;text-align:left;background:#f3e9c8;border:1px solid #c9a86a;border-radius:8px;padding:.7em;margin:.3em 0;color:#221f1a}
+  .check-item.on{background:#1d1d23;color:#f5d76e;border-color:#d4af37}
   .check-item .tick{font-weight:700;margin-right:.4em}
+  #loginOverlay{position:fixed;inset:0;background:linear-gradient(rgba(247,241,227,.88),rgba(247,241,227,.88)),url('../cream-velvet-roses.jpg') center/cover fixed;z-index:9999;padding:24px;overflow:auto}
+  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #b58900;border-radius:12px;padding:20px;background:rgba(255,253,247,.97);box-shadow:0 4px 18px rgba(122,92,20,.25)}
+  #loginOverlay h1{border-bottom:0}
+  #backendBanner{border:2px solid #b58900;background:#fffdf0;border-radius:10px;padding:10px;margin:12px 0}
+  #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
+  #watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);transform-origin:center;z-index:9998;pointer-events:none;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#1d1d23;opacity:.05;letter-spacing:.05em}
+  body.app-hidden #appContent{filter:blur(10px)}
 </style>
 </head>
 <body>
