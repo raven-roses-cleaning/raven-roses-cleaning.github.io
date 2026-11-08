@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Raven &amp; Roses">
 <meta name="theme-color" content="#f7f1e3">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-payroll-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
 <title>Raven &amp; Roses — Payroll (Krystal only)</title>
 <style>
@@ -31,9 +34,15 @@
   .card.warncard{border:2px solid #b58900;background:#fffdf0}
   .warn{color:#b00020;font-weight:700}
   @media print { button, input, select, textarea, .noprint, #loginOverlay, #signOutBtn { display:none !important; } }
-  #loginOverlay{position:fixed;inset:0;background:linear-gradient(rgba(247,241,227,.88),rgba(247,241,227,.88)),url('../cream-velvet-roses.jpg') center/cover fixed;z-index:9999;padding:24px;overflow:auto}
-  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #b58900;border-radius:12px;padding:20px;background:rgba(255,253,247,.97);box-shadow:0 4px 18px rgba(122,92,20,.25)}
-  #loginOverlay h1{border-bottom:0}
+  #loginOverlay{position:fixed;inset:0;background:linear-gradient(rgba(247,241,227,.72),rgba(247,241,227,.72)),url('../cream-velvet-roses.jpg') center/cover fixed;z-index:9999;padding:24px;overflow:auto}
+  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #b58900;border-radius:16px;padding:24px;background:rgba(255,253,247,.97);box-shadow:0 0 0 4px rgba(212,175,55,.25),0 6px 24px rgba(122,92,20,.3)}
+  #loginOverlay h1{border-bottom:0;text-align:center;font-size:1.8rem;margin-bottom:.1em}
+  .login-divider{display:flex;align-items:center;gap:10px;color:#b58900;margin:6px 0 10px}
+  .login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:#d4af37}
+  .login-sub{font-family:"Cormorant Garamond",serif;font-size:1.15rem;color:#7a5c14;text-align:center;letter-spacing:.06em;margin:0 0 1em}
+  #loginOverlay label{font-family:"Cormorant Garamond",serif;font-size:1.05rem;color:#7a5c14;letter-spacing:.02em}
+  #loginOverlay input:focus{outline:none;border-color:#b58900;box-shadow:0 0 0 3px rgba(212,175,55,.3)}
+  #loginOverlay button{font-family:"Cormorant Garamond",serif;font-size:1.15rem;letter-spacing:.05em;padding:.7em}
   #backendBanner{border:2px solid #b58900;background:#fffdf0;border-radius:10px;padding:10px;margin:12px 0}
   #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
   #watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);transform-origin:center;z-index:9998;pointer-events:none;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#1d1d23;opacity:.05;letter-spacing:.05em}
@@ -44,7 +53,9 @@
 
 <div id="loginOverlay">
   <div class="login-box">
-    <h1>🐦‍⬛ Raven &amp; Roses — Payroll</h1>
+    <h1>🐦‍⬛ Raven &amp; Roses</h1>
+    <div class="login-divider">🌹</div>
+    <p class="login-sub">Payroll — Sign in</p>
     <p class="small"><strong>Krystal only — do not give this app to an employee.</strong> This is where pay is calculated and paystubs are sent. It never shows in the employee app.</p>
     <p id="loginBackendNote" class="small"></p>
     <label for="loginCode">Manager code</label>
