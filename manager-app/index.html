@@ -26,22 +26,97 @@
   .small{font-size:.85rem;color:#555} .ok{color:#1a7a2e;font-weight:700}
   table{width:100%;border-collapse:collapse;font-size:.9rem} td,th{border-bottom:1px solid #ddd;padding:.4em;text-align:left}
   pre{white-space:pre-wrap;background:#f7f7f7;padding:12px;border-radius:8px}
+  /* --- Login gate, banner, watermark --- */
+  #loginOverlay{position:fixed;inset:0;background:#fff;z-index:9999;padding:24px;overflow:auto}
+  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #111;border-radius:12px;padding:20px}
+  #backendBanner{border:2px solid #b58900;background:#fffdf0;border-radius:10px;padding:10px;margin:12px 0}
+  #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
+  #watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);transform-origin:center;z-index:9998;pointer-events:none;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#111;opacity:.055;letter-spacing:.05em}
+  body.app-hidden #appContent{filter:blur(10px)}
+  .emp-row{border:1px solid #999;border-radius:10px;padding:10px;margin:10px 0;background:#fff}
+  .emp-row.revoked{opacity:.75;background:#f2f2f2}
+  .emp-row input,.emp-row select{margin:.3em 0}
+  .revoke{background:#b00020} .restore{background:#1a7a2e}
+  details{margin:.4em 0} details summary{cursor:pointer;font-weight:600}
 </style>
 </head>
 <body>
+<div id="watermark" aria-hidden="true"></div>
+<div id="loginOverlay">
+  <div class="login-box">
+    <h1 style="margin-top:0">🐦‍⬛ Raven &amp; Roses — Manager sign in</h1>
+    <p class="small"><strong>Krystal only.</strong> Sign in with your manager code. This
+    app is never reachable without it — do not give this file to an employee.</p>
+    <p id="loginBackendNote" class="small"></p>
+    <label for="loginCode">Manager code</label>
+    <input id="loginCode" type="password" inputmode="numeric" autocomplete="off" placeholder="Your manager code">
+    <button id="loginBtn">Sign in as Krystal</button>
+    <p id="loginError" class="small" style="color:#b00020;font-weight:700"></p>
+    <div id="reviewModeBox" style="display:none">
+      <hr>
+      <p class="small"><strong>Review mode (no shared backend yet).</strong> The backend
+      is not connected, so there is no manager code to check against. Review
+      mode lets Krystal look through the app — everything saves on this
+      phone only, and nothing syncs. Set the manager code once the backend
+      is connected; after that, this app opens with the code only.</p>
+      <button id="reviewBtn" class="secondary">Continue in review mode</button>
+    </div>
+  </div>
+</div>
+<div id="appContent">
 <h1>🐦‍⬛ Raven &amp; Roses — Manager</h1>
 <p class="small"><strong>Krystal only — do not give this file to an employee.</strong> No GPS, no payroll calculation in this app — hours only, for now.</p>
+<div id="backendBanner"></div>
+<button id="signOutBtn" class="secondary" style="width:auto;padding:.4em 1em">Sign out</button>
 
 <div class="card">
   <h2>How entries get here — for now</h2>
   <p class="small">There is no shared server yet. This weekend we will work on that.<br>
   <strong>Testing on one phone:</strong> open the employee app and the manager app in the same browser on the same phone — they share the same saved entries, so you will see her entries here straight away.<br>
-  <strong>Different phones (manual bridge, until a backend is built):</strong> the employee taps “Export for Krystal (JSON)” in her app, sends you that file, and you tap “Import employee file” below. Approvals you make here will not go back to her phone automatically until the backend is built — tell her the result for now.</p>
+  <strong>Different phones (manual bridge, until the backend is connected):</strong> the employee taps “Export for Krystal (JSON)” in her app, sends you that file, and you tap “Import employee file” below. Once the backend is deployed and the BACKEND_URL is pasted into both apps, entries, approvals, house instructions, monthly focus and the guide sync automatically — no export / import needed. Approvals you make here will not go back to her phone automatically until then — tell her the result for now.</p>
   <label for="viewDate">Date to view</label>
   <input id="viewDate" type="date">
   <label for="empFilter">Employee</label>
   <select id="empFilter"><option value="">All employees</option></select>
   <button id="refreshBtn" class="secondary">Refresh</button>
+</div>
+
+<div class="card" id="employeesCard">
+  <h2>Employees — codes, rates &amp; access (Krystal only)</h2>
+  <p class="small">Each employee signs into her app with her name and her own personal
+  code. Set the code here — tell it to her in person, never in a group
+  chat or email thread. A code is blank until you set it; an employee
+  with no code cannot sign in at all.</p>
+  <p class="small"><strong>Revoking cuts off app access only.</strong> If you revoke
+  someone, they cannot get into the app at all — even with the app still
+  on their phone. Revoking <strong>never</strong> cuts off their own
+  signed contract / information package: you give each employee their
+  own paper copy AND their own digital copy (PDF) at signing, separately
+  — never app-only. They always keep that, whatever happens to app access.</p>
+  <div id="employeeList"></div>
+  <h3 style="font-size:1rem">Add a new employee</h3>
+  <p class="small">Only add someone once they are hired. Do not add interviewees.</p>
+  <label for="empNewName">Name</label>
+  <input id="empNewName" placeholder="e.g. Ramona Cyre">
+  <label for="empNewRole">Role</label>
+  <select id="empNewRole">
+    <option value="Employee">Employee</option>
+    <option value="Manager">Manager</option>
+  </select>
+  <label for="empNewRate">Hourly rate ($)</label>
+  <select id="empNewRate">
+    <option value="20">Training — $20/hr</option>
+    <option value="23" selected>Starting — $23/hr</option>
+    <option value="24">After 3-month probation — $24/hr</option>
+    <option value="24.5">$24.50/hr</option>
+    <option value="25">$25/hr</option>
+    <option value="25.5">$25.50/hr</option>
+    <option value="26">Cap — $26/hr</option>
+  </select>
+  <label for="empNewCode">Personal code (leave blank and set it later if you like)</label>
+  <input id="empNewCode" type="password" autocomplete="off" placeholder="Blank until you set it">
+  <button id="empAddBtn" class="secondary">Add employee</button>
+  <p id="empStatus" class="small"></p>
 </div>
 
 <div class="card">
@@ -71,6 +146,16 @@
 <h2>Day total</h2>
 <p id="dayTotal" class="small"></p>
 
+<h2>Weekly view</h2>
+<div class="card">
+  <p class="small">Pick a week (Monday–Sunday). Hours and pay estimates are per employee for that week, plus mileage for the week. Pay is an estimate only — the payroll calculator is the pay authority, and final pay is confirmed by Krystal.</p>
+  <label for="weekPick">Week starting (Monday)</label>
+  <input id="weekPick" type="date">
+  <button id="weekBtn" class="secondary">Show this week</button>
+  <div id="weekView"></div>
+  <p id="weekTotals" class="small"></p>
+</div>
+
 <h2>Today’s entries</h2>
 <div id="entries"></div>
 
@@ -89,6 +174,12 @@
 <div id="mileageView"></div>
 <p id="mileageTotals" class="small"></p>
 
+<h2>Mileage submissions</h2>
+<div class="card">
+  <p class="small">Months employees have submitted, per employee. Km only — the CRA rate is applied by Krystal in payroll. Mileage is submitted on the last day of the month and paid out on the 5th.</p>
+  <div id="mileSubView"></div>
+</div>
+
 
 <h2>Time off / sick requests — approve / decline (Krystal only)</h2>
 <div id="timeOffMgr"></div>
@@ -103,16 +194,92 @@
 <p id="obStatus" class="small"></p>
 
 <h2>House instructions — edit (Krystal only)</h2>
-<p class="small">Add what gets done at each house, plus special instructions. The employee sees this read-only in her app, by first name only. Do not put anything here you would not want the cleaner for that house to see.</p>
+<p class="small">Add what gets done at each house, plus special instructions. The employee sees this read-only in her app, by first name only. Do not put anything here you would not want the cleaner for that house to see. The <strong>service note</strong> below is also shown to the cleaner for that house, at the top of their house instructions — it is an internal staff note, so keep it professional and do not show it to the client.</p>
 <label for="hiName">Client first name</label>
 <input id="hiName" placeholder="e.g. Maria">
+<label for="hiServiceTag">Service note — how is service at this house?</label>
+<select id="hiServiceTag">
+  <option value="">No service rating set yet</option>
+  <option value="good">Good service</option>
+  <option value="okay">Okay service</option>
+  <option value="not-so-good">Not so good service</option>
+</select>
+<label for="hiServiceNote">Service note — what should the cleaner know? (internal, staff only)</label>
+<textarea id="hiServiceNote" rows="3" placeholder="e.g. Good service — easy access, dog is friendly. / Not so good service — hard to get in, allow extra time. — write it as you want the cleaner to see it, professionally"></textarea>
 <label for="hiTasks">What gets done at this house</label>
 <textarea id="hiTasks" rows="5" placeholder="e.g. Kitchen, bathrooms, floors, dusting… — write it as you want her to see it"></textarea>
 <label for="hiSpecial">Special instructions</label>
 <textarea id="hiSpecial" rows="4" placeholder="e.g. Dog in backyard, key under mat, no bleach on…"></textarea>
+<label for="hiCodes">House codes — lock / alarm / key codes</label>
+<textarea id="hiCodes" rows="3" placeholder="e.g. Front door code 1234, alarm 5678 — write each code on its own line. Blurred in the employee app until she taps it at the door."></textarea>
 <button id="hiSaveBtn">Save house instructions</button>
 <p id="hiStatus" class="small"></p>
 <div id="hiList"></div>
+
+<h2>This Month&rsquo;s Focus — set the monthly tasks (Krystal only)</h2>
+<div class="card">
+  <p class="small"><strong>TO-DO in every house for a whole month, then it rotates</strong> &mdash; not a check or inspection. Set 1&ndash;2 tasks for the month (sometimes more, depending on the task and the season). They last the whole month so every house gets done properly, then next month you set the next task(s) here and it rotates. The employee sees these in her app under &ldquo;This Month&rsquo;s Focus&rdquo; and ticks each one off per house.</p>
+  <p class="small"><strong>How she gets the update:</strong> this list is saved in the app&rsquo;s shared data. On one phone / same browser it shows in her app straight away. On different phones it travels with the JSON export / import until the shared backend is connected — then it syncs automatically when you save here, with no separate message needed. The monthly tasks are also included in the day JSON export below.</p>
+  <label for="mfMonth">Month these tasks apply to</label>
+  <input id="mfMonth" placeholder="e.g. November 2026">
+  <label for="mfNote">Note to the employee (optional)</label>
+  <input id="mfNote" placeholder="e.g. Do these in every house this month">
+  <div id="mfTaskList"></div>
+  <label for="mfTitle">New task — what to do</label>
+  <input id="mfTitle" placeholder="e.g. Clean the vents">
+  <label for="mfDetail">New task — detail (what exactly, in every house)</label>
+  <textarea id="mfDetail" rows="3" placeholder="e.g. Wipe down every vent cover and vacuum inside / around the vents"></textarea>
+  <button id="mfAddBtn" class="secondary">Add this task to this month</button>
+  <p id="mfStatus" class="small"></p>
+  <label for="mfRotation">Rotation — what comes next (one per line, Krystal&rsquo;s list, not final until you set it)</label>
+  <textarea id="mfRotation" rows="4" placeholder="e.g. December — Wipe down baseboards in every house"></textarea>
+  <button id="mfSaveBtn">Save Monthly Focus (month, tasks &amp; rotation)</button>
+  <p class="small">Starter examples are loaded the first time only, clearly marked EXAMPLE &mdash; replace them with your real tasks. Examples: &ldquo;Clean the vents&rdquo; and &ldquo;Vacuum under furniture&rdquo;.</p>
+  <h3 style="font-size:1rem">Tick-offs this month (per house)</h3>
+  <div id="mfDoneList"></div>
+</div>
+
+<h2>What to use — Supplies Guide — edit (Krystal only)</h2>
+<div class="card" id="guideMgrCard">
+  <p class="small"><strong>The employee sees this in her app as &ldquo;What to use — Supplies Guide&rdquo;, by the cleaning supplies.</strong> It is <strong>completely separate</strong> from House instructions above — house instructions say what to <em>do</em> in a specific house / room; this guide says what <em>supply to use</em> for an item / dirt, and how. Each item is clickable in her app: tap it and it shows a list of what it is good for, how to use it, and the notes — including the notes from the bottle / lid, so she does not have to go find the bottle to read it. She can open a room and search inside that room, or use the search bar at the top of the guide to search anything.</p>
+  <p class="small"><strong>How she gets the update:</strong> this guide is saved in the app&rsquo;s shared data. On one phone / same browser it shows in her app straight away. On different phones it travels with the JSON export / import until the shared backend is connected — then it syncs automatically when you save here. The guide is also included in the day JSON export below.</p>
+  <p class="small">Starter examples are loaded the first time only, clearly marked EXAMPLE &mdash; replace them with your real supplies, uses and label notes. Bar Keepers Friend is listed only if you confirm it is in the standard kit.</p>
+  <label for="guideRoomSel">Room to add an item to</label>
+  <select id="guideRoomSel"></select>
+  <label for="guideNewRoom">Or add a new room</label>
+  <input id="guideNewRoom" placeholder="e.g. Laundry Room">
+  <button id="guideAddRoomBtn" class="secondary">Add this room</button>
+  <label for="guideItemName">Item — what is being cleaned</label>
+  <input id="guideItemName" placeholder="e.g. Stove / cooktop">
+  <label for="guideItemSupply">Supply to use (Krystal provides — technicians do not buy supplies)</label>
+  <input id="guideItemSupply" placeholder="e.g. Cleaning solutions (bulk)">
+  <label for="guideItemGood">Good for — one per line (what dirt / stain it cleans)</label>
+  <textarea id="guideItemGood" rows="3" placeholder="e.g. Grease&#10;Cooking splatters"></textarea>
+  <label for="guideItemHow">How to use it</label>
+  <textarea id="guideItemHow" rows="3" placeholder="e.g. Apply solution, wipe with a cloth, rinse and dry. Wear gloves."></textarea>
+  <label for="guideItemNotes">Notes — copy the notes from the bottle / lid here, plus anything she needs to know</label>
+  <textarea id="guideItemNotes" rows="3" placeholder="e.g. Label notes from the bottle / lid — uses, warnings, what not to use it on. Mark TO CONFIRM if not confirmed yet."></textarea>
+  <label for="guideItemTags">Search words — comma separated (so she finds it by searching the dirt, stain or item)</label>
+  <input id="guideItemTags" placeholder="e.g. stove, grease, hob">
+  <button id="guideAddItemBtn" class="secondary">Add / save this item</button>
+  <p id="guideStatus" class="small"></p>
+  <h3 style="font-size:1rem">All guide items (tap Edit to change one, Remove to delete it)</h3>
+  <div id="guideMgrList"></div>
+  <h3 style="font-size:1rem">Supplies — what each supply is good for</h3>
+  <p class="small">Tap a supply in the employee app to see everything it is good for. Add a supply here, or edit its good-for list / notes.</p>
+  <label for="guideSupName">Supply name</label>
+  <input id="guideSupName" placeholder="e.g. Cleaning solutions (bulk)">
+  <label for="guideSupGood">Good for — one per line</label>
+  <textarea id="guideSupGood" rows="3" placeholder="e.g. Grease&#10;Everyday dirt"></textarea>
+  <label for="guideSupHow">How to use it</label>
+  <textarea id="guideSupHow" rows="3" placeholder="e.g. Use as shown — on a cloth / sponge, wear gloves. Never mix cleaning products."></textarea>
+  <label for="guideSupNotes">Notes — copy the notes from the bottle / lid here</label>
+  <textarea id="guideSupNotes" rows="3" placeholder="e.g. Label notes from the bottle / lid — uses, warnings."></textarea>
+  <button id="guideAddSupBtn" class="secondary">Add / save this supply</button>
+  <div id="guideSupList"></div>
+  <button id="guideSaveBtn">Save Supplies Guide</button>
+  <p id="guideSaveStatus" class="small"></p>
+</div>
 
 <h2>Export / import</h2>
 <button id="copyBtn">Copy day summary as text</button>
@@ -123,9 +290,19 @@
 <p id="importStatus" class="small"></p>
 <pre id="summary"></pre>
 <button id="clearBtn" class="secondary">Clear test entries on this device</button>
-<p class="small">Weekend work still to do: shared backend so phones sync automatically, employee codes so multiple employees stay separate, a decline-reason field that is saved (not just a pop-up), notifications when a new request arrives, and a weekly / payroll view. None of that is in this file yet.</p>
+<p class="small">Weekend build status (Nov 8, 2026): shared backend is BUILT (Google Sheet “Raven Employee System” + Apps Script in the backend folder — deploy it and paste the /exec URL into both apps to connect it); employee codes + manager code with revoke are BUILT; screenshot / copy warnings + watermark + blurred codes are BUILT (true OS-screenshot blocking still needs a native wrapper — see “Still for Krystal” in the weekend checklist); notifications are backend emails on clock-out, adjustment, time-off and mileage submission; decline reasons are saved fields; weekly view + mileage submissions view are BUILT. Still to do: phone test everything; SIN vault (NOT built — do not type a SIN anywhere); payroll automatic import (draft payroll still uses manual JSON import); final kit list + real supply photos.</p>
 
+</div>
 <script>
+// ============================================================================
+// BACKEND — shared Google Sheet backend (free route, like Raven Forms).
+// BACKEND_URL is EMPTY until the Apps Script web app is deployed (see
+// backend/BACKEND-SETUP.md). With it empty the app runs in local-only mode:
+// everything works exactly as before, data stays on this phone, and a
+// banner says so. When it is set, the app syncs to the shared backend.
+// ============================================================================
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec"; // <-- PASTE THE BACKEND /exec URL HERE after deployment
+const BACKEND_ENABLED = BACKEND_URL !== "";
 const KEY = "ravenTimeCardDemoV1";
 const ADJKEY = "ravenTimeCardAdjustmentsV1";
 let entries = JSON.parse(localStorage.getItem(KEY) || "[]");
@@ -134,6 +311,23 @@ const MILEKEY = "ravenMileageV1";
 const HOUSEKEY = "ravenHouseInstructionsV1";
 let mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]");
 let houseInstructions = JSON.parse(localStorage.getItem(HOUSEKEY) || "{}");
+const MONTHLYKEY = "ravenMonthlyFocusV1";
+const MONTHLYDONEKEY = "ravenMonthlyDoneV1";
+const DEFAULT_MONTHLY = {
+  month: "November 2026",
+  note: "EXAMPLES ONLY — Krystal to replace with this month's real task(s).",
+  tasks: [
+    { id: "ex-vents", title: "Clean the vents", detail: "EXAMPLE: Wipe down every vent cover in the house and vacuum inside / around the vents. Do this in every house this month." },
+    { id: "ex-under-furniture", title: "Vacuum under furniture", detail: "EXAMPLE: Vacuum under sofas, beds and other large furniture you can safely reach under. Do this in every house this month." }
+  ],
+  rotation: [
+    "EXAMPLE rotation — Krystal to replace: December — Wipe down baseboards in every house",
+    "EXAMPLE rotation — Krystal to replace: January — Wipe down blinds in every house",
+    "EXAMPLE rotation — Krystal to replace: Spring — Vacuum behind appliances you can safely move"
+  ]
+};
+let monthlyFocus = JSON.parse(localStorage.getItem(MONTHLYKEY) || "null") || JSON.parse(JSON.stringify(DEFAULT_MONTHLY));
+let monthlyDone = JSON.parse(localStorage.getItem(MONTHLYDONEKEY) || "[]");
 const TIMEOFFKEY = "ravenTimeOffV1";
 const ONBOARDKEY = "ravenOnboardV1";
 let timeOff = JSON.parse(localStorage.getItem(TIMEOFFKEY) || "[]");
@@ -147,8 +341,8 @@ const localDate = () => { const d = new Date(); return d.getFullYear() + "-" + S
 $("viewDate").value = localDate();
 function fmt(t){ return new Date(t).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
 function hours(a,b){ return ((b-a)/3600000); }
-function saveAll(){ localStorage.setItem(TIMEOFFKEY, JSON.stringify(timeOff)); localStorage.setItem(ONBOARDKEY, JSON.stringify(onboard)); localStorage.setItem(KEY, JSON.stringify(entries)); localStorage.setItem(ADJKEY, JSON.stringify(adjustments)); localStorage.setItem(MILEKEY, JSON.stringify(mileage)); localStorage.setItem(HOUSEKEY, JSON.stringify(houseInstructions)); localStorage.setItem(RATEKEY, JSON.stringify(employeeRates)); if (!isNaN(craRate)) localStorage.setItem(CRAKEY, String(craRate)); render(); }
-function reload(){ timeOff = JSON.parse(localStorage.getItem(TIMEOFFKEY) || "[]"); onboard = JSON.parse(localStorage.getItem(ONBOARDKEY) || "{}"); entries = JSON.parse(localStorage.getItem(KEY) || "[]"); adjustments = JSON.parse(localStorage.getItem(ADJKEY) || "[]"); mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]"); houseInstructions = JSON.parse(localStorage.getItem(HOUSEKEY) || "{}"); employeeRates = JSON.parse(localStorage.getItem(RATEKEY) || "{}"); craRate = parseFloat(localStorage.getItem(CRAKEY) || ""); render(); }
+function saveAll(){ localStorage.setItem(GUIDEKEY, JSON.stringify(guide)); localStorage.setItem(MONTHLYKEY, JSON.stringify(monthlyFocus)); localStorage.setItem(MONTHLYDONEKEY, JSON.stringify(monthlyDone)); localStorage.setItem(TIMEOFFKEY, JSON.stringify(timeOff)); localStorage.setItem(ONBOARDKEY, JSON.stringify(onboard)); localStorage.setItem(KEY, JSON.stringify(entries)); localStorage.setItem(ADJKEY, JSON.stringify(adjustments)); localStorage.setItem(MILEKEY, JSON.stringify(mileage)); localStorage.setItem(HOUSEKEY, JSON.stringify(houseInstructions)); localStorage.setItem(RATEKEY, JSON.stringify(employeeRates)); if (!isNaN(craRate)) localStorage.setItem(CRAKEY, String(craRate)); render(); }
+function reload(){ guide = JSON.parse(localStorage.getItem(GUIDEKEY) || "null") || JSON.parse(JSON.stringify(DEFAULT_GUIDE)); monthlyFocus = JSON.parse(localStorage.getItem(MONTHLYKEY) || "null") || JSON.parse(JSON.stringify(DEFAULT_MONTHLY)); monthlyDone = JSON.parse(localStorage.getItem(MONTHLYDONEKEY) || "[]"); timeOff = JSON.parse(localStorage.getItem(TIMEOFFKEY) || "[]"); onboard = JSON.parse(localStorage.getItem(ONBOARDKEY) || "{}"); entries = JSON.parse(localStorage.getItem(KEY) || "[]"); adjustments = JSON.parse(localStorage.getItem(ADJKEY) || "[]"); mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]"); houseInstructions = JSON.parse(localStorage.getItem(HOUSEKEY) || "{}"); employeeRates = JSON.parse(localStorage.getItem(RATEKEY) || "{}"); craRate = parseFloat(localStorage.getItem(CRAKEY) || ""); render(); }
 
 function mgrRate(e){
   if (e.rate != null) return e.rate;
@@ -164,15 +358,179 @@ function mgrEntryPay(e){
 }
 
 
+function renderMonthlyFocusMgr(){
+  const el = $("mfTaskList"); if (!el) return;
+  if (document.activeElement !== $("mfMonth")) $("mfMonth").value = monthlyFocus.month || "";
+  if (document.activeElement !== $("mfNote")) $("mfNote").value = monthlyFocus.note || "";
+  if (document.activeElement !== $("mfRotation")) $("mfRotation").value = (monthlyFocus.rotation || []).join("\n");
+  el.innerHTML = monthlyFocus.tasks.length ? monthlyFocus.tasks.map((t, i) => "<div class='card'><strong>" + t.title + "</strong><br>" + t.detail + "<br><button class='smallbtn secondary' onclick='mfRemoveTask(" + i + ")'>Remove this task</button></div>").join("") : "<p class='small'>No tasks set for this month yet — add one below.</p>";
+  const done = monthlyDone.filter(d => d.month === monthlyFocus.month);
+  $("mfDoneList").innerHTML = done.length ? "<table><tr><th>House / job</th><th>Task</th><th>Employee</th><th>Date</th></tr>" + done.map(d => "<tr><td>" + d.job + "</td><td>" + ((monthlyFocus.tasks.find(t => t.id === d.taskId) || {}).title || d.taskId) + "</td><td>" + (d.name || "—") + "</td><td>" + (d.date || "—") + "</td></tr>").join("") + "</table>" : "<p class='small'>No houses ticked off yet this month.</p>";
+}
+window.mfRemoveTask = function(i){ monthlyFocus.tasks.splice(i, 1); saveAll(); renderMonthlyFocusMgr(); };
+$("mfAddBtn").onclick = () => {
+  const title = $("mfTitle").value.trim(), detail = $("mfDetail").value.trim();
+  if (!title || !detail) { alert("Enter both the task and the detail first."); return; }
+  monthlyFocus.tasks.push({ id: "mf-" + Date.now(), title, detail });
+  $("mfTitle").value = ""; $("mfDetail").value = "";
+  $("mfStatus").innerHTML = '<span class="ok">Task added — tap “Save Monthly Focus” below to save the month, tasks &amp; rotation together.</span>';
+  renderMonthlyFocusMgr();
+};
+$("mfSaveBtn").onclick = () => {
+  monthlyFocus.month = $("mfMonth").value.trim() || monthlyFocus.month;
+  monthlyFocus.note = $("mfNote").value.trim();
+  monthlyFocus.rotation = $("mfRotation").value.split("\n").map(s => s.trim()).filter(Boolean);
+  saveAll(); renderMonthlyFocusMgr();
+  mgrBackendPost({ action: "focusSave", month: monthlyFocus.month, note: monthlyFocus.note,
+    tasks: monthlyFocus.tasks, rotation: monthlyFocus.rotation });
+  $("mfStatus").innerHTML = '<span class="ok">Monthly Focus saved for ' + monthlyFocus.month + ' — ' + monthlyFocus.tasks.length + ' task(s). The employee sees these in her app; they sync automatically once the shared backend is connected (see the banner at the top), and travel with the JSON export / import until then.</span>';
+};
+
+const GUIDEKEY = "ravenSuppliesGuideV1";
+// Supplies Guide — "What to use for what". SEPARATE from House instructions:
+// House instructions = what to DO in a specific house/room. This guide = what
+// SUPPLY to use for a specific item / dirt, and how. EXAMPLES ONLY below —
+// Krystal checks / replaces them. Only supplies Krystal provides are listed;
+// technicians do NOT buy supplies. No brand names / chemical mixes are invented
+// here — anything not yet confirmed by Krystal is marked TO CONFIRM.
+// Bar Keepers Friend is listed ONLY if Krystal confirms it is in the kit.
+const DEFAULT_GUIDE = {
+  note: "EXAMPLES ONLY — Krystal to check / replace. Use only supplies Krystal provides.",
+  rooms: [
+    { id: "kitchen", name: "Kitchen", items: [
+      { id: "k-stove", name: "Stove / cooktop", supply: "Cleaning solutions (bulk)", goodFor: ["Grease", "Cooking splatters", "Everyday cooking dirt"], how: "Apply Krystal's cleaning solution as she shows you, wipe with a cloth, rinse the cloth and wipe again, then dry. Wear gloves.", notes: "TO CONFIRM WITH KRYSTAL: which solution, and how long to leave it on a greasy hob.", tags: "stove cooktop hob grease" },
+      { id: "k-oven", name: "Oven", supply: "Scrub Daddies / sponges", goodFor: ["Baked-on food", "Grease inside the oven"], how: "Wipe loose crumbs out first. Apply cleaning solution, leave it as Krystal shows you, scrub gently with a sponge, wipe clean with a damp cloth.", notes: "TO CONFIRM WITH KRYSTAL: oven cleaner / solution, and what not to use on oven glass.", tags: "oven baked-on grease" },
+      { id: "k-fridge", name: "Fridge (outside & shelves)", supply: "Cleaning solutions (bulk)", goodFor: ["Food spills", "Fingerprints", "Sticky marks"], how: "Wipe with cleaning solution on a cloth, then wipe with a clean damp cloth and dry.", notes: "TO CONFIRM WITH KRYSTAL: inside-shelf solution. Do not use anything strong-smelling inside the fridge unless Krystal says so.", tags: "fridge refrigerator spills" },
+      { id: "k-sink", name: "Kitchen sink", supply: "Bar Keepers Friend (only if Krystal confirms)", goodFor: ["Water marks", "Dull stainless steel", "Stains in the sink"], how: "EXAMPLE — Krystal to confirm: use only if Krystal confirms it is in the kit. Follow the notes on the bottle / lid, copied into 'Label notes' below.", notes: "LABEL NOTES — TO COPY FROM THE BOTTLE / LID: Krystal to copy the notes, uses and warnings from the bottle / lid here, so nobody has to go find the bottle to read it. Do NOT use until Krystal confirms.", tags: "sink stainless water marks limescale" },
+      { id: "k-counters", name: "Counters / worktops", supply: "Cleaning solutions (bulk)", goodFor: ["Food marks", "Sticky spots", "Everyday dirt"], how: "Spray / apply solution on a cloth (not straight onto food areas unless Krystal says so), wipe, then wipe with a clean damp cloth.", notes: "TO CONFIRM WITH KRYSTAL: which solution for stone / laminate / wood counters.", tags: "counters worktops" },
+      { id: "k-microwave", name: "Microwave", supply: "Paper towel", goodFor: ["Food splatters inside", "Sticky marks"], how: "Wipe inside with a damp cloth / paper towel and cleaning solution, then dry. Wipe the outside the same way.", notes: "TO CONFIRM WITH KRYSTAL.", tags: "microwave splatters" }
+    ]},
+    { id: "bathroom", name: "Bathroom", items: [
+      { id: "b-toilet", name: "Toilet", supply: "Cleaning solutions (bulk)", goodFor: ["Stains", "Limescale — to confirm", "Everyday dirt"], how: "Clean inside and outside with cleaning solution and a sponge / brush as Krystal shows you. Wear gloves. Rinse / flush and wipe dry where needed.", notes: "TO CONFIRM WITH KRYSTAL: toilet solution and brush. Never mix cleaning products.", tags: "toilet stains limescale" },
+      { id: "b-shower", name: "Shower / bath", supply: "Cleaning solutions (bulk)", goodFor: ["Soap scum", "Water marks", "Mould marks — to confirm"], how: "Apply solution, leave it as Krystal shows you, scrub gently, rinse and wipe dry.", notes: "TO CONFIRM WITH KRYSTAL: shower solution, and what to use on glass doors vs tiles.", tags: "shower bath soap scum water marks" },
+      { id: "b-taps", name: "Bathroom sink & taps", supply: "Cleaning solutions (bulk)", goodFor: ["Water spots", "Limescale — to confirm", "Toothpaste marks"], how: "Wipe with solution on a cloth, rinse the cloth, wipe again and dry so no water spots are left.", notes: "TO CONFIRM WITH KRYSTAL.", tags: "sink taps limescale water spots" },
+      { id: "b-mirror", name: "Mirror / glass", supply: "Cloths / mop heads", goodFor: ["Fingerprints", "Water spots", "Smears"], how: "Wipe with a clean damp cloth, then dry with a dry cloth / paper towel so it is streak-free.", notes: "TO CONFIRM WITH KRYSTAL: glass cloth / solution, if any.", tags: "mirror glass fingerprints" }
+    ]},
+    { id: "living", name: "Living Room", items: [
+      { id: "l-table", name: "Coffee table / wood furniture", supply: "Cloths / mop heads", goodFor: ["Dust", "Fingerprints", "Cup rings — to confirm"], how: "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.", notes: "TO CONFIRM WITH KRYSTAL: wood cleaner / polish, if any — do not use a wet cloth on wood unless she says so.", tags: "wood table dust fingerprints" },
+      { id: "l-tv", name: "TV screen", supply: "Cloths / mop heads", goodFor: ["Dust", "Fingerprints"], how: "Wipe gently with a clean, dry, soft cloth only.", notes: "TO CONFIRM WITH KRYSTAL: do not spray cleaner directly on a screen unless Krystal says so.", tags: "tv screen dust" },
+      { id: "l-floors", name: "Hard floors", supply: "Cloths / mop heads", goodFor: ["Dust", "Footprints", "Everyday dirt"], how: "Vacuum / sweep first, then mop with a damp mop head and Krystal's floor solution, as she shows you.", notes: "TO CONFIRM WITH KRYSTAL: floor solution for wood vs tile / laminate.", tags: "floors mop dust" },
+      { id: "l-sofa", name: "Sofa / upholstery", supply: "Cloths / mop heads", goodFor: ["Dust", "Crumbs", "Surface marks — to confirm"], how: "Vacuum / brush off crumbs and dust first, then wipe / spot-clean only as Krystal shows you.", notes: "TO CONFIRM WITH KRYSTAL: upholstery cleaner, if any.", tags: "sofa upholstery crumbs" }
+    ]},
+    { id: "bedroom", name: "Bedroom", items: [
+      { id: "be-bedside", name: "Bedside tables", supply: "Cloths / mop heads", goodFor: ["Dust", "Fingerprints", "Water rings — to confirm"], how: "Dust with a dry cloth, then wipe with a slightly damp cloth and dry straight away.", notes: "TO CONFIRM WITH KRYSTAL.", tags: "bedside dust" },
+      { id: "be-dresser", name: "Dresser / wood furniture", supply: "Cloths / mop heads", goodFor: ["Dust", "Fingerprints"], how: "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.", notes: "TO CONFIRM WITH KRYSTAL: wood cleaner / polish, if any.", tags: "dresser wood dust" },
+      { id: "be-mirror", name: "Bedroom mirror", supply: "Cloths / mop heads", goodFor: ["Fingerprints", "Water spots", "Smears"], how: "Wipe with a clean damp cloth, then dry with a dry cloth / paper towel so it is streak-free.", notes: "TO CONFIRM WITH KRYSTAL.", tags: "mirror glass fingerprints" },
+      { id: "be-floors", name: "Bedroom floors", supply: "Cloths / mop heads", goodFor: ["Dust", "Footprints", "Everyday dirt"], how: "Vacuum / sweep first, then mop with a damp mop head and Krystal's floor solution, as she shows you.", notes: "TO CONFIRM WITH KRYSTAL.", tags: "floors mop dust" }
+    ]},
+    { id: "general", name: "General / all rooms", items: [
+      { id: "g-vents", name: "Vents", supply: "Cloths / mop heads", goodFor: ["Dust in vents", "Dust on vent covers"], how: "Wipe vent covers with a damp cloth and vacuum inside / around the vents where you can reach. (Also a Monthly Focus task some months.)", notes: "TO CONFIRM WITH KRYSTAL.", tags: "vents dust" },
+      { id: "g-washer", name: "Washing machine (outside)", supply: "Cloths / mop heads", goodFor: ["Dust", "Detergent drips", "Fingerprints"], how: "Wipe with cleaning solution on a cloth, then wipe with a clean damp cloth and dry.", notes: "TO CONFIRM WITH KRYSTAL.", tags: "washing machine" }
+    ]}
+  ],
+  supplies: [
+    { id: "s-solutions", name: "Cleaning solutions (bulk)", goodFor: ["Grease", "Everyday dirt", "Food marks", "Soap scum"], how: "Use as Krystal shows you — on a cloth / sponge, wear gloves. Never mix cleaning products.", notes: "TO CONFIRM WITH KRYSTAL: which solution is which, and what each one is for." },
+    { id: "s-gloves", name: "Gloves", goodFor: ["Protecting your hands", "Bathrooms", "Kitchens"], how: "Wear for cleaning, especially bathrooms and kitchens. Change them if they tear.", notes: "Provided by Krystal." },
+    { id: "s-sponges", name: "Scrub Daddies / sponges", goodFor: ["Baked-on food", "Scrubbing sinks, ovens and baths"], how: "Use with cleaning solution, scrub gently, rinse the sponge often.", notes: "TO CONFIRM WITH KRYSTAL: which sponge for which surface — do not use a rough sponge on glass / shiny surfaces unless she says so." },
+    { id: "s-papertowel", name: "Paper towel", goodFor: ["Wiping", "Drying mirrors and glass", "Quick spills"], how: "Wipe and dry with a clean piece; throw used paper towel away, do not reuse it.", notes: "Provided by Krystal." },
+    { id: "s-soap", name: "Laundry soap (for cloths)", goodFor: ["Washing cleaning cloths"], how: "Use to wash cloths as Krystal shows you. Tap 'Cloths washed' in the app only when actually washed.", notes: "For cloths only — not a surface cleaner." },
+    { id: "s-cloths", name: "Cloths / mop heads", goodFor: ["Dusting", "Wiping", "Drying", "Mopping floors", "Mirrors and glass"], how: "Use a clean cloth for each job where you can. Wash cloths with the provided laundry soap when dirty.", notes: "Provided by Krystal. Wash them — do not use a dirty cloth on a clean surface." },
+    { id: "s-bkf", name: "Bar Keepers Friend (only if Krystal confirms)", goodFor: ["Water marks", "Dull stainless steel", "Stains in sinks — to confirm"], how: "EXAMPLE — Krystal to confirm: use only if Krystal confirms it is in the standard kit. Follow the label notes below.", notes: "LABEL NOTES — TO COPY FROM THE BOTTLE / LID: Krystal to copy the notes, uses and warnings from the bottle / lid here, so nobody has to go find the bottle to read it. Do NOT use until Krystal confirms it is in the kit." }
+  ]
+};
+
+let guide = JSON.parse(localStorage.getItem(GUIDEKEY) || "null") || JSON.parse(JSON.stringify(DEFAULT_GUIDE));
+let guideEditItem = null; // {roomId, itemId} being edited, or null for a new item
+let guideEditSupply = null; // supply id being edited, or null for a new supply
+function saveGuide(){ localStorage.setItem(GUIDEKEY, JSON.stringify(guide)); }
+function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;"); }
+function renderGuideMgr(){
+  const sel = $("guideRoomSel"); if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = (guide.rooms || []).map(r => "<option value='" + r.id + "'>" + esc(r.name) + "</option>").join("");
+  if ((guide.rooms || []).some(r => r.id === cur)) sel.value = cur;
+  $("guideMgrList").innerHTML = (guide.rooms || []).map(r =>
+    "<div class='card'><strong>" + esc(r.name) + "</strong> <button class='smallbtn secondary' onclick=\"guideRemoveRoom(\'" + r.id + "\')\">Remove room</button><br>"
+    + ((r.items || []).length ? (r.items || []).map(it => "<div style='margin:.5em 0'><strong>" + esc(it.name) + "</strong> — Use: " + esc(it.supply) + "<br><span class='small'>Good for: " + esc((it.goodFor || []).join(", ")) + "</span><br><button class='smallbtn secondary' onclick=\"guideEditItemFn(\'" + r.id + "\',\'" + it.id + "\')\">Edit</button> <button class='smallbtn secondary' onclick=\"guideRemoveItem(\'" + r.id + "\',\'" + it.id + "\')\">Remove</button></div>").join("") : "<p class='small'>No items in this room yet.</p>")
+    + "</div>"
+  ).join("");
+  $("guideSupList").innerHTML = (guide.supplies || []).map(s => "<div class='card'><strong>" + esc(s.name) + "</strong><br><span class='small'>Good for: " + esc((s.goodFor || []).join(", ")) + "</span><br><span class='small'>Notes: " + esc(s.notes || "—") + "</span><br><button class='smallbtn secondary' onclick=\"guideEditSupplyFn(\'" + s.id + "\')\">Edit</button> <button class='smallbtn secondary' onclick=\"guideRemoveSupply(\'" + s.id + "\')\">Remove</button></div>").join("");
+}
+window.guideRemoveRoom = function(roomId){ if (!confirm("Remove this room and all its items from the Supplies Guide?")) return; guide.rooms = guide.rooms.filter(r => r.id !== roomId); saveGuide(); renderGuideMgr(); };
+window.guideRemoveItem = function(roomId, itemId){ const r = guide.rooms.find(x => x.id === roomId); if (!r) return; r.items = (r.items || []).filter(x => x.id !== itemId); saveGuide(); renderGuideMgr(); };
+window.guideRemoveSupply = function(supId){ guide.supplies = (guide.supplies || []).filter(x => x.id !== supId); saveGuide(); renderGuideMgr(); };
+window.guideEditItemFn = function(roomId, itemId){
+  const r = guide.rooms.find(x => x.id === roomId); if (!r) return;
+  const it = (r.items || []).find(x => x.id === itemId); if (!it) return;
+  guideEditItem = { roomId, itemId };
+  $("guideRoomSel").value = roomId;
+  $("guideItemName").value = it.name; $("guideItemSupply").value = it.supply;
+  $("guideItemGood").value = (it.goodFor || []).join("\n"); $("guideItemHow").value = it.how || "";
+  $("guideItemNotes").value = it.notes || ""; $("guideItemTags").value = it.tags || "";
+  $("guideStatus").textContent = "Editing: " + it.name + " — change the fields above, then tap “Add / save this item”.";
+  document.getElementById("guideMgrCard").scrollIntoView();
+};
+window.guideEditSupplyFn = function(supId){
+  const s = (guide.supplies || []).find(x => x.id === supId); if (!s) return;
+  guideEditSupply = supId;
+  $("guideSupName").value = s.name; $("guideSupGood").value = (s.goodFor || []).join("\n");
+  $("guideSupHow").value = s.how || ""; $("guideSupNotes").value = s.notes || "";
+  $("guideStatus").textContent = "Editing supply: " + s.name + " — change the fields above, then tap “Add / save this supply”.";
+  document.getElementById("guideMgrCard").scrollIntoView();
+};
+$("guideAddRoomBtn").onclick = () => {
+  const name = $("guideNewRoom").value.trim(); if (!name) { alert("Type a room name first."); return; }
+  guide.rooms.push({ id: "room-" + Date.now(), name, items: [] });
+  $("guideNewRoom").value = ""; saveGuide(); renderGuideMgr();
+  $("guideStatus").innerHTML = '<span class="ok">Room added: ' + esc(name) + ' — now add items to it below.</span>';
+};
+$("guideAddItemBtn").onclick = () => {
+  const roomId = $("guideRoomSel").value;
+  const name = $("guideItemName").value.trim(), supply = $("guideItemSupply").value.trim();
+  if (!roomId || !name || !supply) { alert("Pick a room, and enter both the item and the supply to use, first."); return; }
+  const room = guide.rooms.find(r => r.id === roomId); if (!room) return;
+  const item = { id: (guideEditItem && guideEditItem.itemId) || ("it-" + Date.now()), name, supply,
+    goodFor: $("guideItemGood").value.split("\n").map(s => s.trim()).filter(Boolean),
+    how: $("guideItemHow").value.trim(), notes: $("guideItemNotes").value.trim(), tags: $("guideItemTags").value.trim() };
+  if (guideEditItem && guideEditItem.itemId) {
+    const oldRoom = guide.rooms.find(r => r.id === guideEditItem.roomId);
+    if (oldRoom) oldRoom.items = (oldRoom.items || []).filter(x => x.id !== item.id);
+    room.items.push(item);
+  } else room.items.push(item);
+  guideEditItem = null;
+  ["guideItemName","guideItemSupply","guideItemGood","guideItemHow","guideItemNotes","guideItemTags"].forEach(id => $(id).value = "");
+  saveGuide(); renderGuideMgr();
+  $("guideStatus").innerHTML = '<span class="ok">Item saved: ' + esc(name) + ' in ' + esc(room.name) + '.</span>';
+};
+$("guideAddSupBtn").onclick = () => {
+  const name = $("guideSupName").value.trim(); if (!name) { alert("Type a supply name first."); return; }
+  const sup = { id: guideEditSupply || ("sup-" + Date.now()), name,
+    goodFor: $("guideSupGood").value.split("\n").map(s => s.trim()).filter(Boolean),
+    how: $("guideSupHow").value.trim(), notes: $("guideSupNotes").value.trim() };
+  if (guideEditSupply) guide.supplies = (guide.supplies || []).map(x => x.id === sup.id ? sup : x);
+  else guide.supplies.push(sup);
+  guideEditSupply = null;
+  ["guideSupName","guideSupGood","guideSupHow","guideSupNotes"].forEach(id => $(id).value = "");
+  saveGuide(); renderGuideMgr();
+  $("guideStatus").innerHTML = '<span class="ok">Supply saved: ' + esc(name) + '.</span>';
+};
+$("guideSaveBtn").onclick = () => { saveGuide(); saveAll(); renderGuideMgr(); mgrBackendPost({ action: "guideSave", guide: guide }); $("guideSaveStatus").innerHTML = '<span class="ok">Supplies Guide saved — the employee sees it in her app; it syncs automatically once the shared backend is connected (see the banner at the top), and travels with the JSON export / import until then.</span>'; };
+
 function renderTimeOffMgr(){
   const el = $("timeOffMgr"); if (!el) return;
   const list = timeOff.filter(r => !$("empFilter") || !$("empFilter").value || r.name === $("empFilter").value);
   el.innerHTML = list.length ? list.map((r,i) => {
     const idx = timeOff.indexOf(r);
-    return "<div class='card'><strong>" + r.name + " — " + r.date + " — " + (r.type === "sick" ? "Sick day (paid)" : "Time off (unpaid)") + "</strong><br>Reason: " + (r.reason || "—") + "<br>Status: <b>" + r.status + "</b>" + (r.status === "PENDING" ? " <button class='smallbtn' onclick='decideTimeOff(" + idx + ", \"APPROVED\")'>Approve</button> <button class='smallbtn' onclick='decideTimeOff(" + idx + ", \"DECLINED\")'>Decline</button>" : "") + "</div>";
+    return "<div class='card'><strong>" + r.name + " — " + r.date + " — " + (r.type === "sick" ? "Sick day (paid)" : "Time off (unpaid)") + "</strong><br>Reason: " + (r.reason || "—") + "<br>Status: <b>" + r.status + "</b>" + (r.declineReason ? "<br>Decline reason: " + r.declineReason : "") + (r.status === "PENDING" ? "<br><label>Decline reason — saved with the record (only used if you decline)</label><input id='todecline-" + idx + "' placeholder='e.g. Already booked that day'> <button class='smallbtn' onclick='decideTimeOff(" + idx + ", \"APPROVED\")'>Approve</button> <button class='smallbtn' onclick='decideTimeOff(" + idx + ", \"DECLINED\", document.getElementById(\"todecline-" + idx + "\").value)'>Decline</button>" : "") + "</div>";
   }).join("") : "<p class='small'>No time off / sick requests yet.</p>";
 }
-window.decideTimeOff = function(idx, status){ timeOff[idx].status = status; saveAll(); renderTimeOffMgr(); };
+window.decideTimeOff = function(idx, status, declineReason){
+  timeOff[idx].status = status;
+  if (declineReason) timeOff[idx].declineReason = declineReason;
+  saveAll(); renderTimeOffMgr();
+  mgrBackendPost({ action: "decideTimeOff", employee: timeOff[idx].name, date: timeOff[idx].date,
+    type: timeOff[idx].type, status: status, declineReason: timeOff[idx].declineReason || "" });
+};
 function renderOnboard(){
   const el = $("obChecks"); if (!el) return;
   const items = ["Federal TD1 received","BC TD1 received","E-transfer info received (pay morning of payday)","Criminal record check received / clean, before solo work","Training completed","Probation start date recorded","Review dates recorded (3-month, then every 6 months)","Employee information copy kept by Krystal (separately, not in app)"];
@@ -198,6 +556,392 @@ function dayAdjustments(){
   const date = $("viewDate").value, emp = $("empFilter").value;
   return adjustments.filter(r => r.date === date && (!emp || r.name === emp));
 }
+// ============================================================================
+// LOGIN GATE + SESSION (manager)
+// This app is never reachable without the manager code. The code is checked
+// against the backend (Krystal's Employees row, or the Settings ManagerCode
+// cell), so changing it in the manager app or the Sheet changes it here.
+// The session lives in sessionStorage only (ends when the tab closes).
+// Without a backend (BACKEND_URL empty) there is nothing to check against,
+// so the app offers a clearly-labelled REVIEW MODE for Krystal only.
+// ============================================================================
+const MGR_SESSION_KEY = "ravenManagerSessionV1";
+let mgrSession = null; // {name:"Krystal McGee", token, role:"Manager"} or {role:"review"}
+let backendSubs = []; // mileage submissions pulled from the backend
+const EMPKEY = "ravenEmployeesV1";
+let employees = JSON.parse(localStorage.getItem(EMPKEY) || "null") || [
+  { name: "Ramona Cyre", role: "Employee", rate: 20, active: true, code: "" },
+  { name: "Krystal McGee", role: "Manager", rate: "", active: true, code: "" }
+];
+function saveEmployees() { localStorage.setItem(EMPKEY, JSON.stringify(employees)); }
+
+function mgrBackendJsonp(action, params) {
+  return new Promise(function (resolve) {
+    if (!BACKEND_ENABLED) { resolve({ ok: false, error: "Backend not connected" }); return; }
+    var cb = "ravenMgrCb" + Date.now() + Math.floor(Math.random() * 10000);
+    var q = Object.keys(params || {}).map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
+    var url = BACKEND_URL + "?action=" + encodeURIComponent(action) + "&callback=" + cb + (q ? "&" + q : "");
+    var s = document.createElement("script");
+    var done = false;
+    window[cb] = function (data) {
+      if (done) return; done = true;
+      delete window[cb]; s.remove();
+      resolve(data || { ok: false, error: "Empty reply from backend" });
+    };
+    s.onerror = function () {
+      if (done) return; done = true;
+      delete window[cb]; s.remove();
+      resolve({ ok: false, error: "Could not reach the backend" });
+    };
+    s.src = url;
+    document.body.appendChild(s);
+    setTimeout(function () {
+      if (!done) { done = true; try { delete window[cb]; } catch (e) {} s.remove(); resolve({ ok: false, error: "Backend timed out" }); }
+    }, 20000);
+  });
+}
+function mgrBackendPost(payload) {
+  // Fire-and-forget: local save always happens first, this is the sync.
+  if (!BACKEND_ENABLED || !mgrSession || !mgrSession.token) return;
+  try {
+    fetch(BACKEND_URL, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(Object.assign({ name: "Krystal McGee", token: mgrSession.token }, payload))
+    }).catch(function () {});
+  } catch (e) {}
+}
+function mgrMergeByKey(localArr, remoteArr, keyFn) {
+  var seen = {};
+  var out = [];
+  (remoteArr || []).forEach(function (r) { var k = keyFn(r); if (!seen[k]) { seen[k] = true; out.push(r); } });
+  (localArr || []).forEach(function (r) { var k = keyFn(r); if (!seen[k]) { seen[k] = true; out.push(r); } });
+  return out;
+}
+function mgrNormEntry(r) {
+  return {
+    name: r.Employee || r.name, job: r.Job || r.job, date: r.Date || r.date,
+    in: r.ClockIn ? Number(r.ClockIn) : r.in, out: r.ClockOut ? Number(r.ClockOut) : (r.out || null),
+    hours: r.Hours === "" || r.Hours == null ? (r.hours || 0) : Number(r.Hours),
+    training: r.Training === "Yes" || r.training === true,
+    issue: r.Issue || r.issue || "", refilled: r.Refilled === "Yes" || r.refilled === true,
+    low: r.LowItems ? String(r.LowItems).split(";").map(function (x) { return x.trim(); }).filter(Boolean) : (r.low || []),
+    stocked: r.Stocked === "Yes" || r.stocked === true,
+    cloth: r.Cloths === "Yes" || r.cloth === true,
+    checklistDone: r.ChecklistDone || r.checklistDone || "",
+    checklistItems: r.ChecklistItems || r.checklistItems || "",
+    adjustmentApproved: r.AdjustmentApproved === "Yes" || r.adjustmentApproved === true,
+    adjustmentReason: r.adjustmentReason || ""
+  };
+}
+function pullMgrBackendData() {
+  if (!BACKEND_ENABLED || !mgrSession || !mgrSession.token) return Promise.resolve();
+  return mgrBackendJsonp("getData", { name: "Krystal McGee", token: mgrSession.token }).then(function (d) {
+    if (!d || !d.ok) return;
+    if (d.houseInstructions) { houseInstructions = d.houseInstructions; }
+    if (d.monthlyFocus && d.monthlyFocus.month) { monthlyFocus = d.monthlyFocus; }
+    if (d.guide && (d.guide.rooms || d.guide.supplies)) { guide = d.guide; }
+    if (d.rates) Object.assign(employeeRates, d.rates);
+    if (d.craRate !== undefined && d.craRate !== "") craRate = Number(d.craRate);
+    if (d.employees) {
+      // Codes are deliberately NOT kept here: the manager sets codes, she
+      // does not need them stored on this phone. Code fields stay blank.
+      employees = d.employees.map(function (r) {
+        return { name: r.Name, role: r.Role || "Employee", rate: r.Rate === "" ? "" : Number(r.Rate),
+          active: String(r.Active || "").toLowerCase() === "yes", code: "" };
+      });
+      saveEmployees();
+    }
+    if (d.entries) entries = mgrMergeByKey(entries, d.entries.map(mgrNormEntry), function (e) { return [e.name, e.job, e.date, e.in].join("|"); });
+    if (d.adjustments) adjustments = mgrMergeByKey(adjustments, d.adjustments.map(function (r) {
+      return { name: r.Employee || r.name, job: r.Job || r.job, date: r.Date || r.date,
+        reqIn: Number(r.ReqIn || r.reqIn), reqOut: Number(r.ReqOut || r.reqOut),
+        reqHours: Number(r.ReqHours || r.reqHours), reason: r.Reason || r.reason || "",
+        status: r.Status || r.status || "PENDING", declineReason: r.DeclineReason || r.declineReason || "",
+        origIn: r.OrigIn ? Number(r.OrigIn) : undefined, origOut: r.OrigOut ? Number(r.OrigOut) : undefined,
+        origHours: r.OrigHours ? Number(r.OrigHours) : undefined, entryIdx: -1, created: Date.now() };
+    }), function (r) { return [r.name, r.job, r.date, r.reqIn, r.reason].join("|"); });
+    if (d.timeOff) timeOff = mgrMergeByKey(timeOff, d.timeOff.map(function (r) {
+      return { name: r.Employee || r.name, date: r.Date || r.date, type: (r.Type || r.type || "timeoff"),
+        reason: r.Reason || r.reason || "", status: r.Status || r.status || "PENDING",
+        declineReason: r.DeclineReason || r.declineReason || "", created: Date.now() };
+    }), function (r) { return [r.name, r.date, r.type].join("|"); });
+    if (d.mileage) mileage = mgrMergeByKey(mileage, d.mileage.map(function (r) {
+      return { date: r.Date || r.date, start: r.Start || r.start, end: r.End || r.end,
+        km: Number(r.Km || r.km), type: "between", name: r.Employee || r.name };
+    }), function (m) { return [m.name, m.date, m.start, m.end, m.km].join("|"); });
+    if (d.monthlyDone) monthlyDone = mgrMergeByKey(monthlyDone, d.monthlyDone.map(function (r) {
+      return { taskId: r.TaskId || r.taskId, job: r.Job || r.job, month: r.Month || r.month,
+        name: r.Employee || r.name, date: r.Date || r.date, doneAt: Date.now() };
+    }), function (x) { return [x.taskId, x.job, x.month].join("|"); });
+    if (d.mileageSubmissions) {
+      backendSubs = d.mileageSubmissions.map(function (r) {
+        var trips = []; try { trips = JSON.parse(r.Trips || "[]"); } catch (e) {}
+        return { name: r.Employee || r.name, month: r.Month || r.month, trips: trips,
+          totalKm: Number(r.TotalKm || r.totalKm || 0), submittedAt: Date.now() };
+      });
+    }
+    saveAll();
+    render();
+  });
+}
+function showMgrLogin() {
+  $("loginOverlay").style.display = "block";
+  $("loginError").textContent = "";
+  if (BACKEND_ENABLED) {
+    $("loginBackendNote").textContent = "Connected to the shared backend — your manager code is checked with the backend.";
+    $("reviewModeBox").style.display = "none";
+  } else {
+    $("loginBackendNote").textContent = "Not connected to the shared backend yet — there is no manager code to check against. Use review mode below.";
+    $("reviewModeBox").style.display = "block";
+  }
+}
+function hideMgrLogin() { $("loginOverlay").style.display = "none"; }
+function updateMgrBanner() {
+  var b = $("backendBanner"); if (!b) return;
+  if (!BACKEND_ENABLED) {
+    b.className = "";
+    b.innerHTML = "<strong>Not connected to the shared backend yet — everything saves on this phone only.</strong> Entries arrive here by the employee's JSON export until the backend is connected (see backend/BACKEND-SETUP.md). Review mode only.";
+  } else if (mgrSession && mgrSession.role === "review") {
+    b.className = "";
+    b.innerHTML = "<strong>Review mode</strong> — backend is set but you are not signed in with your manager code. Sign out and sign in with your code to sync.";
+  } else {
+    b.className = "connected";
+    b.innerHTML = "<strong>Connected to the shared backend</strong> — signed in as Krystal. Entries, adjustments, time off and mileage sync here automatically.";
+  }
+}
+function updateMgrWatermark() {
+  var el = $("watermark"); if (!el) return;
+  var who = (mgrSession && mgrSession.name) ? mgrSession.name : (mgrSession && mgrSession.role === "review" ? "REVIEW MODE" : "");
+  var now = new Date();
+  var stamp = now.toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }) + " " +
+    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  el.textContent = who ? (who + "  •  " + stamp + "  •  " + who + "  •  " + stamp) : "";
+}
+setInterval(updateMgrWatermark, 60000);
+function applyMgrSession() {
+  updateMgrBanner();
+  updateMgrWatermark();
+  if (mgrSession && mgrSession.role !== "review") pullMgrBackendData();
+}
+$("loginBtn").onclick = function () {
+  var code = $("loginCode").value;
+  if (!code) { $("loginError").textContent = "Enter your manager code."; return; }
+  $("loginError").textContent = "Checking…";
+  mgrBackendJsonp("login", { name: "Krystal McGee", code: code }).then(function (d) {
+    if (d && d.ok) {
+      mgrSession = { name: "Krystal McGee", token: d.token, role: "Manager" };
+      sessionStorage.setItem(MGR_SESSION_KEY, JSON.stringify(mgrSession));
+      $("loginCode").value = "";
+      hideMgrLogin();
+      applyMgrSession();
+    } else {
+      $("loginError").textContent = (d && d.error) || "Could not sign in. Check your manager code and try again.";
+    }
+  });
+};
+$("loginCode").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
+$("reviewBtn").onclick = function () {
+  mgrSession = { name: "Krystal McGee", token: "", role: "review" };
+  sessionStorage.setItem(MGR_SESSION_KEY, JSON.stringify(mgrSession));
+  hideMgrLogin();
+  applyMgrSession();
+};
+$("signOutBtn").onclick = function () {
+  mgrSession = null;
+  try { sessionStorage.removeItem(MGR_SESSION_KEY); } catch (e) {}
+  location.reload();
+};
+function initMgrLogin() {
+  try {
+    var saved = JSON.parse(sessionStorage.getItem(MGR_SESSION_KEY) || "null");
+    if (saved && saved.role) {
+      mgrSession = saved;
+      if (BACKEND_ENABLED && mgrSession.token) {
+        mgrBackendJsonp("getData", { name: "Krystal McGee", token: mgrSession.token }).then(function (d) {
+          if (d && d.ok) { hideMgrLogin(); applyMgrSession(); }
+          else { mgrSession = null; try { sessionStorage.removeItem(MGR_SESSION_KEY); } catch (e) {} showMgrLogin(); }
+        });
+      } else { hideMgrLogin(); applyMgrSession(); }
+      return;
+    }
+  } catch (e) {}
+  showMgrLogin();
+}
+
+// ============================================================================
+// HOME COMPLETION LIST — same 16 items as the employee app (from
+// raven-home-completion-list.docx). Used here to show what was ticked
+// on each entry, and what was missed.
+// ============================================================================
+const CHECKLIST = {
+  sections: [
+    { title: "Entrances", items: ["Fix shoes", "Wipe door handles"] },
+    { title: "Living room", items: ["Fold blankets", "Fix pillows", "Vacuum couch if pet hair"] },
+    { title: "Kitchen", items: ["Fold and hang towels", "Organize cloths/soaps around sink", "Fold cloths", "Clean inside microwave"] },
+    { title: "Bedroom", items: ["Make bed if unmade"] },
+    { title: "Bathroom", items: ["Fold toilet paper", "Fold/hang towels", "Clean soap dish", "Organize counter top", "Empty garbage", "Dry all showers/tubs"] }
+  ]
+};
+const CHECKLIST_TOTAL = CHECKLIST.sections.reduce(function (s, sec) { return s + sec.items.length; }, 0);
+function checklistLabels(ids) {
+  if (!ids) return "Not ticked off.";
+  var list = String(ids).split(",").filter(Boolean);
+  if (!list.length) return "Not ticked off.";
+  var out = [];
+  CHECKLIST.sections.forEach(function (sec, si) {
+    sec.items.forEach(function (item, ii) {
+      if (list.indexOf(si + "-" + ii) >= 0) out.push(sec.title + " — " + item);
+    });
+  });
+  return out.length ? out.join("; ") : "Not ticked off.";
+}
+function monthLabel(ym) {
+  var parts = String(ym || "").split("-");
+  var d = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+  return d.toLocaleDateString([], { month: "long", year: "numeric" });
+}
+function mondayOf(dateStr) {
+  var d = new Date(dateStr + "T00:00:00");
+  var day = d.getDay(); // 0 = Sunday
+  var diff = (day === 0 ? -6 : 1 - day);
+  d.setDate(d.getDate() + diff);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+// ============================================================================
+// WEEKLY VIEW — Monday to Sunday, per employee: hours, pay estimate,
+// mileage. Pay is an estimate only; the payroll calculator is the pay
+// authority.
+// ============================================================================
+function renderWeek() {
+  var el = $("weekView"); if (!el) return;
+  var monday = $("weekPick").value;
+  if (!monday) { el.innerHTML = "<p class='small'>Pick a Monday to see the week.</p>"; $("weekTotals").textContent = ""; return; }
+  var end = new Date(monday + "T00:00:00"); end.setDate(end.getDate() + 6);
+  var endStr = end.getFullYear() + "-" + String(end.getMonth() + 1).padStart(2, "0") + "-" + String(end.getDate()).padStart(2, "0");
+  var weekEntries = entries.filter(function (e) { return e.date >= monday && e.date <= endStr; });
+  var weekMiles = mileage.filter(function (m) { return m.date >= monday && m.date <= endStr && m.type === "between"; });
+  if (!weekEntries.length && !weekMiles.length) {
+    el.innerHTML = "<p class='small'>No entries or mileage for the week of " + monday + " – " + endStr + ".</p>";
+    $("weekTotals").textContent = "";
+    return;
+  }
+  var byEmp = {};
+  weekEntries.forEach(function (e) {
+    var g = byEmp[e.name] || (byEmp[e.name] = { hours: 0, pay: 0, count: 0 });
+    g.hours += (e.hours || 0); g.pay += mgrEntryPay(e); g.count += 1;
+  });
+  var totalHours = weekEntries.reduce(function (s, e) { return s + (e.hours || 0); }, 0);
+  var totalPay = weekEntries.reduce(function (s, e) { return s + mgrEntryPay(e); }, 0);
+  var totalKm = weekMiles.reduce(function (s, m) { return s + m.km; }, 0);
+  var html = "<table><tr><th>Employee</th><th>Jobs</th><th>Hours</th><th>Pay (est.)</th></tr>" +
+    Object.keys(byEmp).sort().map(function (n) {
+      var g = byEmp[n];
+      return "<tr><td>" + esc(n) + "</td><td>" + g.count + "</td><td>" + g.hours.toFixed(2) + "</td><td>$" + g.pay.toFixed(2) + "</td></tr>";
+    }).join("") + "</table>";
+  html += "<table><tr><th>Date</th><th>Employee</th><th>Job</th><th>Hours</th><th>Pay (est.)</th></tr>" +
+    weekEntries.slice().sort(function (a, b) { return (a.date + a.name).localeCompare(b.date + b.name); }).map(function (e) {
+      return "<tr><td>" + e.date + "</td><td>" + esc(e.name) + "</td><td>" + esc(e.job) + (e.adjustmentApproved ? " (adjusted)" : "") + "</td><td>" + (e.hours || 0).toFixed(2) + "</td><td>$" + mgrEntryPay(e).toFixed(2) + "</td></tr>";
+    }).join("") + "</table>";
+  el.innerHTML = html;
+  $("weekTotals").innerHTML = "Week " + monday + " – " + endStr + ": <b>" + totalHours.toFixed(2) + " hours</b>, estimated pay <b>$" + totalPay.toFixed(2) + "</b> (hours + $1/hr refill + 4% vacation pay), mileage <b>" + totalKm.toFixed(1) + " km</b> payable" +
+    ((!isNaN(craRate) && craRate > 0) ? " · mileage pay (est.) $" + (totalKm * craRate).toFixed(2) : " · mileage pay not shown — CRA rate not set.") + ".";
+}
+$("weekBtn").onclick = renderWeek;
+$("weekPick").addEventListener("change", renderWeek);
+
+// ============================================================================
+// MILEAGE SUBMISSIONS — months employees have submitted, per employee.
+// From this phone's local records plus the backend MileageSubmissions tab.
+// ============================================================================
+function renderMileageSubs() {
+  var el = $("mileSubView"); if (!el) return;
+  var local = [];
+  try { local = JSON.parse(localStorage.getItem("ravenMileageSubmissionsV1") || "[]"); } catch (e) {}
+  var subs = mgrMergeByKey(local, backendSubs, function (s) { return [s.name, s.month].join("|"); });
+  if (!subs.length) { el.innerHTML = "<p class='small'>No mileage submitted yet.</p>"; return; }
+  subs.sort(function (a, b) { return (b.month + b.name).localeCompare(a.month + a.name); });
+  el.innerHTML = "<table><tr><th>Employee</th><th>Month</th><th>Trips</th><th>Total km</th><th>Submitted</th></tr>" +
+    subs.map(function (s) {
+      return "<tr><td>" + esc(s.name) + "</td><td>" + monthLabel(s.month) + "</td><td>" + (s.trips ? s.trips.length : 0) +
+        "</td><td>" + (s.totalKm || 0).toFixed(1) + "</td><td>" + (s.submittedAt ? new Date(s.submittedAt).toLocaleDateString([], { dateStyle: "medium" }) : "—") + "</td></tr>";
+    }).join("") + "</table>";
+}
+
+// ============================================================================
+// EMPLOYEES — codes, rates, revoke/restore. Writes go to the backend
+// Employees tab (and the local fallback when the backend is not connected).
+// ============================================================================
+function renderEmployees() {
+  var el = $("employeeList"); if (!el) return;
+  var rateOptions = [20, 23, 24, 24.5, 25, 25.5, 26].map(function (r) {
+    return "<option value='" + r + "'>" + (r === 20 ? "Training — $20/hr" : r === 23 ? "Starting — $23/hr" : r === 24 ? "After probation — $24/hr" : r === 26 ? "Cap — $26/hr" : "$" + r + "/hr") + "</option>";
+  }).join("");
+  el.innerHTML = employees.map(function (emp, i) {
+    var rateLabel = (emp.rate === "" || emp.rate == null) ? "Rate not set" : "$" + Number(emp.rate).toFixed(2) + "/hr";
+    return "<div class='emp-row" + (emp.active ? "" : " revoked") + "'><strong>" + esc(emp.name) + "</strong> — " + esc(emp.role || "Employee") +
+      " · " + rateLabel + " · <b>" + (emp.active ? "Active" : "REVOKED") + "</b>" +
+      "<br><label>Personal code</label><input type='password' id='empCode-" + i + "' autocomplete='off' placeholder='" + (emp.code ? "Code set — type a new one to change it" : "Blank — no code set yet") + "'>" +
+      "<button class='smallbtn secondary' onclick='empSaveCode(" + i + ")'>Save code</button>" +
+      "<br><label>Hourly rate ($)</label><select id='empRate-" + i + "'>" + rateOptions + "</select>" +
+      "<button class='smallbtn secondary' onclick='empSaveRate(" + i + ")'>Save rate</button>" +
+      "<br><button class='smallbtn " + (emp.active ? "revoke" : "restore") + "' onclick='empToggleActive(" + i + ")'>" + (emp.active ? "Revoke access" : "Restore access") + "</button></div>";
+  }).join("") || "<p class='small'>No employees yet.</p>";
+  employees.forEach(function (emp, i) {
+    var sel = $("empRate-" + i);
+    if (sel && emp.rate !== "" && emp.rate != null) sel.value = String(emp.rate);
+  });
+}
+window.empSaveCode = function (i) {
+  var emp = employees[i]; if (!emp) return;
+  var code = $("empCode-" + i).value;
+  if (!code) {
+    if (!confirm("Clear " + emp.name + "'s code? They will not be able to sign in until you set a new one.")) return;
+  }
+  emp.code = code;
+  saveEmployees();
+  mgrBackendPost({ action: "employeeSave", employee: emp.name, code: code });
+  $("empStatus").innerHTML = '<span class="ok">Code ' + (code ? "set" : "cleared") + ' for ' + esc(emp.name) + '. Tell it to them in person.</span>';
+  renderEmployees();
+};
+window.empSaveRate = function (i) {
+  var emp = employees[i]; if (!emp) return;
+  var rate = parseFloat($("empRate-" + i).value);
+  emp.rate = rate;
+  employeeRates[emp.name] = rate;
+  saveEmployees();
+  mgrBackendPost({ action: "employeeSave", employee: emp.name, rate: rate });
+  $("empStatus").innerHTML = '<span class="ok">Rate for ' + esc(emp.name) + ' set to $' + rate.toFixed(2) + '/hr.</span>';
+  saveAll();
+};
+window.empToggleActive = function (i) {
+  var emp = employees[i]; if (!emp) return;
+  if (emp.active) {
+    if (!confirm("Revoke access for " + emp.name + "? They will not be able to sign into the app again, even with the app still on their phone. This does NOT take away their signed contract / information package — you gave them that separately at signing (paper + PDF).")) return;
+    emp.active = false;
+  } else {
+    emp.active = true;
+  }
+  saveEmployees();
+  mgrBackendPost({ action: "employeeSave", employee: emp.name, active: emp.active });
+  $("empStatus").innerHTML = '<span class="ok">' + esc(emp.name) + (emp.active ? " — access restored." : " — access revoked. They cannot sign in.") + '</span>';
+  renderEmployees();
+};
+$("empAddBtn").onclick = function () {
+  var name = $("empNewName").value.trim();
+  if (!name) { alert("Enter the employee's name first."); return; }
+  if (employees.some(function (e) { return e.name.toLowerCase() === name.toLowerCase(); })) { alert(name + " is already in the list — use the row above to change their code or rate."); return; }
+  var emp = { name: name, role: $("empNewRole").value, rate: parseFloat($("empNewRate").value), active: true, code: $("empNewCode").value || "" };
+  employees.push(emp);
+  employeeRates[name] = emp.rate;
+  saveEmployees();
+  mgrBackendPost({ action: "employeeSave", employee: emp.name, role: emp.role, rate: emp.rate, active: true, code: emp.code });
+  $("empNewName").value = ""; $("empNewCode").value = "";
+  $("empStatus").innerHTML = '<span class="ok">Added ' + esc(name) + ' — ' + esc(emp.role) + ', $' + emp.rate.toFixed(2) + '/hr. ' + (emp.code ? "Code set — tell it to them in person." : "No code set yet — set one above before they sign in.") + '</span>';
+  saveAll();
+};
+
 function render(){
   // employee filter
   const names = [...new Set(entries.map(e => e.name))];
@@ -209,7 +953,7 @@ function render(){
   const payTotal = d.reduce((s,e)=>s + mgrEntryPay(e), 0);
   $("dayTotal").innerHTML = "<b>" + $("viewDate").value + "</b> — " + d.length + " entr" + (d.length===1?"y":"ies") + ", total <b>" + total.toFixed(2) + " hours</b>, estimated pay <b>$" + payTotal.toFixed(2) + "</b> (hours + $1/hr refill + 4% vacation pay on every cheque, pending adjustments not counted, mileage pay added below if CRA rate is set).";
   $("entries").innerHTML = d.length ? "<table><tr><th>Employee</th><th>Job</th><th>In–Out</th><th>Hours</th><th>Pay (est.)</th><th>Supplies</th><th>Cloths</th></tr>" +
-    d.map(e => "<tr><td>" + e.name + "</td><td>" + e.job + (e.adjustmentApproved ? " <span class='small'>(adjusted, approved)</span>" : "") + "</td><td>" + fmt(e.in) + "–" + (e.out?fmt(e.out):"") + "</td><td>" + (e.hours||0).toFixed(2) + "</td><td>" + (e.refilled?"refilled":"—") + (e.low&&e.low.length?" · low: "+e.low.join(", "):"") + "</td><td>" + (e.cloth?"washed":"not needed") + "</td></tr>").join("") + "</table>"
+    d.map(e => "<tr><td>" + e.name + "</td><td>" + e.job + (e.adjustmentApproved ? " <span class='small'>(adjusted, approved)</span>" : "") + (e.checklistDone ? "<br><details><summary class='small'>Checklist: " + e.checklistDone + "</summary><span class='small'>" + checklistLabels(e.checklistItems) + "</span></details>" : "<br><span class='small'>Checklist: not ticked off</span>") + (e.issue ? "<br><span class='small'>Issue: " + e.issue + "</span>" : "") + "</td><td>" + fmt(e.in) + "–" + (e.out?fmt(e.out):"") + "</td><td>" + (e.hours||0).toFixed(2) + "</td><td>$" + mgrEntryPay(e).toFixed(2) + "</td><td>" + (e.refilled?"refilled":"—") + (e.low&&e.low.length?" · low: "+e.low.join(", "):"") + "</td><td>" + (e.cloth?"washed":"not needed") + "</td></tr>").join("") + "</table>"
     : "<p class='small'>No entries for this date / employee yet. If you are testing on one phone, clock in/out in the employee app first, then tap Refresh here.</p>";
   const lows = [];
   d.forEach(e => (e.low||[]).forEach(x => { if (!lows.includes(x)) lows.push(x); }));
@@ -219,7 +963,7 @@ function render(){
   $("pending").innerHTML = pend.length ? pend.map(r => {
     const gi = adjustments.indexOf(r);
     const orig = (r.entryIdx >= 0 && r.origIn) ? "Original: " + fmt(r.origIn) + "–" + (r.origOut ? fmt(r.origOut) : "?") + " (" + (r.origHours||0).toFixed(2) + "h) → " : "New / missed shift: ";
-    return "<div class='card pending'><strong>" + r.name + " — " + r.job + "</strong> — " + r.date + "<br>" + orig + "Requested: " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h)<br>Reason: " + r.reason + "<br><button class='smallbtn approve' onclick='decide(" + gi + ", true)'>Approve</button><button class='smallbtn decline' onclick='decide(" + gi + ", false)'>Decline</button></div>";
+    return "<div class='card pending'><strong>" + r.name + " — " + r.job + "</strong> — " + r.date + "<br>" + orig + "Requested: " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h)<br>Reason: " + r.reason + "<br><label>Decline reason — saved with the record (only used if you decline)</label><input id='decline-" + gi + "' placeholder='e.g. Hours do not match the schedule'><br><button class='smallbtn approve' onclick='decide(" + gi + ", true)'>Approve</button><button class='smallbtn decline' onclick='decide(" + gi + ", false, document.getElementById(\"decline-" + gi + "\").value)'>Decline</button></div>";
   }).join("") : "<p class='small'>No pending time adjustments for this date.</p>";
   $("history").innerHTML = hist.length ? hist.map(r => "<div class='card " + r.status.toLowerCase() + "'><strong>" + r.name + " — " + r.job + "</strong> — " + r.date + " — Requested " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h) — <b>" + r.status + "</b>" + (r.declineReason ? " — Reason: " + r.declineReason : "") + " — Employee reason: " + r.reason + "</div>").join("") : "<p class='small'>No approved / declined adjustments for this date yet.</p>";
   const miles = mileage.filter(m => m.date === $("viewDate").value && (! $("empFilter").value || m.name === $("empFilter").value));
@@ -228,9 +972,14 @@ function render(){
   $("mileageView").innerHTML = miles.length ? "<table><tr><th>Employee</th><th>Start → End</th><th>Km</th><th>Type</th></tr>" + miles.map(m => "<tr><td>" + m.name + "</td><td>" + m.start + " → " + m.end + "</td><td>" + m.km.toFixed(1) + "</td><td>" + (m.type === "between" ? "Between clients — payable" : m.type === "to_first" ? "To first — not payable" : "Home from last — not payable") + "</td></tr>").join("") + "</table>" : "<p class='small'>No mileage trips for this date yet.</p>";
   $("mileageTotals").innerHTML = "Payable today (between clients only): <b>" + payKm.toFixed(1) + " km</b> · All trips today: " + allKm.toFixed(1) + " km" + ((!isNaN(craRate) && craRate > 0) ? " · Mileage pay (est.): $" + (payKm * craRate).toFixed(2) : " · Mileage pay not shown — CRA rate not set above.") + ".";
   const hiNames = Object.keys(houseInstructions);
-  $("hiList").innerHTML = hiNames.length ? hiNames.map(n => "<div class='card'><strong>" + n + "</strong><br><em>What gets done:</em> " + (houseInstructions[n].tasks || "—") + "<br><em>Special:</em> " + (houseInstructions[n].special || "—") + "<br><button class='smallbtn secondary' onclick='loadHouse(\"" + n + "\")'>Edit</button></div>").join("") : "<p class='small'>No house instructions saved yet. Add the first house above — this is the weekend job, house by house, not invented here.</p>";
+  $("hiList").innerHTML = hiNames.length ? hiNames.map(n => "<div class='card'><strong>" + n + "</strong><br><em>Service note (staff only):</em> " + (houseInstructions[n].serviceTag ? esc({good:"Good service",okay:"Okay service","not-so-good":"Not so good service"}[houseInstructions[n].serviceTag] || "Service note") + (houseInstructions[n].serviceNote ? " — " + esc(houseInstructions[n].serviceNote) : " — no note written yet.") : (houseInstructions[n].serviceNote ? esc(houseInstructions[n].serviceNote) : "No service note set yet.")) + "<br><em>What gets done:</em> " + (houseInstructions[n].tasks || "—") + "<br><em>Special:</em> " + (houseInstructions[n].special || "—") + "<br><em>House codes:</em> " + (houseInstructions[n].codes ? "Saved — blurred in the employee app until tapped." : "None set yet.") + "<br><button class='smallbtn secondary' onclick='loadHouse(\"" + n + "\")'>Edit</button></div>").join("") : "<p class='small'>No house instructions saved yet. Add the first house above — this is the weekend job, house by house, not invented here.</p>";
   renderTimeOffMgr();
+  renderMonthlyFocusMgr();
+  renderGuideMgr();
   renderOnboard();
+  renderEmployees();
+  renderWeek();
+  renderMileageSubs();
   populateRateEmp();
   if (!isNaN(craRate) && craRate > 0 && document.activeElement !== $("craInput")) $("craInput").value = String(craRate);
   const lines = ["Raven & Roses — Manager day summary — " + $("viewDate").value, "Total hours: " + total.toFixed(2)];
@@ -241,7 +990,7 @@ function render(){
   lines.push("Estimated pay today (hours + refill + 4% vacation pay, before mileage): $" + payTotal.toFixed(2) + " — estimate only, Krystal confirms final pay. Payroll file is the pay authority (taxes, net, remittance).");
   $("summary").textContent = lines.join("\n");
 }
-window.decide = function(gi, approve){
+window.decide = function(gi, approve, declineReason){
   const r = adjustments[gi]; if (!r || r.status !== "PENDING") return;
   if (approve) {
     r.status = "APPROVED";
@@ -253,10 +1002,11 @@ window.decide = function(gi, approve){
     }
   } else {
     r.status = "DECLINED";
-    const reason = prompt("Decline reason (optional, for your records):", "");
-    if (reason) r.declineReason = reason;
+    if (declineReason) r.declineReason = declineReason;
   }
   saveAll();
+  mgrBackendPost({ action: "decideAdjust", employee: r.name, date: r.date, job: r.job, reqIn: r.reqIn, reqOut: r.reqOut,
+    reqHours: r.reqHours, status: r.status, declineReason: r.declineReason || "", origIn: r.origIn || "", origOut: r.origOut || "", origHours: r.origHours || "" });
 };
 $("refreshBtn").onclick = reload;
 $("viewDate").addEventListener("change", render);
@@ -270,7 +1020,7 @@ $("csvBtn").onclick = () => {
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"})); a.download = "raven-manager-" + $("viewDate").value + ".csv"; a.click();
 };
 $("jsonBtn").onclick = () => {
-  const data = { entries: filtered(), adjustments: dayAdjustments(), mileage: mileage.filter(m => m.date === $("viewDate").value), houseInstructions: houseInstructions, employeeRates: employeeRates, craRate: craRate, exported: new Date().toISOString() };
+  const data = { entries: filtered(), adjustments: dayAdjustments(), mileage: mileage.filter(m => m.date === $("viewDate").value), houseInstructions: houseInstructions, employeeRates: employeeRates, craRate: craRate, monthlyFocus: monthlyFocus, monthlyDone: monthlyDone, suppliesGuide: guide, exported: new Date().toISOString() };
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"})); a.download = "raven-manager-" + $("viewDate").value + ".json"; a.click();
 };
 $("importFile").addEventListener("change", async (ev) => {
@@ -287,6 +1037,9 @@ $("importFile").addEventListener("change", async (ev) => {
     const inMiles = data.mileage || [];
     inMiles.forEach(m => { const mk = [m.name, m.date, m.start, m.end, m.km].join("|"); if (!mileage.some(x => [x.name, x.date, x.start, x.end, x.km].join("|") === mk)) { mileage.push(m); } });
     if (data.houseInstructions) { Object.assign(houseInstructions, data.houseInstructions); }
+    if (data.suppliesGuide) { guide = data.suppliesGuide; localStorage.setItem(GUIDEKEY, JSON.stringify(guide)); }
+    if (data.monthlyFocus) { monthlyFocus = data.monthlyFocus; localStorage.setItem(MONTHLYKEY, JSON.stringify(monthlyFocus)); }
+    if (data.monthlyDone) { data.monthlyDone.forEach(d => { if (!monthlyDone.some(x => x.taskId === d.taskId && x.job === d.job && x.month === d.month)) monthlyDone.push(d); }); localStorage.setItem(MONTHLYDONEKEY, JSON.stringify(monthlyDone)); }
     if (data.employeeRates) { Object.assign(employeeRates, data.employeeRates); }
     if (data.timeOff) { data.timeOff.forEach(r => { if (!timeOff.some(x => x.name === r.name && x.date === r.date && x.type === r.type)) timeOff.push(r); }); }
     if (data.craRate && !isNaN(parseFloat(data.craRate))) { craRate = parseFloat(data.craRate); localStorage.setItem(CRAKEY, String(craRate)); }
@@ -301,13 +1054,18 @@ window.loadHouse = function(n){
   $("hiName").value = n;
   $("hiTasks").value = houseInstructions[n] ? houseInstructions[n].tasks : "";
   $("hiSpecial").value = houseInstructions[n] ? houseInstructions[n].special : "";
+  $("hiServiceTag").value = houseInstructions[n] ? (houseInstructions[n].serviceTag || "") : "";
+  $("hiServiceNote").value = houseInstructions[n] ? (houseInstructions[n].serviceNote || "") : "";
+  $("hiCodes").value = houseInstructions[n] ? (houseInstructions[n].codes || "") : "";
 };
 $("hiSaveBtn").onclick = () => {
   const n = $("hiName").value.trim();
   if (!n) { alert("Enter a client first name first."); return; }
-  houseInstructions[n] = { tasks: $("hiTasks").value.trim(), special: $("hiSpecial").value.trim() };
+  houseInstructions[n] = { tasks: $("hiTasks").value.trim(), special: $("hiSpecial").value.trim(), serviceTag: $("hiServiceTag").value, serviceNote: $("hiServiceNote").value.trim(), codes: $("hiCodes").value.trim() };
   $("hiStatus").innerHTML = '<span class="ok">Saved instructions for ' + n + '.</span>';
   saveAll();
+  mgrBackendPost({ action: "houseSave", client: n, tasks: houseInstructions[n].tasks, special: houseInstructions[n].special,
+    serviceTag: houseInstructions[n].serviceTag, serviceNote: houseInstructions[n].serviceNote, codes: houseInstructions[n].codes });
 };
 
 function populateRateEmp(){
@@ -324,6 +1082,7 @@ $("craSaveBtn").onclick = () => {
   const v = parseFloat($("craInput").value);
   if (isNaN(v) || v <= 0) { craRate = NaN; localStorage.removeItem(CRAKEY); }
   else { craRate = v; localStorage.setItem(CRAKEY, String(v)); }
+  mgrBackendPost({ action: "settingsSave", craRate: (isNaN(v) || v <= 0) ? "" : String(v) });
   render();
 };
 $("rateSaveBtn").onclick = () => {
@@ -332,9 +1091,12 @@ $("rateSaveBtn").onclick = () => {
   employeeRates[n] = parseFloat($("rateVal").value);
   $("rateStatus").innerHTML = '<span class="ok">Rate for ' + n + ' set to $' + employeeRates[n].toFixed(2) + '/hr for future calculations (jobs already clocked out keep their saved rate unless adjusted).</span>';
   $("rateEmpOther").value = "";
+  mgrBackendPost({ action: "ratesSave", employee: n, rate: employeeRates[n] });
   saveAll();
 };
 
+if ($("weekPick")) $("weekPick").value = mondayOf(localDate());
+initMgrLogin();
 render();
 </script>
 </body>
