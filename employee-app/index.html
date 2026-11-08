@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Raven &amp; Roses">
 <meta name="theme-color" content="#f7f1e3">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-180.png">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
 
 <title>Raven &amp; Roses — Time Card</title>
@@ -69,9 +71,15 @@
   .check-item{display:block;width:100%;text-align:left;background:#f3e9c8;border:1px solid #c9a86a;border-radius:8px;padding:.7em;margin:.3em 0;color:#221f1a}
   .check-item.on{background:#1d1d23;color:#f5d76e;border-color:#d4af37}
   .check-item .tick{font-weight:700;margin-right:.4em}
-  #loginOverlay{position:fixed;inset:0;background:linear-gradient(rgba(247,241,227,.88),rgba(247,241,227,.88)),url('../cream-velvet-roses.jpg') center/cover fixed;z-index:9999;padding:24px;overflow:auto}
-  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #b58900;border-radius:12px;padding:20px;background:rgba(255,253,247,.97);box-shadow:0 4px 18px rgba(122,92,20,.25)}
-  #loginOverlay h1{border-bottom:0}
+  #loginOverlay{position:fixed;inset:0;background:linear-gradient(rgba(247,241,227,.72),rgba(247,241,227,.72)),url('../cream-velvet-roses.jpg') center/cover fixed;z-index:9999;padding:24px;overflow:auto}
+  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #b58900;border-radius:16px;padding:24px;background:rgba(255,253,247,.97);box-shadow:0 0 0 4px rgba(212,175,55,.25),0 6px 24px rgba(122,92,20,.3)}
+  #loginOverlay h1{border-bottom:0;text-align:center;font-size:1.8rem;margin-bottom:.1em}
+  .login-divider{display:flex;align-items:center;gap:10px;color:#b58900;margin:6px 0 10px}
+  .login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:#d4af37}
+  .login-sub{font-family:"Cormorant Garamond",serif;font-size:1.15rem;color:#7a5c14;text-align:center;letter-spacing:.06em;margin:0 0 1em}
+  #loginOverlay label{font-family:"Cormorant Garamond",serif;font-size:1.05rem;color:#7a5c14;letter-spacing:.02em}
+  #loginOverlay input:focus{outline:none;border-color:#b58900;box-shadow:0 0 0 3px rgba(212,175,55,.3)}
+  #loginOverlay button{font-family:"Cormorant Garamond",serif;font-size:1.15rem;letter-spacing:.05em;padding:.7em}
   #backendBanner{border:2px solid #b58900;background:#fffdf0;border-radius:10px;padding:10px;margin:12px 0}
   #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
   #watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);transform-origin:center;z-index:9998;pointer-events:none;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#1d1d23;opacity:.05;letter-spacing:.05em}
@@ -84,7 +92,9 @@
 <div id="loginOverlay">
   <div class="login-box">
     <div id="signInForm">
-    <h1 style="margin-top:0">🐦‍⬛ Raven &amp; Roses — Sign in</h1>
+    <h1 style="margin-top:0">🐦‍⬛ Raven &amp; Roses</h1>
+    <div class="login-divider">🌹</div>
+    <p class="login-sub">Employee App — Sign in</p>
     <p class="small">Sign in with your name and your personal code. Krystal gives you
     your code — it is yours alone. The first code she gives you is only for the first time: when you sign in with it, you will create your own 4-digit code. If your code stops working, ask Krystal.</p>
     <p id="loginBackendNote" class="small"></p>
