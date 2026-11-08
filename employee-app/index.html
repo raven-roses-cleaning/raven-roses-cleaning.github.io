@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#f7f1e3">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="/icon-192.png">
-<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="apple-touch-icon" href="/icon-employee-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
 
 <title>Raven &amp; Roses — Time Card</title>
@@ -826,57 +826,501 @@ const GUIDEKEY = "ravenSuppliesGuideV1";
 // confirmed by Krystal is marked TO CONFIRM. Stove, fridge, sink, wood and
 // the cleaners below are confirmed by Krystal (Nov 8, 2026).
 const DEFAULT_GUIDE = {
-  note: "Use only supplies Krystal provides. Items still marked TO CONFIRM need Krystal's say-so before use.",
-  rooms: [
-    { id: "kitchen", name: "Kitchen", items: [
-      { id: "k-stove", name: "Stove / cooktop", supply: "Bar Keepers Friend Soft Cleanser, Dawn Powerwash, glass razor", goodFor: ["Grease","Cooking splatters","Build-up","Everyday cooking dirt"], how: "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, wipe with a cloth, rinse the cloth and wipe again, then dry. For build-up, use the glass razor as Krystal shows you. Wear gloves.", notes: "Use caution with the glass razor — use it properly, as Krystal shows you.", tags: "stove cooktop hob grease razor" },
-      { id: "k-oven", name: "Oven", supply: "Scrub Daddies / sponges", goodFor: ["Baked-on food","Grease inside the oven"], how: "Wipe loose crumbs out first. Apply cleaning solution, leave it as Krystal shows you, scrub gently with a sponge, wipe clean with a damp cloth.", notes: "TO CONFIRM WITH KRYSTAL: oven cleaner / solution, and what not to use on oven glass.", tags: "oven baked-on grease" },
-      { id: "k-fridge", name: "Fridge (outside & shelves)", supply: "Dawn Powerwash or Bar Keepers Friend Soft Cleanser", goodFor: ["Food spills","Fingerprints","Sticky marks"], how: "Wipe with Dawn Powerwash or Bar Keepers Friend Soft Cleanser on a cloth, then wipe with a clean damp cloth and dry. Always finish with a polish of Windex or vinegar.", notes: "The fridge always gets a polish of Windex or vinegar after cleaning. Do not use anything strong-smelling inside the fridge unless Krystal says so.", tags: "fridge refrigerator spills" },
-      { id: "k-sink", name: "Kitchen sink", supply: "Bar Keepers Friend Soft Cleanser, Dawn Powerwash", goodFor: ["Water marks","Dull stainless steel","Stains in the sink"], how: "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, then wipe and dry. Follow the notes on the bottle.", notes: "Confirmed by Krystal — Bar Keepers Friend and Dawn Powerwash are both good for sinks and stainless steel.", tags: "sink stainless water marks limescale" },
-      { id: "k-counters", name: "Counters / worktops", supply: "Multi-purpose cleaner, Vim", goodFor: ["Food marks","Sticky spots","Everyday dirt"], how: "Spray / apply on a cloth (not straight onto food areas unless Krystal says so), wipe, then wipe with a clean damp cloth.", notes: "Multi-purpose cleaner is food-friendly — use it in kitchens. Vim can be used as well.", tags: "counters worktops" },
-      { id: "k-microwave", name: "Microwave", supply: "Paper towel", goodFor: ["Food splatters inside","Sticky marks"], how: "Wipe inside with a damp cloth / paper towel and cleaning solution, then dry. Wipe the outside the same way.", notes: "TO CONFIRM WITH KRYSTAL.", tags: "microwave splatters" },
-      { id: "k-cabinets", name: "Wood cabinets", supply: "Wood polish", goodFor: ["Dust","Fingerprints","Grease marks"], how: "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.", notes: "Use wood polish on wood cabinets occasionally.", tags: "wood cabinets polish" }
-    ]},
-    { id: "bathroom", name: "Bathroom", items: [
-      { id: "b-toilet", name: "Toilet", supply: "Vim, disinfectant", goodFor: ["Stains","Limescale — to confirm","Everyday dirt"], how: "Clean the inside of the toilet with Vim. Clean the toilet and around it with disinfectant. Wear gloves. Rinse / flush and wipe dry where needed.", notes: "Vim is for the inside of the toilet. Disinfectant is for the toilet and around it. Never mix cleaning products.", tags: "toilet stains limescale" },
-      { id: "b-shower", name: "Shower / bath", supply: "Vim, Dawn Powerwash, Bar Keepers Friend Soft Cleanser", goodFor: ["Soap scum","Water marks","Mould marks — to confirm"], how: "Use Vim for showers and tubs. If there is really dark build-up, use Bar Keepers Friend to get rid of it. Dawn Powerwash can be used instead of Vim — they are interchangeable, go back and forth.", notes: "Vim and Dawn Powerwash are interchangeable for showers and tubs. Bar Keepers Friend is for really dark build-up.", tags: "shower bath soap scum water marks" },
-      { id: "b-taps", name: "Bathroom sink & taps", supply: "Vim, Dawn Powerwash, Bar Keepers Friend Soft Cleanser", goodFor: ["Water spots","Limescale — to confirm","Toothpaste marks"], how: "Clean with Vim or Dawn Powerwash, then wipe and dry so no water spots are left. If there is really nasty build-up, use Bar Keepers Friend.", notes: "Confirmed by Krystal.", tags: "sink taps limescale water spots" },
-      { id: "b-mirror", name: "Mirror / glass", supply: "Windex", goodFor: ["Fingerprints","Water spots","Smears"], how: "Clean with Windex and a clean cloth, then dry so it is streak-free.", notes: "Windex is used for all glass and mirrors.", tags: "mirror glass fingerprints" }
-    ]},
-    { id: "living", name: "Living Room", items: [
-      { id: "l-table", name: "Coffee table / wood furniture", supply: "Wood polish", goodFor: ["Dust","Fingerprints","Cup rings"], how: "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.", notes: "Use wood polish if the wood is looking dull — not every time. Do not use a wet cloth on wood unless Krystal says so.", tags: "wood table dust fingerprints" },
-      { id: "l-tv", name: "TV screen", supply: "Cloths / mop heads", goodFor: ["Dust","Fingerprints"], how: "Wipe gently with a clean, dry, soft cloth only.", notes: "TO CONFIRM WITH KRYSTAL: do not spray cleaner directly on a screen unless Krystal says so.", tags: "tv screen dust" },
-      { id: "l-floors", name: "Hard floors", supply: "Floor cleaner", goodFor: ["Dust","Footprints","Everyday dirt"], how: "Vacuum / sweep first, then mop with a damp mop head and floor cleaner.", notes: "Always use floor cleaner on floors.", tags: "floors mop dust" },
-      { id: "l-sofa", name: "Sofa / upholstery", supply: "Cloths / mop heads", goodFor: ["Dust","Crumbs","Surface marks — to confirm"], how: "Vacuum / brush off crumbs and dust first, then wipe / spot-clean only as Krystal shows you.", notes: "TO CONFIRM WITH KRYSTAL: upholstery cleaner, if any.", tags: "sofa upholstery crumbs" }
-    ]},
-    { id: "bedroom", name: "Bedroom", items: [
-      { id: "be-bedside", name: "Bedside tables", supply: "Cloths / mop heads", goodFor: ["Dust","Fingerprints","Water rings — to confirm"], how: "Dust with a dry cloth, then wipe with a slightly damp cloth and dry straight away.", notes: "TO CONFIRM WITH KRYSTAL.", tags: "bedside dust" },
-      { id: "be-dresser", name: "Dresser / wood furniture", supply: "Wood polish", goodFor: ["Dust","Fingerprints"], how: "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.", notes: "Use wood polish if the wood is looking dull — not every time.", tags: "dresser wood dust" },
-      { id: "be-mirror", name: "Bedroom mirror", supply: "Windex", goodFor: ["Fingerprints","Water spots","Smears"], how: "Clean with Windex and a clean cloth, then dry so it is streak-free.", notes: "Windex is used for all glass and mirrors.", tags: "mirror glass fingerprints" },
-      { id: "be-floors", name: "Bedroom floors", supply: "Floor cleaner", goodFor: ["Dust","Footprints","Everyday dirt"], how: "Vacuum / sweep first, then mop with a damp mop head and floor cleaner.", notes: "Always use floor cleaner on floors.", tags: "floors mop dust" }
-    ]},
-    { id: "general", name: "General / all rooms", items: [
-      { id: "g-vents", name: "Vents", supply: "Cloths / mop heads", goodFor: ["Dust in vents","Dust on vent covers"], how: "Wipe vent covers with a damp cloth and vacuum inside / around the vents where you can reach. (Also a Monthly Focus task some months.)", notes: "TO CONFIRM WITH KRYSTAL.", tags: "vents dust" },
-      { id: "g-washer", name: "Washing machine (outside)", supply: "Cloths / mop heads", goodFor: ["Dust","Detergent drips","Fingerprints"], how: "Wipe with cleaning solution on a cloth, then wipe with a clean damp cloth and dry.", notes: "TO CONFIRM WITH KRYSTAL.", tags: "washing machine" }
-    ]}
+  "note": "Use only supplies Krystal provides. Items still marked TO CONFIRM need Krystal's say-so before use.",
+  "rooms": [
+    {
+      "id": "kitchen",
+      "name": "Kitchen",
+      "items": [
+        {
+          "id": "k-stove",
+          "name": "Stove / cooktop",
+          "supply": "Bar Keepers Friend Soft Cleanser, Dawn Powerwash, glass razor",
+          "goodFor": [
+            "Grease",
+            "Cooking splatters",
+            "Build-up",
+            "Everyday cooking dirt"
+          ],
+          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, wipe with a cloth, rinse the cloth and wipe again, then dry. For build-up, use the glass razor as Krystal shows you. Wear gloves.",
+          "notes": "Use caution with the glass razor — use it properly, as Krystal shows you.",
+          "tags": "stove cooktop hob grease razor"
+        },
+        {
+          "id": "k-oven",
+          "name": "Oven",
+          "supply": "Scrub Daddies / sponges",
+          "goodFor": [
+            "Baked-on food",
+            "Grease inside the oven"
+          ],
+          "how": "Wipe loose crumbs out first. Apply cleaning solution, leave it as Krystal shows you, scrub gently with a sponge, wipe clean with a damp cloth.",
+          "notes": "TO CONFIRM WITH KRYSTAL: oven cleaner / solution, and what not to use on oven glass.",
+          "tags": "oven baked-on grease"
+        },
+        {
+          "id": "k-fridge",
+          "name": "Fridge (outside & shelves)",
+          "supply": "Dawn Powerwash or Bar Keepers Friend Soft Cleanser",
+          "goodFor": [
+            "Food spills",
+            "Fingerprints",
+            "Sticky marks"
+          ],
+          "how": "Wipe with Dawn Powerwash or Bar Keepers Friend Soft Cleanser on a cloth, then wipe with a clean damp cloth and dry. Always finish with a polish of Windex or vinegar.",
+          "notes": "The fridge always gets a polish of Windex or vinegar after cleaning. Do not use anything strong-smelling inside the fridge unless Krystal says so.",
+          "tags": "fridge refrigerator spills"
+        },
+        {
+          "id": "k-sink",
+          "name": "Kitchen sink",
+          "supply": "Bar Keepers Friend Soft Cleanser, Dawn Powerwash",
+          "goodFor": [
+            "Water marks",
+            "Dull stainless steel",
+            "Stains in the sink"
+          ],
+          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, then wipe and dry. Follow the notes on the bottle.",
+          "notes": "Confirmed by Krystal — Bar Keepers Friend and Dawn Powerwash are both good for sinks and stainless steel.",
+          "tags": "sink stainless water marks limescale"
+        },
+        {
+          "id": "k-counters",
+          "name": "Counters / worktops",
+          "supply": "Multi-purpose cleaner, Vim",
+          "goodFor": [
+            "Food marks",
+            "Sticky spots",
+            "Everyday dirt"
+          ],
+          "how": "Spray / apply on a cloth (not straight onto food areas unless Krystal says so), wipe, then wipe with a clean damp cloth.",
+          "notes": "Multi-purpose cleaner is food-friendly — use it in kitchens. Vim can be used as well.",
+          "tags": "counters worktops"
+        },
+        {
+          "id": "k-microwave",
+          "name": "Microwave",
+          "supply": "Paper towel",
+          "goodFor": [
+            "Food splatters inside",
+            "Sticky marks"
+          ],
+          "how": "Wipe inside with a damp cloth / paper towel and cleaning solution, then dry. Wipe the outside the same way.",
+          "notes": "TO CONFIRM WITH KRYSTAL.",
+          "tags": "microwave splatters"
+        },
+        {
+          "id": "k-cabinets",
+          "name": "Wood cabinets",
+          "supply": "Wood polish",
+          "goodFor": [
+            "Dust",
+            "Fingerprints",
+            "Grease marks"
+          ],
+          "how": "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.",
+          "notes": "Use wood polish on wood cabinets occasionally.",
+          "tags": "wood cabinets polish"
+        }
+      ]
+    },
+    {
+      "id": "bathroom",
+      "name": "Bathroom",
+      "items": [
+        {
+          "id": "b-toilet",
+          "name": "Toilet",
+          "supply": "Vim, disinfectant",
+          "goodFor": [
+            "Stains",
+            "Limescale — to confirm",
+            "Everyday dirt"
+          ],
+          "how": "Clean the inside of the toilet with Vim. Clean the toilet and around it with disinfectant. Wear gloves. Rinse / flush and wipe dry where needed.",
+          "notes": "Vim is for the inside of the toilet. Disinfectant is for the toilet and around it. Never mix cleaning products.",
+          "tags": "toilet stains limescale"
+        },
+        {
+          "id": "b-shower",
+          "name": "Shower / bath",
+          "supply": "Vim, Dawn Powerwash, Bar Keepers Friend Soft Cleanser, Degreaser",
+          "goodFor": [
+            "Soap scum",
+            "Water marks",
+            "Mould marks — to confirm",
+            "Build-up between tiles"
+          ],
+          "how": "Use Vim for showers and tubs. If there is really dark build-up, use Bar Keepers Friend to get rid of it. Dawn Powerwash can be used instead of Vim — they are interchangeable, go back and forth. Degreaser works really well with a grout brush on shower floors if there is build-up between the tiles.",
+          "notes": "Vim and Dawn Powerwash are interchangeable for showers and tubs. Bar Keepers Friend is for really dark build-up. Degreaser with a grout brush gets build-up out from between the tiles on shower floors.",
+          "tags": "shower bath soap scum water marks grout brush degreaser"
+        },
+        {
+          "id": "b-taps",
+          "name": "Bathroom sink & taps",
+          "supply": "Vim, Dawn Powerwash, Bar Keepers Friend Soft Cleanser",
+          "goodFor": [
+            "Water spots",
+            "Limescale — to confirm",
+            "Toothpaste marks"
+          ],
+          "how": "Clean with Vim or Dawn Powerwash, then wipe and dry so no water spots are left. If there is really nasty build-up, use Bar Keepers Friend.",
+          "notes": "Confirmed by Krystal.",
+          "tags": "sink taps limescale water spots"
+        },
+        {
+          "id": "b-mirror",
+          "name": "Mirror / glass",
+          "supply": "Windex",
+          "goodFor": [
+            "Fingerprints",
+            "Water spots",
+            "Smears"
+          ],
+          "how": "Clean with Windex and a clean cloth, then dry so it is streak-free.",
+          "notes": "Windex is used for all glass and mirrors.",
+          "tags": "mirror glass fingerprints"
+        }
+      ]
+    },
+    {
+      "id": "living",
+      "name": "Living Room",
+      "items": [
+        {
+          "id": "l-table",
+          "name": "Coffee table / wood furniture",
+          "supply": "Wood polish",
+          "goodFor": [
+            "Dust",
+            "Fingerprints",
+            "Cup rings"
+          ],
+          "how": "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.",
+          "notes": "Use wood polish if the wood is looking dull — not every time. Do not use a wet cloth on wood unless Krystal says so.",
+          "tags": "wood table dust fingerprints"
+        },
+        {
+          "id": "l-tv",
+          "name": "TV screen",
+          "supply": "Cloths / mop heads",
+          "goodFor": [
+            "Dust",
+            "Fingerprints"
+          ],
+          "how": "Wipe gently with a clean, dry, soft cloth only.",
+          "notes": "TO CONFIRM WITH KRYSTAL: do not spray cleaner directly on a screen unless Krystal says so.",
+          "tags": "tv screen dust"
+        },
+        {
+          "id": "l-floors",
+          "name": "Hard floors",
+          "supply": "Floor cleaner",
+          "goodFor": [
+            "Dust",
+            "Footprints",
+            "Everyday dirt"
+          ],
+          "how": "Vacuum / sweep first, then mop with a damp mop head and floor cleaner.",
+          "notes": "Always use floor cleaner on floors.",
+          "tags": "floors mop dust"
+        },
+        {
+          "id": "l-sofa",
+          "name": "Sofa / upholstery",
+          "supply": "Cloths / mop heads",
+          "goodFor": [
+            "Dust",
+            "Crumbs",
+            "Surface marks — to confirm"
+          ],
+          "how": "Vacuum / brush off crumbs and dust first, then wipe / spot-clean only as Krystal shows you.",
+          "notes": "TO CONFIRM WITH KRYSTAL: upholstery cleaner, if any.",
+          "tags": "sofa upholstery crumbs"
+        }
+      ]
+    },
+    {
+      "id": "bedroom",
+      "name": "Bedroom",
+      "items": [
+        {
+          "id": "be-bedside",
+          "name": "Bedside tables",
+          "supply": "Cloths / mop heads",
+          "goodFor": [
+            "Dust",
+            "Fingerprints",
+            "Water rings — to confirm"
+          ],
+          "how": "Dust with a dry cloth, then wipe with a slightly damp cloth and dry straight away.",
+          "notes": "TO CONFIRM WITH KRYSTAL.",
+          "tags": "bedside dust"
+        },
+        {
+          "id": "be-dresser",
+          "name": "Dresser / wood furniture",
+          "supply": "Wood polish",
+          "goodFor": [
+            "Dust",
+            "Fingerprints"
+          ],
+          "how": "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.",
+          "notes": "Use wood polish if the wood is looking dull — not every time.",
+          "tags": "dresser wood dust"
+        },
+        {
+          "id": "be-mirror",
+          "name": "Bedroom mirror",
+          "supply": "Windex",
+          "goodFor": [
+            "Fingerprints",
+            "Water spots",
+            "Smears"
+          ],
+          "how": "Clean with Windex and a clean cloth, then dry so it is streak-free.",
+          "notes": "Windex is used for all glass and mirrors.",
+          "tags": "mirror glass fingerprints"
+        },
+        {
+          "id": "be-floors",
+          "name": "Bedroom floors",
+          "supply": "Floor cleaner",
+          "goodFor": [
+            "Dust",
+            "Footprints",
+            "Everyday dirt"
+          ],
+          "how": "Vacuum / sweep first, then mop with a damp mop head and floor cleaner.",
+          "notes": "Always use floor cleaner on floors.",
+          "tags": "floors mop dust"
+        }
+      ]
+    },
+    {
+      "id": "general",
+      "name": "General / all rooms",
+      "items": [
+        {
+          "id": "g-vents",
+          "name": "Vents",
+          "supply": "Cloths / mop heads",
+          "goodFor": [
+            "Dust in vents",
+            "Dust on vent covers"
+          ],
+          "how": "Wipe vent covers with a damp cloth and vacuum inside / around the vents where you can reach. (Also a Monthly Focus task some months.)",
+          "notes": "TO CONFIRM WITH KRYSTAL.",
+          "tags": "vents dust"
+        },
+        {
+          "id": "g-washer",
+          "name": "Washing machine (outside)",
+          "supply": "Cloths / mop heads",
+          "goodFor": [
+            "Dust",
+            "Detergent drips",
+            "Fingerprints"
+          ],
+          "how": "Wipe with cleaning solution on a cloth, then wipe with a clean damp cloth and dry.",
+          "notes": "TO CONFIRM WITH KRYSTAL.",
+          "tags": "washing machine"
+        }
+      ]
+    }
   ],
-  supplies: [
-    { id: "s-solutions", name: "Cleaning solutions (bulk)", goodFor: ["Grease","Everyday dirt","Food marks","Soap scum"], how: "Use as Krystal shows you — on a cloth / sponge, wear gloves. Never mix cleaning products.", notes: "TO CONFIRM WITH KRYSTAL: which solution is which, and what each one is for." },
-    { id: "s-gloves", name: "Gloves", goodFor: ["Protecting your hands","Bathrooms","Kitchens"], how: "Wear for cleaning, especially bathrooms and kitchens. Change them if they tear.", notes: "Provided by Krystal." },
-    { id: "s-sponges", name: "Scrub Daddies / sponges", goodFor: ["Baked-on food","Scrubbing sinks, ovens and baths"], how: "Use with cleaning solution, scrub gently, rinse the sponge often.", notes: "TO CONFIRM WITH KRYSTAL: which sponge for which surface — do not use a rough sponge on glass / shiny surfaces unless she says so." },
-    { id: "s-papertowel", name: "Paper towel", goodFor: ["Wiping","Drying mirrors and glass","Quick spills"], how: "Wipe and dry with a clean piece; throw used paper towel away, do not reuse it.", notes: "Provided by Krystal." },
-    { id: "s-soap", name: "Laundry soap (for cloths)", goodFor: ["Washing cleaning cloths"], how: "Use to wash cloths as Krystal shows you. Tap 'Cloths washed' in the app only when actually washed.", notes: "For cloths only — not a surface cleaner." },
-    { id: "s-cloths", name: "Cloths / mop heads", goodFor: ["Dusting","Wiping","Drying","Mopping floors","Mirrors and glass"], how: "Use a clean cloth for each job where you can. Wash cloths with the provided laundry soap when dirty.", notes: "Provided by Krystal. Wash them — do not use a dirty cloth on a clean surface." },
-    { id: "s-bkf", name: "Bar Keepers Friend Soft Cleanser", goodFor: ["Stainless steel","Sinks","Fridges","Stoves","Tough build-up","Really dark build-up in showers and tubs","Water marks","Dull stainless steel"], how: "Use as Krystal shows you. Follow the notes on the bottle.", notes: "Confirmed by Krystal — good for stainless steel, sinks, fridges, stoves and tough build-up." },
-    { id: "s-dawn", name: "Dawn Powerwash", goodFor: ["Stove","Fridge","Stainless steel","Showers and tubs","Grease","Food spills","Sticky marks"], how: "Spray on, leave as Krystal shows you, wipe with a cloth and dry. On stainless steel it polishes at the same time, so no separate polish step is needed.", notes: "Regular Dawn Powerwash only — not Heavy Duty. Interchangeable with Vim for showers and tubs." },
-    { id: "s-windex", name: "Windex / vinegar", goodFor: ["Glass and mirrors","Polishing","Streak-free shine","Fridge polish","Stainless steel polish"], how: "After cleaning, polish with Windex or vinegar on a clean cloth and dry.", notes: "Windex is used for all glass and mirrors. The fridge always gets a polish of Windex or vinegar after cleaning." },
-    { id: "s-razor", name: "Glass razor", goodFor: ["Build-up on the stove"], how: "Use only as Krystal shows you.", notes: "Use caution when using the glass razor — use it properly." },
-    { id: "s-vim", name: "Vim", goodFor: ["Showers and tubs","Inside of toilets","Bathroom countertops and sinks","Kitchen counters"], how: "Use as Krystal shows you.", notes: "Interchangeable with Dawn Powerwash for showers and tubs." },
-    { id: "s-disinfectant", name: "Disinfectant", goodFor: ["Toilets and around toilets","Bathroom cabinets"], how: "Use as Krystal shows you.", notes: "Use to clean the toilets and around the toilets, and all the cabinets in the bathroom." },
-    { id: "s-multi", name: "Multi-purpose cleaner", goodFor: ["Kitchens","Countertops","Food areas"], how: "Use as Krystal shows you.", notes: "Food-friendly — use in kitchens." },
-    { id: "s-floor", name: "Floor cleaner", goodFor: ["Floors","Hard floors"], how: "Vacuum / sweep first, then mop with a damp mop head and floor cleaner.", notes: "Always use floor cleaner on floors." },
-    { id: "s-woodpolish", name: "Wood polish", goodFor: ["Wood cabinets","Wood furniture"], how: "Use as Krystal shows you.", notes: "Use on wood cabinets if they are looking dull — not every time." },
-    { id: "s-dusters", name: "Dusters", goodFor: ["Dusting"], how: "Use to dust as Krystal shows you.", notes: "Used for dusting." }
+  "supplies": [
+    {
+      "id": "s-solutions",
+      "name": "Cleaning solutions (bulk)",
+      "goodFor": [
+        "Grease",
+        "Everyday dirt",
+        "Food marks",
+        "Soap scum"
+      ],
+      "how": "Use as Krystal shows you — on a cloth / sponge, wear gloves. Never mix cleaning products.",
+      "notes": "TO CONFIRM WITH KRYSTAL: which solution is which, and what each one is for."
+    },
+    {
+      "id": "s-gloves",
+      "name": "Gloves",
+      "goodFor": [
+        "Protecting your hands",
+        "Bathrooms",
+        "Kitchens"
+      ],
+      "how": "Wear for cleaning, especially bathrooms and kitchens. Change them if they tear.",
+      "notes": "Provided by Krystal."
+    },
+    {
+      "id": "s-sponges",
+      "name": "Scrub Daddies / sponges",
+      "goodFor": [
+        "Baked-on food",
+        "Scrubbing sinks, ovens and baths"
+      ],
+      "how": "Use with cleaning solution, scrub gently, rinse the sponge often.",
+      "notes": "TO CONFIRM WITH KRYSTAL: which sponge for which surface — do not use a rough sponge on glass / shiny surfaces unless she says so."
+    },
+    {
+      "id": "s-papertowel",
+      "name": "Paper towel",
+      "goodFor": [
+        "Wiping",
+        "Drying mirrors and glass",
+        "Quick spills"
+      ],
+      "how": "Wipe and dry with a clean piece; throw used paper towel away, do not reuse it.",
+      "notes": "Provided by Krystal."
+    },
+    {
+      "id": "s-soap",
+      "name": "Laundry soap (for cloths)",
+      "goodFor": [
+        "Washing cleaning cloths"
+      ],
+      "how": "Use to wash cloths as Krystal shows you. Tap 'Cloths washed' in the app only when actually washed.",
+      "notes": "For cloths only — not a surface cleaner."
+    },
+    {
+      "id": "s-cloths",
+      "name": "Cloths / mop heads",
+      "goodFor": [
+        "Dusting",
+        "Wiping",
+        "Drying",
+        "Mopping floors",
+        "Mirrors and glass"
+      ],
+      "how": "Use a clean cloth for each job where you can. Wash cloths with the provided laundry soap when dirty.",
+      "notes": "Provided by Krystal. Wash them — do not use a dirty cloth on a clean surface."
+    },
+    {
+      "id": "s-bkf",
+      "name": "Bar Keepers Friend Soft Cleanser",
+      "goodFor": [
+        "Stainless steel",
+        "Sinks",
+        "Fridges",
+        "Stoves",
+        "Tough build-up",
+        "Really dark build-up in showers and tubs",
+        "Water marks",
+        "Dull stainless steel"
+      ],
+      "how": "Use as Krystal shows you. Follow the notes on the bottle.",
+      "notes": "Confirmed by Krystal — good for stainless steel, sinks, fridges, stoves and tough build-up."
+    },
+    {
+      "id": "s-dawn",
+      "name": "Dawn Powerwash",
+      "goodFor": [
+        "Stove",
+        "Fridge",
+        "Stainless steel",
+        "Showers and tubs",
+        "Grease",
+        "Food spills",
+        "Sticky marks"
+      ],
+      "how": "Spray on, leave as Krystal shows you, wipe with a cloth and dry. On stainless steel it polishes at the same time, so no separate polish step is needed.",
+      "notes": "Regular Dawn Powerwash only — not Heavy Duty. Interchangeable with Vim for showers and tubs."
+    },
+    {
+      "id": "s-windex",
+      "name": "Windex / vinegar",
+      "goodFor": [
+        "Glass and mirrors",
+        "Polishing",
+        "Streak-free shine",
+        "Fridge polish",
+        "Stainless steel polish"
+      ],
+      "how": "After cleaning, polish with Windex or vinegar on a clean cloth and dry.",
+      "notes": "Windex is used for all glass and mirrors. The fridge always gets a polish of Windex or vinegar after cleaning."
+    },
+    {
+      "id": "s-razor",
+      "name": "Glass razor",
+      "goodFor": [
+        "Build-up on the stove"
+      ],
+      "how": "Use only as Krystal shows you.",
+      "notes": "Use caution when using the glass razor — use it properly."
+    },
+    {
+      "id": "s-vim",
+      "name": "Vim",
+      "goodFor": [
+        "Showers and tubs",
+        "Inside of toilets",
+        "Bathroom countertops and sinks",
+        "Kitchen counters"
+      ],
+      "how": "Use as Krystal shows you.",
+      "notes": "Interchangeable with Dawn Powerwash for showers and tubs."
+    },
+    {
+      "id": "s-disinfectant",
+      "name": "Disinfectant",
+      "goodFor": [
+        "Toilets and around toilets",
+        "Bathroom cabinets"
+      ],
+      "how": "Use as Krystal shows you.",
+      "notes": "Use to clean the toilets and around the toilets, and all the cabinets in the bathroom."
+    },
+    {
+      "id": "s-multi",
+      "name": "Multi-purpose cleaner",
+      "goodFor": [
+        "Kitchens",
+        "Countertops",
+        "Food areas"
+      ],
+      "how": "Use as Krystal shows you.",
+      "notes": "Food-friendly — use in kitchens."
+    },
+    {
+      "id": "s-floor",
+      "name": "Floor cleaner",
+      "goodFor": [
+        "Floors",
+        "Hard floors"
+      ],
+      "how": "Vacuum / sweep first, then mop with a damp mop head and floor cleaner.",
+      "notes": "Always use floor cleaner on floors."
+    },
+    {
+      "id": "s-woodpolish",
+      "name": "Wood polish",
+      "goodFor": [
+        "Wood cabinets",
+        "Wood furniture"
+      ],
+      "how": "Use as Krystal shows you.",
+      "notes": "Use on wood cabinets if they are looking dull — not every time."
+    },
+    {
+      "id": "s-dusters",
+      "name": "Dusters",
+      "goodFor": [
+        "Dusting"
+      ],
+      "how": "Use to dust as Krystal shows you.",
+      "notes": "Used for dusting."
+    },
+    {
+      "id": "s-degreaser",
+      "name": "Degreaser",
+      "goodFor": [
+        "Shower floors",
+        "Build-up between tiles",
+        "Grease"
+      ],
+      "how": "Use with a grout brush on shower floors to get rid of build-up between the tiles."
+    }
   ]
 };
 
