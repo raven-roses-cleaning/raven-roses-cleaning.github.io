@@ -1,0 +1,14 @@
+{
+  "name": "Raven & Roses Cleaning Co.",
+  "short_name": "Raven & Roses",
+  "description": "Raven & Roses Cleaning Co. — Smart Cleaning. Beautiful Results. Residential cleaning in Nanaimo and surrounding areas, BC.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1d1d23",
+  "theme_color": "#1d1d23",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
