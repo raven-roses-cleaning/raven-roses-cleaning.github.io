@@ -53,6 +53,25 @@
 <p class="small">Hours and mileage come in from the time-card backend automatically — no re-typing, no JSON import — once the backend is connected. Employee apps show <strong>hours, mileage and supplies only — no pay</strong>. Pay is calculated here, and the employee gets a paystub by email from you.</p>
 <div id="backendBanner"></div>
 <button id="signOutBtn" class="secondary" style="width:auto;padding:.4em 1em">Sign out</button>
+<div id="sectionNav" style="position:sticky;top:0;z-index:200;background:#111;color:#fff;padding:10px 12px;border-radius:0 0 10px 10px;margin:12px 0">
+<label for="sectionJump" style="color:#fff;margin:0 0 .2em">Go to section:</label>
+<select id="sectionJump" onchange="jumpToSection(this)" style="margin-top:.3em">
+<option value="">— Pick a section —</option>
+<option>Top of the page</option>
+<option>0. Pay data — from the backend</option>
+<option>1. This pay run</option>
+<option>2. Year-to-date BEFORE this pay (for CPP / EI caps)</option>
+<option>3. TD1 claims (employee’s signed TD1 forms — basic only by default)</option>
+<option>Paystub — for the employee (copy / print / email)</option>
+<option>Remittance — for Krystal / CRA (does NOT submit to CRA)</option>
+<option>Email paystubs for this pay period</option>
+<option>Year-end totals — for T4 (Krystal / bookkeeper, NOT a filed T4)</option>
+<option>Saved pay runs + monthly remittance totals</option>
+<option>Monthly CRA remittance report</option>
+<option>Rates used — 2026, BC, outside Quebec</option>
+</select>
+</div>
+
 
 <h2>0. Pay data — from the backend</h2>
 <div class="card">
@@ -212,6 +231,25 @@
 // ============================================================================
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec"; // <-- PASTE THE BACKEND /exec URL HERE after deployment
 const BACKEND_ENABLED = BACKEND_URL !== "";
+// Section jump menu — Krystal: no long scrolling to find a section.
+function jumpToSection(sel){
+  var label = sel.value;
+  if(!label){ return; }
+  sel.value = "";
+  if(label === "Top of the page"){ window.scrollTo({top:0, behavior:"smooth"}); return; }
+  var norm = function(s){ return s.replace(/\s+/g, " ").trim(); };
+  var heads = document.querySelectorAll("h2");
+  for(var i=0;i<heads.length;i++){
+    if(norm(heads[i].textContent) === norm(label)){
+      heads[i].scrollIntoView({behavior:"smooth", block:"start"});
+      heads[i].style.outline = "3px solid #b58900";
+      heads[i].style.outlineOffset = "4px";
+      (function(h){ setTimeout(function(){ h.style.outline=""; h.style.outlineOffset=""; }, 2000); })(heads[i]);
+      return;
+    }
+  }
+}
+
 const KEY = "ravenPayrollRunsV1";            // saved pay runs (same as the draft)
 const TD1KEY = "ravenPayrollTd1V1";          // {fed, bc} — local fallback
 const BNKEY = "ravenPayrollBnV1";            // {bn, rp} — local fallback (Krystal's own phone only)
