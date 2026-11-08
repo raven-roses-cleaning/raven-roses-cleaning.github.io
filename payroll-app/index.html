@@ -6,28 +6,38 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Raven &amp; Roses">
-<meta name="theme-color" content="#111111">
+<meta name="theme-color" content="#f7f1e3">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
 <title>Raven &amp; Roses — Payroll (Krystal only)</title>
 <style>
-  body{font-family:system-ui,-apple-system,sans-serif;max-width:820px;margin:0 auto;padding:16px;line-height:1.45;color:#111}
-  h1{font-size:1.4rem} h2{font-size:1.1rem;margin-top:1.5em}
+  body{font-family:"EB Garamond",Georgia,serif;max-width:820px;margin:0 auto;padding:16px;line-height:1.5;background:#f7f1e3;color:#221f1a}
+  body::before{content:"";position:fixed;inset:0;background-image:url('../cream-velvet-roses.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;opacity:.5;pointer-events:none;z-index:0}
+  #appContent{position:relative;z-index:1}
+  h1{font-family:"Cormorant Garamond",serif;font-size:1.6rem;color:#7a5c14;border-bottom:2px solid #d4af37;padding-bottom:.2em}
+  h2{font-family:"Cormorant Garamond",serif;font-size:1.25rem;margin-top:1.5em;color:#7a5c14}
   label{display:block;margin:.6em 0 .2em;font-weight:600}
-  input,select,button,textarea{font-size:1rem;padding:.6em;width:100%;box-sizing:border-box}
-  button{margin:.4em 0;background:#111;color:#fff;border:0;border-radius:8px;cursor:pointer}
-  button.secondary{background:#eee;color:#111} button.smallbtn{width:auto;padding:.5em 1em;margin:.25em .25em .25em 0}
-  button.sendbtn{background:#1a7a2e}
+  input,select,button,textarea{font-family:inherit;font-size:1rem;padding:.6em;width:100%;box-sizing:border-box;background:#fffdf7;border:1px solid #c9a86a;border-radius:8px;color:#221f1a}
+  button{margin:.4em 0;background:#1d1d23;color:#f5d76e;border:1px solid #d4af37;border-radius:8px;cursor:pointer}
+  button.secondary{background:#f3e9c8;color:#221f1a;border:1px solid #b58900}
+  button:disabled{opacity:.5}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .card{border:1px solid #ccc;border-radius:12px;padding:12px;margin:12px 0}
+  .card{border:1px solid #c9a86a;border-radius:12px;padding:12px;margin:12px 0;background:rgba(255,253,247,.94);box-shadow:0 1px 4px rgba(122,92,20,.12)}
+  .small{font-size:.85rem;color:#5a5346} .ok{color:#1a7a2e;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:.9rem} td,th{border-bottom:1px solid #ddd2b8;padding:.4em;text-align:left}
+  pre{white-space:pre-wrap;background:#f3e9c8;padding:12px;border-radius:8px}
+  button.smallbtn{width:auto;padding:.5em 1em;margin:.25em .25em .25em 0}
+  button.sendbtn{background:#1a7a2e}
   .card.sent{border-color:#1a7a2e;background:#f0f8f0}
   .card.warncard{border:2px solid #b58900;background:#fffdf0}
-  .small{font-size:.85rem;color:#555} .ok{color:#1a7a2e;font-weight:700} .warn{color:#b00020;font-weight:700}
-  table{width:100%;border-collapse:collapse;font-size:.9rem} td,th{border-bottom:1px solid #ddd;padding:.4em;text-align:left}
-  pre{white-space:pre-wrap;background:#f7f7f7;padding:12px;border-radius:8px}
-  #loginOverlay{position:fixed;inset:0;background:#fff;z-index:9999;padding:24px;overflow:auto}
-  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #111;border-radius:12px;padding:20px}
+  .warn{color:#b00020;font-weight:700}
+  @media print { button, input, select, textarea, .noprint, #loginOverlay, #signOutBtn { display:none !important; } }
+  #loginOverlay{position:fixed;inset:0;background:linear-gradient(rgba(247,241,227,.88),rgba(247,241,227,.88)),url('../cream-velvet-roses.jpg') center/cover fixed;z-index:9999;padding:24px;overflow:auto}
+  #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #b58900;border-radius:12px;padding:20px;background:rgba(255,253,247,.97);box-shadow:0 4px 18px rgba(122,92,20,.25)}
+  #loginOverlay h1{border-bottom:0}
   #backendBanner{border:2px solid #b58900;background:#fffdf0;border-radius:10px;padding:10px;margin:12px 0}
   #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
-  @media print { button, input, select, textarea, .noprint, #loginOverlay, #signOutBtn { display:none !important; } }
+  #watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);transform-origin:center;z-index:9998;pointer-events:none;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#1d1d23;opacity:.05;letter-spacing:.05em}
+  body.app-hidden #appContent{filter:blur(10px)}
 </style>
 </head>
 <body>
@@ -53,8 +63,8 @@
 <p class="small">Hours and mileage come in from the time-card backend automatically — no re-typing, no JSON import — once the backend is connected. Employee apps show <strong>hours, mileage and supplies only — no pay</strong>. Pay is calculated here, and the employee gets a paystub by email from you.</p>
 <div id="backendBanner"></div>
 <button id="signOutBtn" class="secondary" style="width:auto;padding:.4em 1em">Sign out</button>
-<div id="sectionNav" style="position:sticky;top:0;z-index:200;background:#111;color:#fff;padding:10px 12px;border-radius:0 0 10px 10px;margin:12px 0">
-<label for="sectionJump" style="color:#fff;margin:0 0 .2em">Go to section:</label>
+<div id="sectionNav" style="position:sticky;top:0;z-index:200;background:#1d1d23;color:#f5d76e;padding:10px 12px;border-radius:0 0 10px 10px;margin:12px 0;border-bottom:2px solid #d4af37">
+<label for="sectionJump" style="color:#f5d76e;margin:0 0 .2em">Go to section:</label>
 <select id="sectionJump" onchange="jumpToSection(this)" style="margin-top:.3em">
 <option value="">— Pick a section —</option>
 <option>Top of the page</option>
