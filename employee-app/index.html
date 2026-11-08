@@ -79,9 +79,10 @@
 <div id="copyWarning" role="alert"></div>
 <div id="loginOverlay">
   <div class="login-box">
+    <div id="signInForm">
     <h1 style="margin-top:0">🐦‍⬛ Raven &amp; Roses — Sign in</h1>
     <p class="small">Sign in with your name and your personal code. Krystal gives you
-    your code — it is yours alone. If your code stops working, ask Krystal.</p>
+    your code — it is yours alone. The first code she gives you is only for the first time: when you sign in with it, you will create your own 4-digit code. If your code stops working, ask Krystal.</p>
     <p id="loginBackendNote" class="small"></p>
     <label for="loginName">Your name</label>
     <input id="loginName" placeholder="Your name" autocomplete="off">
@@ -89,6 +90,7 @@
     <input id="loginCode" type="password" inputmode="numeric" autocomplete="off" placeholder="Your code from Krystal">
     <button id="loginBtn">Sign in</button>
     <p id="loginError" class="small" style="color:#b00020;font-weight:700"></p>
+    </div>
     <div id="reviewModeBox" style="display:none">
       <hr>
       <p class="small"><strong>Review mode (no shared backend yet).</strong> The backend
@@ -97,6 +99,17 @@
       nothing syncs. Do not give this to an employee as a live app until the
       backend is connected and codes are set.</p>
       <button id="reviewBtn" class="secondary">Continue in review mode</button>
+    </div>
+    <div id="changeCodeBox" style="display:none">
+      <hr>
+      <h2 style="margin-top:.5em">Create your own code</h2>
+      <p class="small">This is your first sign-in. The code Krystal gave you was only for the first time — now create your own 4-digit code. You will use this code from now on, so pick one you will remember. Do not use your birth year.</p>
+      <label for="newCode">Your own 4-digit code</label>
+      <input id="newCode" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="4 digits">
+      <label for="newCode2">Type it again</label>
+      <input id="newCode2" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="Same 4 digits again">
+      <button id="saveCodeBtn">Save my code and open the app</button>
+      <p id="changeCodeError" class="small" style="color:#b00020;font-weight:700"></p>
     </div>
   </div>
 </div>
@@ -133,9 +146,6 @@
 
 <label for="job">Job / client — pick from your route</label>
 <select id="job"></select>
-<label for="jobOther">Or type a first name (new client, not on the list)</label>
-<input id="jobOther" placeholder="e.g. Maria — do not enter an address">
-<label><input id="trainingFlag" type="checkbox" style="width:auto"> This shift is training ($20/hr, not the regular rate)</label>
 
 <label for="workdate">Date</label>
 <input id="workdate" type="date">
@@ -143,6 +153,7 @@
 <div class="card" id="clockCard">
   <h2>Clock in / out</h2>
   <p id="status">Not clocked in.</p>
+  <p id="trainingNote" class="small" style="display:none">Training shift — $20/hr. Krystal sets this in the manager app.</p>
   <div class="row">
     <button id="inBtn">Clock in</button>
     <button id="outBtn" class="secondary" disabled>Clock out</button>
@@ -488,7 +499,10 @@ function save(){ localStorage.setItem(KEY, JSON.stringify(entries)); render(); p
 $("inBtn").onclick = () => {
   const name = $("emp").value.trim(), job = currentJobName();
   if (!name || !job) { alert("Enter your name and pick the job / client first."); return; }
-  current = { name, job, date: $("workdate").value, in: Date.now(), out: null, refilled:false, low:[], stocked:false, cloth:false, training: $("trainingFlag").checked, issue: "" };
+  // Training is set by Krystal in the manager app (rate $20/hr) — the
+  // employee does not tick it here.
+  var isTraining = Number(session.rate) === 20;
+  current = { name, job, date: $("workdate").value, in: Date.now(), out: null, refilled:false, low:[], stocked:false, cloth:false, training: isTraining, issue: "" };
   $("status").innerHTML = "Clocked in at <b>" + fmt(current.in) + "</b> for " + job + ".";
   $("inBtn").disabled = true; $("outBtn").disabled = false;
   backendPost({ action: "clockin", date: current.date, job: job, in: current.in, training: current.training });
@@ -1076,6 +1090,8 @@ function pullBackendData() {
 function showLogin() {
   $("loginOverlay").style.display = "block";
   $("loginError").textContent = "";
+  var f = $("signInForm"); if (f) f.style.display = "block";
+  var c = $("changeCodeBox"); if (c) c.style.display = "none";
   if (BACKEND_ENABLED) {
     $("loginBackendNote").textContent = "Connected to the shared backend — your code is checked with Krystal's list, and your entries sync to her.";
     $("reviewModeBox").style.display = "none";
@@ -1084,12 +1100,25 @@ function showLogin() {
     $("reviewModeBox").style.display = "block";
   }
 }
+// First sign-in with a temporary code: show the "create your own code"
+// screen instead of opening the app. The app stays locked behind it
+// until the employee has their own code.
+function showChangeCode() {
+  $("loginOverlay").style.display = "block";
+  var f = $("signInForm"); if (f) f.style.display = "none";
+  var r = $("reviewModeBox"); if (r) r.style.display = "none";
+  var c = $("changeCodeBox"); if (c) c.style.display = "block";
+  $("loginError").textContent = "";
+  $("changeCodeError").textContent = "";
+}
 function hideLogin() { $("loginOverlay").style.display = "none"; }
 function applySession() {
   var name = session && session.name ? session.name : "";
   var emp = $("emp");
   emp.value = name;
   emp.disabled = !!(session && session.role !== "review");
+  var tn = $("trainingNote");
+  if (tn) tn.style.display = (session && Number(session.rate) === 20) ? "block" : "none";
   updateBanner();
   updateWatermark();
   if (session && session.role !== "review") pullBackendData();
@@ -1117,6 +1146,7 @@ $("loginBtn").onclick = function () {
       session = { name: d.name, token: d.token, role: d.role || "Employee", rate: d.rate || "" };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
       $("loginCode").value = "";
+      if (d.mustChangeCode) { showChangeCode(); return; }
       hideLogin();
       applySession();
     } else {
@@ -1124,6 +1154,25 @@ $("loginBtn").onclick = function () {
     }
   });
 };
+$("saveCodeBtn").onclick = function () {
+  var a = $("newCode").value.trim(), b = $("newCode2").value.trim();
+  var err = $("changeCodeError");
+  if (!/^[0-9]{4}$/.test(a)) { err.textContent = "Your code must be exactly 4 digits."; return; }
+  if (a !== b) { err.textContent = "The two codes do not match. Type the same 4 digits twice."; return; }
+  err.textContent = "Saving…";
+  backendJsonp("changeCode", { name: session.name, token: session.token, newCode: a }).then(function (d) {
+    if (d && d.ok) {
+      session.token = d.token;
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      $("newCode").value = ""; $("newCode2").value = "";
+      hideLogin();
+      applySession();
+    } else {
+      err.textContent = (d && d.error) || "Could not save your code. Check your connection and try again.";
+    }
+  });
+};
+$("newCode2").addEventListener("keydown", function (e) { if (e.key === "Enter") $("saveCodeBtn").click(); });
 $("loginCode").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
 $("reviewBtn").onclick = function () {
   session = { name: "", token: "", role: "review" };
@@ -1146,7 +1195,13 @@ function initLoginGate() {
       session = saved;
       if (BACKEND_ENABLED && session.token) {
         backendJsonp("getData", { name: session.name, token: session.token }).then(function (d) {
-          if (d && d.ok) { hideLogin(); applySession(); }
+          if (d && d.ok) {
+            // Still on a temporary code (app closed before picking their
+            // own): keep the app locked behind the create-your-own-code
+            // screen instead of opening it.
+            if (d.mustChangeCode) { showChangeCode(); }
+            else { hideLogin(); applySession(); }
+          }
           else { session = null; try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {} showLogin(); }
         });
       } else { hideLogin(); applySession(); }
@@ -1226,21 +1281,19 @@ document.addEventListener("visibilitychange", function () {
 });
 
 // ============================================================================
-// JOB PICK-LIST for clocking in — pick from the route, or type a new name.
+// JOB PICK-LIST for clocking in — pick from the route only. Krystal adds
+// clients in the manager app; the employee cannot type in a new name.
 // The CLIENTS list is the same one the mileage dropdowns use.
 // ============================================================================
 function currentJobName() {
   var sel = $("job");
-  var v = sel ? sel.value : "";
-  if (v === "__other__") return $("jobOther").value.trim();
-  return v;
+  return sel ? sel.value : "";
 }
 function populateClockInJobs() {
   var sel = $("job"); if (!sel) return;
   var cur = sel.value;
   sel.innerHTML = "<option value=''>Pick a job…</option>" +
-    CLIENTS.map(function (c) { return "<option value='" + esc(c[0]) + "'>" + esc(c[0]) + "</option>"; }).join("") +
-    "<option value='__other__'>Other — type a name below</option>";
+    CLIENTS.map(function (c) { return "<option value='" + esc(c[0]) + "'>" + esc(c[0]) + "</option>"; }).join("");
   if (cur) sel.value = cur;
 }
 
@@ -1308,7 +1361,6 @@ window.toggleChecklistItem = function (id) {
 };
 $("job").addEventListener("change", renderChecklist);
 $("workdate").addEventListener("change", renderChecklist);
-$("jobOther").addEventListener("input", renderChecklist);
 
 // ============================================================================
 // HOUSE CODES — blurred by default, tap to reveal at the door, re-blur
