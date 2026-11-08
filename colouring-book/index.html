@@ -1336,7 +1336,7 @@
     <p>A Relaxing Colouring Book — a free gift from Raven &amp; Roses Cleaning. No payment, no signup — just colour.</p>
   </div>
 
-  <p class="top-lilith-link"><a href="/spaces/v2/lilith-moon-haven-colouring-book/">More free colouring pages →</a></p>
+  <p class="top-lilith-link"><a href="https://lilithmoonhaven.github.io/colouring-book/">More free colouring pages →</a></p>
 
   <p class="top-tip">Tip: Add to Home Screen to keep this book on your phone like an app.</p>
 
@@ -1452,7 +1452,7 @@
         <li><strong>Try these for this page</strong> — colours picked to suit the page you're on. Just a starting point — use any colours you like.</li>
         <li><strong>Recent colours</strong> — colours you've used, so you can pick them again quickly.</li>
         <li><strong>Favourite colours</strong> — tap the heart, “Save as favourite,” next to the Current colour to keep a colour you love. It stays saved on this phone, ready in the Favourite colours row below. Tap a favourite to use it; tap its little × to remove just that one.</li>
-        <li><strong>Pick colour</strong> (in Tools) — tap a coloured spot on the page to pick up that exact colour again.</li>
+        <li><strong>Copy colour</strong> (in Tools) — tap a coloured spot on the page to copy that exact colour again.</li>
       </ul>
     </div>
     <div class="wheel-row">
@@ -1514,10 +1514,10 @@
         <li><strong>Pen</strong> — a firm, clean line. <strong>Pencil</strong> — softer and lighter. <strong>Brush</strong> — wide and soft-edged.</li>
         <li><strong>Blend</strong> — a very soft brush; go over an area more than once to build up gentle shading that melts into the colour next to it.</li>
         <li><strong>Eraser</strong> — drag over your colouring to rub it back to the plain line art.</li>
-        <li><strong>Pick colour</strong> — tap any coloured spot on the page to pick up that exact colour again, so you never have to hunt for it in the wheel.</li>
+        <li><strong>Copy colour</strong> — tap any coloured spot on the page to copy that exact colour again, so you never have to hunt for it in the wheel. It becomes your colour straight away, and you land back on the tool you were using, ready to colour with it. It works even before you have chosen a colour.</li>
         <li><strong>Fill similar</strong> — tap a spot and every area coloured the same way is filled at once. Tap a white spot and all the still-white areas fill together; tap a coloured spot and every area in that colour changes together.</li>
         <li><strong>Fill all</strong> (under the tools) — fills every area that is still white with your current colour, in one tap.</li>
-        <li><strong>Magnifier</strong> (under the tools) — turn it on and a round magnifying window follows your finger while you colour, so tiny details are easy to see. Turn it off again when you’re done.</li>
+        <li><strong>Magnifier</strong> (under the tools) — turn it on and a round magnifying window follows your finger, so tiny details are easy to see. While it is on, the page cannot be coloured at all: dragging moves only the magnifier — the page stays still — and tapping does not fill or draw. Turn it off again to go back to colouring, and to scroll the page.</li>
         <li><strong>Undo &amp; Redo</strong> (above Colours, just under Stroke size) — work for everything: fills, pen, pencil, brush, Blend, Eraser, Fill similar, Fill all, and Clear page. The line right under the buttons tells you what the last tap did.</li>
         <li><strong>Stroke size</strong> — how thick the Pen, Pencil, Brush, Blend and Eraser draw.</li>
         <li><strong>Fill tolerance</strong> — for Fill only. Slide left (Stricter) if fill leaks into the next area; slide right (Looser) if it won't fill a speckled area.</li>
@@ -1552,7 +1552,7 @@
       </button>
       <button class="tool-btn" type="button" data-tool="picker">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5 a2.1 2.1 0 0 1 3 3 L13 15 l-4 1 1 -4 Z"/><path d="M5 15 c-1 1.6 -1.8 3 -2.3 4.3 L3 20 l.7.3 C5 19.8 6.4 19 8 18"/></svg>
-        Pick colour
+        Copy colour
       </button>
       <button class="tool-btn" type="button" data-tool="fillSimilar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5" fill="currentColor" stroke="none" opacity=".55"/></svg>
@@ -1820,7 +1820,7 @@
     <p class="note" id="more-share-status" aria-live="polite" style="margin:4px 0 0"></p>
     <p><a href="https://lilithmoonhaven.etsy.com">Buy our digital colouring books on Etsy</a><br>
     <a href="https://lilithmoonhaven.etsy.com">https://lilithmoonhaven.etsy.com</a></p>
-    <p><a href="/spaces/v2/lilith-moon-haven-colouring-book/">Try our other free colouring book — Lilith Moon Haven Colouring Book</a><br>
+    <p><a href="https://lilithmoonhaven.github.io/colouring-book/">Try our other free colouring book — Lilith Moon Haven Colouring Book</a><br>
     <span class="note">Another free gift from Lilith Moon Haven — Lilith in her night garden. Free to colour, no payment, no signup.</span></p>
   </section>
 
@@ -4376,6 +4376,7 @@ function colouringAsTapTool() { return !hasColour() || isTapTool(currentTool); }
 function promptChooseColour() { setStatus(""); }
 var currentPalette = "Raven";
 var currentTool = "pen";
+var toolBeforePicker = "fill"; // tool in use before Copy colour — a successful pick hands it straight back (see pickColourAt)
 var pageReady = false;
 var drawing = false, lastX = 0, lastY = 0, moved = 0;
 var downAt = 0, downClientX = 0, downClientY = 0, maxDrift = 0;
@@ -4739,23 +4740,44 @@ function fillAllUncoloured() {
   setStatus("Filled all the white areas with " + currentColour + ". Tap Undo above Colours to take it all back in one step.");
 }
 
-/* Pick colour (eyedropper): read the colour already on the page at
-   the tapped spot and make it the current colour. The colour layer
-   is sampled — a spot with no colouring yet has nothing to pick. */
+/* Copy colour (eyedropper): read the colour already on the page at
+   the tapped spot and make it the current colour. Only the colour
+   layer is sampled — a spot with no colouring yet has nothing to
+   pick. A small patch around the tap is searched and the strongest
+   colour in it wins, so tapping a thin pen line or the soft edge
+   of a pencil stroke still finds the colour instead of missing it
+   by a pixel. */
 function pickColourAt(cx, cy) {
   try {
-    var d = colourCtx.getImageData(cx, cy, 1, 1).data;
-    if (d[3] <= 10) {
-      setStatus("That spot has no colour on it yet — tap a spot you have already coloured to pick up its colour.");
+    var R = 4; // search 9 x 9 canvas px around the tap
+    var x0 = Math.max(0, cx - R), y0 = Math.max(0, cy - R);
+    var x1 = Math.min(colourCanvas.width - 1, cx + R), y1 = Math.min(colourCanvas.height - 1, cy + R);
+    var w = x1 - x0 + 1, h = y1 - y0 + 1;
+    var data = colourCtx.getImageData(x0, y0, w, h).data;
+    var best = -1, bestA = 10;
+    for (var i = 3; i < data.length; i += 4) {
+      if (data[i] > bestA) { bestA = data[i]; best = i - 3; }
+    }
+    if (best < 0) {
+      setStatus("That spot has no colour on it yet — tap a spot you have already coloured to copy its colour.");
       return;
     }
     function h2(v) { var s = v.toString(16); return s.length === 1 ? "0" + s : s; }
-    var hex = "#" + h2(d[0]) + h2(d[1]) + h2(d[2]);
+    var hex = "#" + h2(data[best]) + h2(data[best + 1]) + h2(data[best + 2]);
     setColour(hex);
     addRecent(hex, true);
-    setStatus("Picked up " + hex + " from the page — that is your colour now. Tap the heart, “Save as favourite,” next to Current colour to keep it.");
+    // A pick is a one-off errand, not a tool to stay on: left on
+    // Copy colour, the next tap would just pick again instead of
+    // colouring — part of why the tool felt confusing. Go straight
+    // back to the tool in use before Copy colour, and say plainly
+    // what happened and what to do next.
+    var backTool = toolBeforePicker || "fill";
+    if (backTool === "picker") backTool = "fill";
+    var backName = { fill: "Fill", pen: "Pen", pencil: "Pencil", brush: "Brush", blend: "Blend", eraser: "Eraser", fillSimilar: "Fill similar" }[backTool] || "Fill";
+    setTool(backTool);
+    setStatus("Copied " + hex + " from the page — that is your colour now, and you are back on " + backName + ", so you can use it straight away.");
   } catch (e) {
-    setStatus("Could not pick a colour from that spot — try tapping the middle of a coloured area.");
+    setStatus("Could not copy a colour from that spot — try tapping the middle of a coloured area.");
   }
 }
 
@@ -4899,7 +4921,7 @@ function setColour(c) {
   }
   renderFavourites();
   setStatus("Colour: " + c + ". " + (currentTool === "fill" ? "Tap a white area of the page to fill it."
-    : currentTool === "picker" ? "Tap a coloured spot on the page to pick up its colour."
+    : currentTool === "picker" ? "Tap a coloured spot on the page to copy its colour."
     : currentTool === "fillSimilar" ? "Tap a spot to fill every area coloured the same way at once."
     : "Draw with the " + currentTool + "."));
   // A colour is chosen now, so the canvas goes back to the current
@@ -4943,6 +4965,9 @@ function showNoColour() {
 }
 
 function setTool(tool) {
+  // Remember the tool in use before Copy colour, so a successful
+  // pick can hand it straight back (see pickColourAt).
+  if (tool === "picker" && currentTool !== "picker") toolBeforePicker = currentTool;
   currentTool = tool;
   var btns = document.querySelectorAll(".tool-btn");
   for (var i = 0; i < btns.length; i++) {
@@ -4966,8 +4991,8 @@ function setTool(tool) {
       ? "none"
       : colouringAsTapTool() ? "pan-x pan-y" : "none";
   }
-  var toolNames = { fill: "Fill", pen: "Pen", pencil: "Pencil", brush: "Brush", blend: "Blend", eraser: "Eraser", picker: "Pick colour", fillSimilar: "Fill similar" };
-  if (tool === "picker") setStatus("Tool: Pick colour — tap any coloured spot on the page to pick up that exact colour.");
+  var toolNames = { fill: "Fill", pen: "Pen", pencil: "Pencil", brush: "Brush", blend: "Blend", eraser: "Eraser", picker: "Copy colour", fillSimilar: "Fill similar" };
+  if (tool === "picker") setStatus("Tool: Copy colour — tap any coloured spot on the page to copy that exact colour. It becomes your colour, and you land back on the tool you were using.");
   else if (tool === "fillSimilar") setStatus("Tool: Fill similar — tap a spot to fill every area coloured the same way, all at once. Tap a white spot to fill all the white areas together.");
   else setStatus("Tool: " + (toolNames[tool] || tool) + ".");
 }
@@ -5245,15 +5270,26 @@ document.addEventListener("DOMContentLoaded", function () {
   function runTapAction(a) {
     if (!a || !pageReady) return;
     if (a.kind === "none") return; // a tap while no colour is chosen — it colours nothing (double-tap still toggles the enlarged view)
+    if (magnifierOn) return; // magnifier on = inspect / move only — a tap held back from before it was turned on must not colour either
     if (a.pageId && PAGES[currentIndex] && PAGES[currentIndex].id !== a.pageId) return; // page changed meanwhile
+    if (a.kind === "pick") {
+      // Copy colour SETS the current colour (pickColourAt → setColour)
+      // instead of using one, so it must not go through the
+      // save-and-restore below: that restore silently put the old
+      // colour — or no colour at all — back the moment the pick was
+      // made, while the Current colour display kept showing the
+      // picked one. The pick looked done and behaved undone, which
+      // is exactly the reported "tap Copy colour, tap the page,
+      // nothing happens."
+      pickColourAt(a.cx, a.cy);
+      return;
+    }
     var prevColour = currentColour;
     currentColour = a.colourHex;
     if (a.kind === "fill") {
       floodFill(a.cx, a.cy, a.rgb);
     } else if (a.kind === "fillSimilar") {
       floodFillSimilar(a.cx, a.cy, a.rgb);
-    } else if (a.kind === "pick") {
-      pickColourAt(a.cx, a.cy);
     } else if (a.kind === "dot") {
       var prevTool = currentTool;
       currentTool = a.tool;
@@ -5339,6 +5375,7 @@ document.addEventListener("DOMContentLoaded", function () {
     scrollLastClientX = ev.clientX;
   }
   function commitToDraw() {
+    if (magnifierOn) return; // magnifier on = inspect / move only — a drag never becomes a stroke
     if (!hasColour()) return; // no colour chosen — a drag scrolls, it never becomes a stroke
     gestureMode = "draw";
     pushUndo();
@@ -5442,6 +5479,25 @@ document.addEventListener("DOMContentLoaded", function () {
       try { colourCanvas.setPointerCapture(ev.pointerId); } catch (e) {}
       if (panMode) { gestureMode = "pan"; return; }
     }
+    if (magnifierOn) {
+      // Magnifier on = inspect / move ONLY — no colouring at all,
+      // exactly like the fixed Lilith app. No tool may paint while
+      // it is on: not Fill on a tap, not Copy colour on a tap, not
+      // the Pen on a drag, not a mouse/pen stroke. The gesture
+      // starts as a possible tap ("magtap"): a quick tap colours
+      // nothing (it is only held, like a no-colour tap, so a second
+      // tap can still double-tap to enlarge), and any drag becomes
+      // "mag" in pointermove, which moves ONLY the loupe — the
+      // page and everything behind it stay still — and never
+      // draws. Colouring only happens with the magnifier off. The
+      // loupe itself follows via updateMagnifier, which listens
+      // for these same pointer events separately.
+      try { colourCanvas.setPointerCapture(ev.pointerId); } catch (e) {}
+      gestureMode = "magtap";
+      bufferedPts = [];
+      moveHistory = [];
+      return;
+    }
     if (colouringAsTapTool()) {
       // No preventDefault and no pointer capture: the browser stays free
       // to turn this touch into a page scroll at any moment. This is
@@ -5493,6 +5549,24 @@ document.addEventListener("DOMContentLoaded", function () {
     // a second tap that moves a little is still a double-tap (see
     // endPointer), not the start of a stroke.
     if (dblTapCandidate && drift > (isEnlarged() && !colouringAsTapTool() ? 24 : 12)) { flushHeldTap(); dblTapCandidate = false; }
+    if (gestureMode === "magtap" || gestureMode === "mag") {
+      // Magnifier on: a drag moves ONLY the loupe — the page and
+      // everything behind it stay exactly where they are. It must
+      // NOT scroll the page (and must NOT pan the big picture while
+      // enlarged): the reader is inspecting one still page, so the
+      // background moving under the loupe loses their place. No
+      // panByCurrentGesture here — the loupe itself follows via
+      // updateMagnifier, which listens for these same pointer
+      // events separately. It NEVER draws either, whatever tool or
+      // colour is selected — colouring resumes only when the
+      // magnifier is turned off.
+      if (gestureMode === "magtap" && drift > 10) {
+        gestureMode = "mag";
+        setStatus("Magnifier on — that drag just moved the magnifier, so nothing was coloured. The page stayed still. Turn the magnifier off to colour.");
+      }
+      ev.preventDefault();
+      return;
+    }
     if (gestureMode === "pan") {
       // One-finger pan: Move around mode, or a Fill drag in the
       // enlarged view. The big picture follows the finger exactly.
@@ -5550,15 +5624,13 @@ document.addEventListener("DOMContentLoaded", function () {
       // matter how long the finger rested on the picture before it.
       if (rady >= 14 && rady >= 1.6 * radx && vSpeed >= 0.3) {
         if (magnifierOn) {
-          // Magnifier on: a fast vertical drag is the reader moving
-          // the loupe to another line, NOT a scroll — scrolling here
-          // moved the page 1:1 with the finger, which pinned the
-          // loupe to one line (sideways still worked, up/down never
-          // could). With a colour chosen the drag draws as usual;
-          // without one it is a loupe-only drag ("mag") that draws
-          // nothing and scrolls nothing.
-          if (hasColour()) commitToDraw();
-          else { gestureMode = "mag"; bufferedPts = []; moveHistory = []; }
+          // Magnifier on = inspect / move only: a fast vertical drag
+          // moves ONLY the loupe ("mag") — the page behind it does
+          // not scroll or move at all. It NEVER draws, with or
+          // without a colour chosen. Gestures with the magnifier on
+          // normally start as "magtap" in pointerdown and never
+          // reach this branch; this is the safety net.
+          gestureMode = "mag"; bufferedPts = []; moveHistory = [];
           return;
         }
         gestureMode = "scroll";
@@ -5579,9 +5651,10 @@ document.addEventListener("DOMContentLoaded", function () {
           moveHistory = [];
           panByCurrentGesture(ev);
           setStatus("Scrolling — nothing was drawn. To draw, drag slowly on the picture.");
-        } else if (magnifierOn && !hasColour()) {
-          // Long vertical drag with the magnifier on and no colour
-          // chosen: a loupe-only drag, like the fast one above.
+        } else if (magnifierOn) {
+          // Long vertical drag with the magnifier on: a loupe-only
+          // drag, like the fast one above — the page behind it does
+          // not scroll or move at all, and it never draws.
           gestureMode = "mag"; bufferedPts = []; moveHistory = [];
         } else commitToDraw();
       }
@@ -5611,6 +5684,25 @@ document.addEventListener("DOMContentLoaded", function () {
     if (mode === "scroll" || mode === "pan" || mode === "mag") { // it was a scroll / pan / magnifier-only drag; nothing to colour — and not a double-tap, so a held first tap is carried out
       if (dblTapCandidate) { flushHeldTap(); dblTapCandidate = false; }
       gestureMode = ""; bufferedPts = []; return;
+    }
+    if (mode === "magtap") {
+      // A tap with the magnifier on: it NEVER colours — no fill, no
+      // dot, no colour pick, for any tool. A quick second tap in the
+      // same spot is still a double-tap (enlarge / go back); a lone
+      // tap is held only as a "none" action, exactly like a tap with
+      // no colour chosen, so it can pair with a following tap.
+      gestureMode = ""; bufferedPts = []; moveHistory = [];
+      var mDrift = Math.max(maxDrift, Math.abs(ev.clientX - downClientX), Math.abs(ev.clientY - downClientY));
+      var mHeld = Date.now() - downAt;
+      if (dblTapCandidate && mDrift <= 24 && mHeld <= 600) {
+        heldTap = null; dblTapCandidate = false;
+        toggleEnlarged();
+        return;
+      }
+      if (dblTapCandidate) { flushHeldTap(); dblTapCandidate = false; }
+      var mp = canvasPos(ev);
+      scheduleTapAction({ kind: "none", cx: mp.x, cy: mp.y, rgb: null, colourHex: null, clientX: downClientX, clientY: downClientY });
+      return;
     }
     gestureMode = "";
     if (dblTapCandidate) {
@@ -5661,13 +5753,21 @@ document.addEventListener("DOMContentLoaded", function () {
       var p = canvasPos(ev);
       // Hold the tap back a beat: if this tap is the first half of
       // a double-tap, it must not act at all (see scheduleTapAction).
-      if (!hasColour()) {
+      if (currentTool === "picker") {
+        // Copy colour never needs a colour chosen first — copying
+        // one off the page IS how you choose it. This branch must
+        // come before the no-colour one below: with no colour chosen
+        // yet (the book's opening state, even on a page coloured and
+        // saved earlier) a Copy colour tap used to be scheduled as
+        // "none" and swallowed whole — no pick, no message, nothing.
+        scheduleTapAction({ kind: "pick", cx: p.x, cy: p.y, rgb: null, colourHex: null, clientX: downClientX, clientY: downClientY });
+      } else if (!hasColour()) {
         // No colour chosen yet: the held tap is a "none" action — it
         // exists only so a second tap can still make a double-tap
         // (enlarge / go back). On its own it colours nothing.
         scheduleTapAction({ kind: "none", cx: p.x, cy: p.y, rgb: null, colourHex: null, clientX: downClientX, clientY: downClientY });
       } else {
-        var tapKind = currentTool === "picker" ? "pick" : currentTool === "fillSimilar" ? "fillSimilar" : "fill";
+        var tapKind = currentTool === "fillSimilar" ? "fillSimilar" : "fill";
         scheduleTapAction({ kind: tapKind, cx: p.x, cy: p.y, rgb: hexToRgb(currentColour), colourHex: currentColour, clientX: downClientX, clientY: downClientY });
       }
     } else if (mode === "undecided") {
@@ -5779,22 +5879,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (!on && magEl) magEl.hidden = true;
     // While the magnifier is on, the canvas keeps EVERY touch for
-    // itself (touch-action:none). A drag on the page must move the
-    // loupe — up and down as well as sideways — never scroll the
-    // page: a page scroll moves the page exactly with the finger,
-    // so the loupe's height on the page could never change and it
-    // looked stuck on one line (it could only slide sideways). The
-    // pointer handlers likewise never hand a drag to scrolling
-    // while it is on (see the "undecided" handling in pointermove).
-    // Turning it off restores the normal per-tool behaviour.
+    // itself (touch-action:none) so the pointer handlers — not the
+    // browser — decide what a gesture does, and what they do is
+    // inspect / move ONLY: no tool colours anything while it is on.
+    // A drag moves ONLY the loupe, up and down as well as sideways;
+    // the page and everything behind it stay exactly still — the
+    // handlers do NOT scroll the page by hand and do NOT pan it,
+    // because the reader is inspecting one still page and the
+    // background moving under the loupe loses their place. A tap
+    // colours nothing. (Native browser scrolling would also take
+    // the pointer events away, so the loupe could not follow the
+    // finger.) To scroll the page, turn the magnifier off first.
+    // Turning it off restores the normal per-tool behaviour, and
+    // only then can the page be coloured.
     if (colourCanvas) {
       colourCanvas.style.touchAction = on ? "none"
         : document.body.classList.contains("enlarged-lock") ? "none"
         : colouringAsTapTool() ? "pan-x pan-y" : "none";
     }
     setStatus(on
-      ? "Magnifier on — touch or move over the page and a big magnifying window will float well above your finger and follow it, up and down, sideways and right into every corner of the page, so your finger never covers what it is magnifying. While it is on, dragging on the page moves the magnifier instead of scrolling — tap Magnifier again to turn it off and scroll as usual."
-      : "Magnifier off.");
+      ? "Magnifier on — touch or move over the page and a big magnifying window will float well above your finger and follow it, up and down, sideways and right into every corner of the page, so your finger never covers what it is magnifying. While it is on, nothing on the page can be coloured: dragging moves only the magnifier — the page stays still — and tapping does not fill or draw. Tap Magnifier again to turn it off and colour as usual."
+      : "Magnifier off — you can colour again.");
   }
   if (magnifierBtn) magnifierBtn.addEventListener("click", function () { setMagnifier(!magnifierOn); if (magnifierOn) trackEvent("magnifier_use", {}); });
   // The loupe lives on <body>, not inside #canvas-wrap: that wrap
@@ -6524,7 +6629,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var a = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
       if (!a) return;
       var h = a.getAttribute("href") || "";
-      if (h.indexOf("lilith-moon-haven-colouring-book") !== -1) trackEvent("link_tap", { link: "lilith_book" });
+      if (h.indexOf("https://lilithmoonhaven.github.io/colouring-book/") !== -1) trackEvent("link_tap", { link: "lilith_book" });
       else if (h.indexOf("etsy.com") !== -1) trackEvent("link_tap", { link: "etsy" });
       else if (h.indexOf("facebook.com") !== -1) trackEvent("link_tap", { link: "facebook" });
       else if (h.indexOf("pinterest.com") !== -1) trackEvent("link_tap", { link: "pinterest" });
