@@ -10,15 +10,15 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/icon-employee-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 
 <title>Raven &amp; Roses — Time Card</title>
 <style>
   body{font-family:"EB Garamond",Georgia,serif;max-width:640px;margin:0 auto;padding:16px;line-height:1.5;background:#f7f1e3;color:#221f1a}
   body::before{content:"";position:fixed;inset:0;background-image:url('../cream-velvet-roses.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;opacity:.5;pointer-events:none;z-index:0}
   #appContent{position:relative;z-index:1}
-  h1{font-family:"Cormorant Garamond",serif;font-size:1.6rem;color:#7a5c14;border-bottom:2px solid #d4af37;padding-bottom:.2em}
-  h2{font-family:"Cormorant Garamond",serif;font-size:1.25rem;margin-top:1.5em;color:#7a5c14}
+  h1{font-family:"Playfair Display",serif;font-size:1.6rem;color:#7a5c14;border-bottom:2px solid #d4af37;padding-bottom:.2em}
+  h2{font-family:"Playfair Display",serif;font-size:1.25rem;margin-top:1.5em;color:#7a5c14}
   label{display:block;margin:.6em 0 .2em;font-weight:600}
   input,select,button,textarea{font-family:inherit;font-size:1rem;padding:.6em;width:100%;box-sizing:border-box;background:#fffdf7;border:1px solid #c9a86a;border-radius:8px;color:#221f1a}
   button{margin:.4em 0;background:#1d1d23;color:#f5d76e;border:1px solid #d4af37;border-radius:8px;cursor:pointer}
@@ -45,16 +45,25 @@
   .submitted{border:1px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:#fffdf0}
   .monthly-task{border:1px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
   .monthly-task.done{border-color:#1a7a2e;background:#f0f8f0}
-  .monthly-task h3{margin:.2em 0;font-size:1rem;font-family:"Cormorant Garamond",serif;color:#7a5c14}
+  .monthly-task h3{margin:.2em 0;font-size:1rem;font-family:"Playfair Display",serif;color:#7a5c14}
   .monthly-task .donebtn{width:auto;padding:.5em 1em;background:#1a7a2e}
   .monthly-task .donebtn.undobtn{background:#5a5346}
+  /* Monthly Focus — gold ribbon banner (Krystal, 2026-11-08): a decorative
+     gold ribbon, not a plain box. Gold band, dark text, folded ribbon ends. */
+  #monthlyFocusBanner{background:linear-gradient(180deg,#f7dd85 0%,#f5d76e 45%,#e9c95c 100%);border:2px solid #b58900;border-radius:6px;color:#221f1a;box-shadow:0 2px 10px rgba(122,92,20,.35);position:relative;margin-left:10px;margin-right:10px}
+  #monthlyFocusBanner h2{color:#3a2f10;margin-top:.2em}
+  #monthlyFocusBanner .small{color:#4a3f1a}
+  #monthlyFocusBanner .monthly-task{background:rgba(255,253,247,.72);border-color:#b58900}
+  #monthlyFocusBanner::before,#monthlyFocusBanner::after{content:"";position:absolute;top:50%;width:0;height:0;border-style:solid;transform:translateY(-50%)}
+  #monthlyFocusBanner::before{left:-11px;border-width:11px 11px 11px 0;border-color:transparent #b58900 transparent transparent}
+  #monthlyFocusBanner::after{right:-11px;border-width:11px 0 11px 11px;border-color:transparent transparent transparent #b58900}
   .guide-room{border:1px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
-  .guide-room h3{margin:.2em 0;font-size:1rem;font-family:"Cormorant Garamond",serif;color:#7a5c14}
+  .guide-room h3{margin:.2em 0;font-size:1rem;font-family:"Playfair Display",serif;color:#7a5c14}
   .guide-room input{margin:.4em 0}
   .guide-item{width:100%;text-align:left;background:#f3e9c8;border:1px solid #c9a86a;border-radius:8px;padding:.7em;margin:.3em 0;color:#221f1a}
   .guide-item small{color:#5a5346}
   .guide-detail{border:1px solid #1a7a2e;border-radius:10px;padding:10px;margin:10px 0;background:#f0f8f0}
-  .guide-detail h3{margin:.2em 0;font-family:"Cormorant Garamond",serif;color:#7a5c14}
+  .guide-detail h3{margin:.2em 0;font-family:"Playfair Display",serif;color:#7a5c14}
   .guide-chip{display:inline-block;width:auto;padding:.5em .9em;margin:.25em .25em .25em 0;background:#f3e9c8;border:1px solid #b58900;border-radius:999px;color:#221f1a}
   .guide-chip.on{background:#1d1d23;color:#f5d76e;border-color:#d4af37}
   .service-note{border:2px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
@@ -84,11 +93,32 @@
   #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
   #watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);transform-origin:center;z-index:9998;pointer-events:none;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#1d1d23;opacity:.05;letter-spacing:.05em}
   body.app-hidden #appContent{filter:blur(10px)}
+  /* Colouring book QR pop-up (Krystal, 2026-11-08): a free gift for the
+     employee to share with clients. Dark overlay, cream card, gold accents. */
+  #colouringQrOverlay{position:fixed;inset:0;background:rgba(29,29,35,.72);z-index:9996;display:none;padding:20px;overflow:auto}
+  #colouringQrOverlay.open{display:flex;align-items:center;justify-content:center}
+  .colouring-qr-card{max-width:420px;width:100%;background:#fffdf7;border:2px solid #b58900;border-radius:16px;padding:20px;text-align:center;box-shadow:0 8px 32px rgba(29,29,35,.4)}
+  .colouring-qr-card h2{font-family:"Playfair Display",serif;color:#7a5c14;margin-top:.2em}
+  .colouring-qr-card img{width:220px;height:220px;max-width:80vw;display:block;margin:10px auto;border:1px solid #c9a86a;border-radius:10px;background:#fff}
+  .colouring-qr-card .qr-save-btn{display:block;text-decoration:none;background:#1d1d23;color:#f5d76e;border:1px solid #d4af37;border-radius:8px;padding:.6em;margin:.4em 0;font-size:1rem}
+  .colouring-qr-card .qr-never{background:none;border:none;color:#5a5346;text-decoration:underline;width:auto;padding:.4em;font-size:.9rem}
 </style>
 </head>
 <body>
 <div id="watermark" aria-hidden="true"></div>
 <div id="copyWarning" role="alert"></div>
+<div id="colouringQrOverlay" role="dialog" aria-label="Free colouring book">
+  <div class="colouring-qr-card">
+    <h2>🎨 A free gift for your clients!</h2>
+    <p>Our Raven &amp; Roses colouring book is free. Share it with your clients — scan the QR, or save it to your phone to share later.</p>
+    <img src="raven-colouring-book-qr.png" alt="QR code for the free Raven &amp; Roses colouring book">
+    <p class="small">Scan to open the free colouring book</p>
+    <a class="qr-save-btn" href="raven-colouring-book-qr.png" download="raven-colouring-book-qr.png">Save the QR to my phone</a>
+    <button id="colouringQrGotIt" type="button">Got it</button>
+    <p><button id="colouringQrNever" type="button" class="qr-never">Don't show this again</button></p>
+    <p class="small">Tip: you can also press and hold the picture to save it.</p>
+  </div>
+</div>
 <div id="loginOverlay">
   <div class="login-box">
     <div id="signInForm">
@@ -131,6 +161,8 @@
 <h1><img src="/icon-employee-192.png" alt="" style="height:40px;width:40px;vertical-align:middle;border-radius:8px;margin-right:6px"> Raven &amp; Roses — Time Card</h1>
 <div id="privacyNote">Private information — for work purposes only. Do not share, copy, screenshot, or photograph this information.</div>
 <div id="backendBanner"></div>
+<div class="card" id="monthlyFocusBanner"></div>
+<div class="card" id="fridayVacuumCard" style="display:none"></div>
 <button id="signOutBtn" class="secondary" style="width:auto;padding:.4em 1em">Sign out</button>
 <div id="sectionNav" style="position:sticky;top:0;z-index:200;background:#111;color:#fff;padding:10px 12px;border-radius:0 0 10px 10px;margin:12px 0">
 <label for="sectionJump" style="color:#fff;margin:0 0 .2em">Go to section:</label>
@@ -139,12 +171,11 @@
 <option>Top of the page</option>
 <option>Clock in / out</option>
 <option>⏱ Adjust time — request a correction</option>
+<option>🏠 House instructions</option>
+<option>🧴 What to use — Supplies Guide</option>
+<option>🚗 Mileage tracker</option>
 <option>⚠️ Job issue note</option>
 <option>🗓️ Time off / sick day request</option>
-<option>🚗 Mileage tracker</option>
-<option>🏠 House instructions</option>
-<option>🗓️ This Month’s Focus — do in EVERY house this month</option>
-<option>🧴 What to use — Supplies Guide</option>
 <option>End of job — no typing required</option>
 <option>Today’s entries</option>
 <option>Time adjustments</option>
@@ -173,7 +204,6 @@
   </div>
   <p class="small">Times use this phone’s clock. Hours are calculated when you clock out.</p>
 </div>
-
 <div class="card" id="adjustCard">
   <h2>⏱ Adjust time — request a correction</h2>
   <p class="small">Forgot to clock in, forgot to clock out, or clocked in at the wrong time? Fill this in. <strong>Nothing changes until Krystal approves it.</strong></p>
@@ -193,33 +223,38 @@
   <button id="adjCancelBtn" class="secondary">Cancel — keep original times</button>
   <p id="adjStatus" class="small"></p>
 </div>
-
-
-<div class="card" id="issueCard">
-  <h2>⚠️ Job issue note</h2>
-  <p class="small">Something went wrong, couldn’t finish a task, or damage? Write it here before you clock out — Krystal sees it with that job, the same day.</p>
-  <label for="issueNote">Issue note for this job</label>
-  <textarea id="issueNote" rows="3" placeholder="e.g. Vacuum stopped working, could not vacuum living room"></textarea>
+<div class="card" id="houseCard">
+  <h2>🏠 House instructions</h2>
+  <p class="small">Pick a job to see what gets done at that house, plus any special instructions. Krystal adds these for each house in her manager app — if nothing shows here yet, she has not added that house’s instructions yet.</p>
+  <label for="houseJob">Job / client (first name only)</label>
+  <select id="houseJob"></select>
+  <label for="houseJobOther">Or type a first name</label>
+  <input id="houseJobOther" placeholder="e.g. Maria">
+  <h3 style="font-size:1rem">🔒 Service note — for staff only</h3>
+  <div id="houseService" class="service-note protect">Pick a job above to see its service note.</div>
+  <p class="small">Internal note for staff only — do not show or read this to the client.</p>
+  <h3 style="font-size:1rem">What gets done at this house</h3>
+  <pre id="houseTasks" class="protect">Pick a job above to see its instructions.</pre>
+  <h3 style="font-size:1rem">Special instructions</h3>
+  <pre id="houseSpecial" class="protect">—</pre>
+  <h3 style="font-size:1rem">🔑 House codes</h3>
+  <div id="houseCodes" class="codes-box">Pick a job above to see its house codes.</div>
+  <p class="small">Codes are blurred until you tap them. Tap to reveal at the door — they blur again after 30 seconds, or when you pick another house. Never share them. The address stays visible in the mileage list so you can open it in a map.</p>
 </div>
 
-
-<div class="card" id="timeOffCard">
-  <h2>🗓️ Time off / sick day request</h2>
-  <p class="small">BC paid sick days: 5 per year. Vacation pay is already paid on every cheque, so vacation time off itself is unpaid time off — sick days are the paid ones, up to 5 per year. Nothing is approved until Krystal approves it.</p>
-  <label for="toDate">Date requested off</label>
-  <input id="toDate" type="date">
-  <label for="toType">Type</label>
-  <select id="toType">
-    <option value="sick">Sick day — paid (BC, up to 5/year)</option>
-    <option value="timeoff">Time off — unpaid</option>
-  </select>
-  <label for="toReason">Reason (optional for sick, helpful for time off)</label>
-  <input id="toReason" placeholder="e.g. Doctor appointment">
-  <button id="toSubmitBtn">Send time off / sick request to Krystal</button>
-  <p id="toStatus" class="small"></p>
-  <div id="toList"></div>
+<div class="card" id="suppliesGuideCard">
+  <h2>🧴 What to use — Supplies Guide</h2>
+  <p class="small"><strong>Not sure what to use?</strong> Pick a room, tap the thing you are cleaning, and it tells you what to use. Or search below.</p>
+  <p class="small">Use only supplies Krystal provides. Anything marked &ldquo;TO CONFIRM&rdquo; is not final until Krystal confirms it.</p>
+  <label for="guideSearch">🔍 Search anything — item, dirt / stain, or supply</label>
+  <input id="guideSearch" class="guide-search" placeholder="e.g. stove, grease, limescale, soap scum, oven, mirror">
+  <div id="guideSearchResults"></div>
+  <div id="guideMenu"></div>
+  <div id="guideRooms"></div>
+  <div id="guideDetail"></div>
+  <div id="guideSupplies"></div>
+  <p class="small">How updates reach you: when Krystal changes it in her manager app, you see the new guide here automatically — no separate message needed.</p>
 </div>
-
 <div class="card" id="mileageCard">
   <h2>🚗 Mileage tracker</h2>
   <p class="small">Client 1 to Client 2 — kilometres you enter yourself. No Google connection, no GPS.</p>
@@ -248,53 +283,34 @@
   <div id="mileSubmittedList"></div>
 </div>
 
-<div class="card" id="houseCard">
-  <h2>🏠 House instructions</h2>
-  <p class="small">Pick a job to see what gets done at that house, plus any special instructions. Krystal adds these for each house in her manager app — if nothing shows here yet, she has not added that house’s instructions yet.</p>
-  <label for="houseJob">Job / client (first name only)</label>
-  <select id="houseJob"></select>
-  <label for="houseJobOther">Or type a first name</label>
-  <input id="houseJobOther" placeholder="e.g. Maria">
-  <h3 style="font-size:1rem">🔒 Service note — for staff only</h3>
-  <div id="houseService" class="service-note protect">Pick a job above to see its service note.</div>
-  <p class="small">Internal note for staff only — do not show or read this to the client.</p>
-  <h3 style="font-size:1rem">What gets done at this house</h3>
-  <pre id="houseTasks" class="protect">Pick a job above to see its instructions.</pre>
-  <h3 style="font-size:1rem">Special instructions</h3>
-  <pre id="houseSpecial" class="protect">—</pre>
-  <h3 style="font-size:1rem">🔑 House codes</h3>
-  <div id="houseCodes" class="codes-box">Pick a job above to see its house codes.</div>
-  <p class="small">Codes are blurred until you tap them. Tap to reveal at the door — they blur again after 30 seconds, or when you pick another house. Never share them. The address stays visible in the mileage list so you can open it in a map.</p>
+
+
+
+<div class="card" id="issueCard">
+  <h2>⚠️ Job issue note</h2>
+  <p class="small">Something went wrong, couldn’t finish a task, or damage? Write it here before you clock out — Krystal sees it with that job, the same day.</p>
+  <label for="issueNote">Issue note for this job</label>
+  <textarea id="issueNote" rows="3" placeholder="e.g. Vacuum stopped working, could not vacuum living room"></textarea>
 </div>
 
-<div class="card" id="monthlyFocusCard">
-  <h2>🗓️ This Month&rsquo;s Focus — do in EVERY house this month</h2>
-  <p class="small"><strong>This is a TO-DO, not a check or inspection.</strong> Do the task(s) below in every house you clean this month, so every house gets it done properly over the month. Usually 1&ndash;2 tasks a month &mdash; sometimes more, depending on what it is and the season. Next month it rotates to the next task(s). Krystal sets the tasks in her manager app.</p>
-  <p id="monthlyMonth" class="small"></p>
-  <label for="monthlyJob">Tick off for which house / job? (first name only)</label>
-  <select id="monthlyJob"></select>
-  <label for="monthlyJobOther">Or type a first name</label>
-  <input id="monthlyJobOther" placeholder="e.g. Maria">
-  <div id="monthlyList"></div>
-  <p id="monthlyStatus" class="small"></p>
-  <p class="small">How updates reach you: when Krystal sets a new month&rsquo;s tasks, they sync to your phone automatically once the shared backend is connected (see the banner at the top). Until then, updates travel with your JSON export to Krystal — see the note under &ldquo;Export for Krystal&rdquo; below. Tick-offs you make here are saved on this phone and sent to Krystal with your export, and sync automatically when the backend is connected.</p>
-  <h3 style="font-size:1rem">Coming up in the rotation (examples &mdash; Krystal decides)</h3>
-  <p id="monthlyRotation" class="small"></p>
+
+<div class="card" id="timeOffCard">
+  <h2>🗓️ Time off / sick day request</h2>
+  <p class="small">BC paid sick days: 5 per year. Vacation pay is already paid on every cheque, so vacation time off itself is unpaid time off — sick days are the paid ones, up to 5 per year. Nothing is approved until Krystal approves it.</p>
+  <label for="toDate">Date requested off</label>
+  <input id="toDate" type="date">
+  <label for="toType">Type</label>
+  <select id="toType">
+    <option value="sick">Sick day — paid (BC, up to 5/year)</option>
+    <option value="timeoff">Time off — unpaid</option>
+  </select>
+  <label for="toReason">Reason (optional for sick, helpful for time off)</label>
+  <input id="toReason" placeholder="e.g. Doctor appointment">
+  <button id="toSubmitBtn">Send time off / sick request to Krystal</button>
+  <p id="toStatus" class="small"></p>
+  <div id="toList"></div>
 </div>
 
-<div class="card" id="suppliesGuideCard">
-  <h2>🧴 What to use — Supplies Guide</h2>
-  <p class="small"><strong>Not sure what to use?</strong> Pick a room, tap the thing you are cleaning, and it tells you what to use. Or search below.</p>
-  <p class="small">Use only supplies Krystal provides. Anything marked &ldquo;TO CONFIRM&rdquo; is not final until Krystal confirms it.</p>
-  <label for="guideSearch">🔍 Search anything — item, dirt / stain, or supply</label>
-  <input id="guideSearch" class="guide-search" placeholder="e.g. stove, grease, limescale, soap scum, oven, mirror">
-  <div id="guideSearchResults"></div>
-  <div id="guideMenu"></div>
-  <div id="guideRooms"></div>
-  <div id="guideDetail"></div>
-  <div id="guideSupplies"></div>
-  <p class="small">How updates reach you: when Krystal changes it in her manager app, you see the new guide here — no separate message needed — once the shared backend is connected (see the banner at the top). Until then, updates travel with your JSON export to Krystal — see the note under &ldquo;Export for Krystal&rdquo; below. The guide is included in your JSON export.</p>
-</div>
 
 <div class="card" id="suppliesCard">
   <h2>End of job — no typing required</h2>
@@ -308,6 +324,9 @@
   <p class="small">Not washed today? Leave it unchecked — no penalty.</p>
   <button id="sendBtn">Send to Krystal</button>
   <p id="sendStatus" class="small"></p>
+  <hr>
+  <p class="small"><strong>Free colouring book</strong> — a free gift to share with your clients.</p>
+  <button id="colouringQrBtn" class="secondary">🎨 Free colouring book — QR to share</button>
 </div>
 
 <h2>Today’s entries</h2>
@@ -323,8 +342,6 @@
 <pre id="summary">Tap “Show summary” to see today’s total hours, supplies refilled, low items, and cloths status.</pre>
 <button id="copyBtn">Copy summary as text</button>
 <button id="csvBtn" class="secondary">Download / copy CSV</button>
-<button id="jsonBtn" class="secondary">Export for Krystal (JSON)</button>
-<p class="small">Export for Krystal: downloads a file for today that you can send to Krystal. She imports it into her manager app. This is the bridge until the apps sync automatically.</p>
 <pre id="csvOut" class="small"></pre>
 
 </div>
@@ -358,13 +375,13 @@ function jumpToSection(sel){
 }
 
 const KIT = [
-  {name:"Cleaning solutions (bulk)", pic:"🧴", best_use:"", photo:""},
-  {name:"Gloves", pic:"🧤", best_use:"", photo:""},
-  {name:"Scrub Daddies / sponges", pic:"🧽", best_use:"", photo:""},
-  {name:"Paper towel", pic:"🧻", best_use:"", photo:""},
-  {name:"Laundry soap (for cloths)", pic:"🫧", best_use:"", photo:""},
-  {name:"Cloths / mop heads", pic:"🧹", best_use:"", photo:""},
-  {name:"Bar Keepers Friend (only if Krystal confirms)", pic:"🫙", discontinued:false},
+  {name:"Cleaning solutions (bulk)", pic:"🧴", best_use:"", photo:"kit-photos/multi-purpose-ecomax-mpc-256.png", supplyId:"s-solutions"},
+  {name:"Gloves", pic:"🧤", best_use:"", photo:"", supplyId:"s-gloves"},
+  {name:"Scrub Daddies / sponges", pic:"🧽", best_use:"", photo:"kit-photos/scrub-mommy-8-pack.png", supplyId:"s-sponges"},
+  {name:"Paper towel", pic:"🧻", best_use:"", photo:"kit-photos/paper-towel-roll.png", supplyId:"s-papertowel"},
+  {name:"Laundry soap (for cloths)", pic:"🫧", best_use:"", photo:"kit-photos/laundry-soap-tide.png", supplyId:"s-soap"},
+  {name:"Cloths / mop heads", pic:"🧹", best_use:"", photo:"kit-photos/cloths-all-together.png", supplyId:"s-cloths"},
+  {name:"Bar Keepers Friend (only if Krystal confirms)", pic:"🫙", discontinued:false, photo:"kit-photos/bar-keepers-friend-soft-cleanser.png", supplyId:"s-bkf"},
   // Example only, not a real discontinued item yet:
   // {name:"Old cleaner (example)", pic:"🧴", discontinued:true},
 ];
@@ -378,6 +395,11 @@ let mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]");
 let houseInstructions = JSON.parse(localStorage.getItem(HOUSEKEY) || "{}");
 const TIMEOFFKEY = "ravenTimeOffV1";
 let timeOff = JSON.parse(localStorage.getItem(TIMEOFFKEY) || "[]");
+// Work schedule — {Employee, Day, Shift} rows Krystal sets in the manager
+// app. The backend only ever sends this employee's own rows.
+const SCHEDKEY = "ravenScheduleV1";
+let schedule = JSON.parse(localStorage.getItem(SCHEDKEY) || "[]");
+function saveSchedule() { localStorage.setItem(SCHEDKEY, JSON.stringify(schedule)); }
 // Monthly Focus — TO-DO in every house for a whole month, then it rotates.
 // Krystal sets the current month's task(s) in her manager app (same storage
 // keys, so the same code can be synced by the backend when it is built).
@@ -435,6 +457,14 @@ KIT.forEach(item => {
     else { low.add(item.name); card.classList.add("need"); b.classList.add("needbtn"); b.textContent = "✓ Need refill"; stocked = false; $("stockedBtn").classList.remove("on"); }
   };
   card.appendChild(b);
+  // Second button: what this supply is used for — jumps to the matching
+  // supply in "What to use" (Supplies Guide) and shows its uses. Does not
+  // touch the low set or the clock-out payload.
+  const w = document.createElement("button");
+  w.textContent = "What it cleans";
+  w.className = "secondary";
+  w.onclick = () => { guideShowSupply(item.supplyId); };
+  card.appendChild(w);
   $("lowList").appendChild(card);
 });
 $("refilledBtn").onclick = e => { refilled = !refilled; e.target.classList.toggle("on", refilled); };
@@ -502,7 +532,7 @@ function renderPending(){
 
 function fmt(t){ return new Date(t).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
 function hours(a,b){ return ((b-a)/3600000); }
-function save(){ localStorage.setItem(KEY, JSON.stringify(entries)); render(); populateJobSelects(); renderMileage(); renderHouses(); renderMonthlyFocus(); }
+function save(){ localStorage.setItem(KEY, JSON.stringify(entries)); render(); populateJobSelects(); renderMileage(); renderHouses(); }
 
 $("inBtn").onclick = () => {
   const name = $("emp").value.trim(), job = currentJobName();
@@ -510,7 +540,7 @@ $("inBtn").onclick = () => {
   // Training is set by Krystal in the manager app (rate $20/hr) — the
   // employee does not tick it here.
   var isTraining = Number(session.rate) === 20;
-  current = { name, job, date: $("workdate").value, in: Date.now(), out: null, refilled:false, low:[], stocked:false, cloth:false, training: isTraining, issue: "" };
+  current = { name, job, date: $("workdate").value, in: Date.now(), out: null, refilled:false, low:[], stocked:false, cloth:false, vacuum:false, training: isTraining, issue: "" };
   $("status").innerHTML = "Clocked in at <b>" + fmt(current.in) + "</b> for " + job + ".";
   $("inBtn").disabled = true; $("outBtn").disabled = false;
   backendPost({ action: "clockin", date: current.date, job: job, in: current.in, training: current.training });
@@ -518,7 +548,7 @@ $("inBtn").onclick = () => {
 $("outBtn").onclick = () => {
   if (!current) return;
   current.out = Date.now();
-  current.refilled = refilled; current.low = [...low]; current.stocked = stocked; current.cloth = cloth; current.issue = $("issueNote").value.trim(); $("issueNote").value = "";
+  current.refilled = refilled; current.low = [...low]; current.stocked = stocked; current.cloth = cloth; current.vacuum = getVacuum(); current.issue = $("issueNote").value.trim(); $("issueNote").value = "";
   current.hours = Math.round(hours(current.in, current.out) * 100) / 100;
   entries.push(current);
   const doneEntry = current;
@@ -527,7 +557,7 @@ $("outBtn").onclick = () => {
   save();
   backendPost({ action: "clockout", date: doneEntry.date, job: doneEntry.job, in: doneEntry.in, out: doneEntry.out,
     hours: doneEntry.hours, training: doneEntry.training, issue: doneEntry.issue, refilled: doneEntry.refilled,
-    low: doneEntry.low, stocked: doneEntry.stocked, cloth: doneEntry.cloth });
+    low: doneEntry.low, stocked: doneEntry.stocked, cloth: doneEntry.cloth, vacuum: doneEntry.vacuum });
 };
 $("sendBtn").onclick = () => {
   const msg = navigator.onLine
@@ -536,7 +566,7 @@ $("sendBtn").onclick = () => {
   $("sendStatus").innerHTML = '<span class="ok">' + msg + "</span>";
   // Attach the latest taps to the most recent entry for today, if one exists
   const today = entries.filter(e => e.date === $("workdate").value);
-  if (today.length) { const last = today[today.length-1]; last.refilled = refilled; last.low = [...low]; last.stocked = stocked; last.cloth = cloth; const iss = $("issueNote").value.trim(); if (iss) { last.issue = iss; $("issueNote").value = ""; } save(); }
+  if (today.length) { const last = today[today.length-1]; last.refilled = refilled; last.low = [...low]; last.stocked = stocked; last.cloth = cloth; last.vacuum = getVacuum(); const iss = $("issueNote").value.trim(); if (iss) { last.issue = iss; $("issueNote").value = ""; } save(); }
 };
 
 function dayEntries(){ return entries.filter(e => e.date === $("workdate").value); }
@@ -555,7 +585,12 @@ function summaryText(){
       + (e.training ? " | TRAINING shift" : "")
       + (e.issue ? " | Issue: " + e.issue : ""));
   });
-  if (monthlyFocus.tasks.length) lines.push("Monthly Focus (" + monthlyFocus.month + ", every house): " + monthlyFocus.tasks.map(t => t.title).join("; ") + ". Ticked off today: " + (monthlyDone.filter(d => d.date === $("workdate").value && d.month === monthlyFocus.month).map(d => d.job + " — " + (monthlyFocus.tasks.find(t => t.id === d.taskId) || {}).title).join("; ") || "none yet today") + ".");
+  var wd = new Date($("workdate").value + "T12:00");
+  if (!isNaN(wd.getTime()) && wd.getDay() === 5) {
+    var vacDone = d.some(function (e) { return e.vacuum; }) || ($("workdate").value === todayStr() && getVacuum());
+    lines.push("Vacuum (Friday): " + (vacDone ? "cleaned (confirmed)" : "not confirmed yet") + ".");
+  }
+  if (monthlyFocus.tasks.length) lines.push("Monthly Focus (" + monthlyFocus.month + ", every house): " + monthlyFocus.tasks.map(t => t.title).join("; ") + ".");
   const pend = adjustments.filter(r => r.status === "PENDING" && r.date === $("workdate").value);
   if (pend.length) lines.push("Pending time adjustments (NOT approved, NOT counted above): " + pend.map(r => r.job + " " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h) — " + r.reason).join("; "));
   if (!d.some(e => e.refilled)) lines.push("Reminder: refill your supplies when you get home — supplies are refilled at the end of the day, after your last shift.");
@@ -567,14 +602,10 @@ $("copyBtn").onclick = async () => {
   try { await navigator.clipboard.writeText(t); alert("Summary copied."); }
   catch(e){ $("summary").textContent = t; alert("Copy not available in this browser — summary is shown above, select and copy it."); }
 };
-$("jsonBtn").onclick = () => {
-  const data = { entries: dayEntries(), adjustments: adjustments.filter(r => r.date === $("workdate").value), mileage: mileage.filter(m => m.date === $("workdate").value), houseInstructions: houseInstructions, timeOff: timeOff, monthlyFocus: monthlyFocus, monthlyDone: monthlyDone, suppliesGuide: guide, exported: new Date().toISOString() };
-  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"})); a.download = "raven-time-card-" + $("workdate").value + ".json"; a.click();
-};
 $("csvBtn").onclick = () => {
   const d = dayEntries();
-  const head = "date,employee,job_first_name,clock_in,clock_out,hours,supplies_refilled,low_items,cloths_washed";
-  const rows = d.map(e => [e.date, e.name, e.job, fmt(e.in), e.out?fmt(e.out):"", (e.hours||0).toFixed(2), e.refilled?"yes":"no", '"' + (e.low||[]).join("; ") + '"', e.cloth?"yes":"not needed"].join(","));
+  const head = "date,employee,job_first_name,clock_in,clock_out,hours,supplies_refilled,low_items,cloths_washed,vacuum_cleaned";
+  const rows = d.map(e => [e.date, e.name, e.job, fmt(e.in), e.out?fmt(e.out):"", (e.hours||0).toFixed(2), e.refilled?"yes":"no", '"' + (e.low||[]).join("; ") + '"', e.cloth?"yes":"not needed", e.vacuum?"yes":(new Date(e.date + "T12:00").getDay() === 5 ? "not confirmed" : "n/a")].join(","));
   const csv = [head, ...rows].join("\n");
   $("csvOut").textContent = csv;
   try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"})); a.download = "raven-time-card-" + $("workdate").value + ".csv"; a.click(); } catch(e){}
@@ -636,6 +667,48 @@ function serviceLabel(tag){
   if (tag === "not-so-good") return "Not so good service";
   return "Service note";
 }
+// Clickable supply links in House instructions (Krystal, 2026-11-08):
+// supply names in the house text link to "What to use" (Supplies Guide)
+// and show what that supply is used for. Only names with a matching Guide
+// supply are linked; all other text is unchanged. Phrases come from the
+// live Guide supplies list, plus the short forms Krystal uses in notes.
+function supplyLinkPhrases(){
+  var list = [];
+  (guide.supplies || []).forEach(function (s) {
+    if (s.name) list.push({ phrase: s.name, id: s.id });
+  });
+  var shorts = [
+    { phrase: "Bar Keepers Friend", id: "s-bkf" },
+    { phrase: "Windex", id: "s-windex" }
+  ];
+  shorts.forEach(function (sh) {
+    if (!list.some(function (x) { return x.phrase.toLowerCase() === sh.phrase.toLowerCase(); })) list.push(sh);
+  });
+  // Longest first, so "Bar Keepers Friend Soft Cleanser" wins over
+  // "Bar Keepers Friend" when both could match at the same spot.
+  list.sort(function (a, b) { return b.phrase.length - a.phrase.length; });
+  return list;
+}
+function linkSupplies(text){
+  var out = "";
+  var rest = String(text == null ? "" : text);
+  var phrases = supplyLinkPhrases();
+  while (rest.length) {
+    var best = null, bestIdx = -1;
+    for (var i = 0; i < phrases.length; i++) {
+      var idx = rest.toLowerCase().indexOf(phrases[i].phrase.toLowerCase());
+      if (idx >= 0 && (bestIdx < 0 || idx < bestIdx || (idx === bestIdx && phrases[i].phrase.length > best.phrase.length))) {
+        best = phrases[i]; bestIdx = idx;
+      }
+    }
+    if (!best) { out += esc(rest); break; }
+    out += esc(rest.slice(0, bestIdx));
+    var matched = rest.slice(bestIdx, bestIdx + best.phrase.length);
+    out += "<button class='guide-chip' onclick=\"guideShowSupply('" + best.id + "')\">" + esc(matched) + "</button>";
+    rest = rest.slice(bestIdx + best.phrase.length);
+  }
+  return out;
+}
 function renderHouses(){
   const name = $("houseJob").value || $("houseJobOther").value.trim();
   const svc = $("houseService");
@@ -644,11 +717,11 @@ function renderHouses(){
   if (!h) { svc.className = "service-note"; svc.textContent = "No service note added for " + name + " yet — Krystal adds this in her manager app."; $("houseTasks").textContent = "No instructions added for " + name + " yet — Krystal adds these in her manager app."; $("houseSpecial").textContent = "No special instructions added yet."; renderHouseCodes(""); return; }
   const tag = h.serviceTag || "";
   svc.className = "service-note" + (tag === "good" ? " good" : tag === "okay" ? " okay" : tag === "not-so-good" ? " notgood" : "");
-  svc.textContent = h.serviceNote
+  svc.innerHTML = linkSupplies(h.serviceNote
     ? serviceLabel(tag) + " — " + h.serviceNote
-    : serviceLabel(tag) + " — no service note written for this house yet. Krystal adds this in her manager app.";
-  $("houseTasks").textContent = h.tasks || "No tasks listed for this house yet.";
-  $("houseSpecial").textContent = h.special || "No special instructions for this house.";
+    : serviceLabel(tag) + " — no service note written for this house yet. Krystal adds this in her manager app.");
+  $("houseTasks").innerHTML = linkSupplies(h.tasks || "No tasks listed for this house yet.");
+  $("houseSpecial").innerHTML = linkSupplies(h.special || "No special instructions for this house.");
   renderHouseCodes(h.codes || "");
 }
 // --- Easy monthly mileage submittal (weekend copy, 2026-11-06) ---
@@ -764,40 +837,26 @@ $("toSubmitBtn").onclick = () => {
   backendPost({ action: "timeoff", date: date, type: type, reason: reason });
 };
 
-function saveMonthly(){ localStorage.setItem(MONTHLYKEY, JSON.stringify(monthlyFocus)); localStorage.setItem(MONTHLYDONEKEY, JSON.stringify(monthlyDone)); renderMonthlyFocus(); }
-function monthlyJobName(){ return ($("monthlyJob").value || $("monthlyJobOther").value.trim()); }
-function renderMonthlyFocus(){
-  const el = $("monthlyList"); if (!el) return;
-  $("monthlyMonth").innerHTML = "<strong>" + monthlyFocus.month + "</strong> — " + (monthlyFocus.note || "");
-  $("monthlyRotation").textContent = (monthlyFocus.rotation && monthlyFocus.rotation.length) ? monthlyFocus.rotation.join("  ·  ") : "No rotation items set yet — Krystal adds these in her manager app.";
-  const job = monthlyJobName();
-  el.innerHTML = monthlyFocus.tasks.map(t => {
-    const doneForJob = job ? monthlyDone.some(d => d.taskId === t.id && d.job === job && d.month === monthlyFocus.month) : false;
-    const doneHouses = [...new Set(monthlyDone.filter(d => d.taskId === t.id && d.month === monthlyFocus.month).map(d => d.job))];
-    return "<div class='monthly-task" + (doneForJob ? " done" : "") + "'><h3>" + t.title + "</h3><p>" + t.detail + "</p>"
-      + "<p class='small'>Applies to: <strong>every house</strong> &middot; Month: <strong>" + monthlyFocus.month + "</strong>"
-      + (doneHouses.length ? "<br>Ticked off so far this month: " + doneHouses.join(", ") : "<br>Not ticked off for any house yet this month.") + "</p>"
-      + "<button class='donebtn" + (doneForJob ? " undobtn" : "") + "' onclick='toggleMonthlyDone(\"" + t.id + "\")'>" + (doneForJob ? "✓ Done for this house — tap to undo" : "✓ Done in this house") + "</button></div>";
-  }).join("") || "<p class='small'>No Monthly Focus tasks set for this month yet — Krystal sets them in her manager app.</p>";
-  // keep the job dropdown in step with clocked-in jobs
-  const jobs = [...new Set(entries.map(e => e.job))];
-  const sel = $("monthlyJob"); const cur = sel.value;
-  sel.innerHTML = "<option value=''>Pick a house / job…</option>" + jobs.map(j => "<option value='" + j + "'>" + j + "</option>").join("");
-  if (jobs.includes(cur)) sel.value = cur;
+function saveMonthly(){ localStorage.setItem(MONTHLYKEY, JSON.stringify(monthlyFocus)); localStorage.setItem(MONTHLYDONEKEY, JSON.stringify(monthlyDone)); renderMonthlyFocusBanner(); }
+// Monthly Focus banner — read-only. This month's tasks, title + detail,
+// shown at the top of the app so they cannot be missed. No house picker,
+// no ticking off per house: the tasks are a TO-DO in every house, and the
+// employee just remembers each house (Krystal, 2026-11-08).
+function renderMonthlyFocusBanner(){
+  var el = $("monthlyFocusBanner"); if (!el) return;
+  var tasks = (monthlyFocus.tasks || []);
+  var head = "<h2>🗓️ This Month&rsquo;s Focus — do in EVERY house this month</h2>" +
+    "<p class='small'><strong>" + esc(monthlyFocus.month || "") + "</strong>" + (monthlyFocus.note ? " — " + esc(monthlyFocus.note) : "") + "</p>";
+  if (!tasks.length) {
+    el.innerHTML = head + "<p class='small'>No tasks set for this month yet — Krystal sets them in her manager app.</p>";
+    return;
+  }
+  el.innerHTML = head + tasks.map(function (t) {
+    return "<div class='monthly-task'><h3>" + esc(t.title) + "</h3><p>" + esc(t.detail) + "</p>" +
+      "<p class='small'>Applies to: <strong>every house</strong></p></div>";
+  }).join("");
 }
-window.toggleMonthlyDone = function(taskId){
-  const job = monthlyJobName();
-  if (!job) { alert("Pick or type the house / job first — the tick-off is per house, so Krystal knows which houses got it done."); return; }
-  const name = $("emp").value.trim() || "(name not entered)";
-  const i = monthlyDone.findIndex(d => d.taskId === taskId && d.job === job && d.month === monthlyFocus.month);
-  if (i >= 0) { monthlyDone.splice(i, 1); $("monthlyStatus").textContent = "Tick removed for " + job + "."; }
-  else { monthlyDone.push({ taskId, job, month: monthlyFocus.month, name, date: localDateStr(), doneAt: Date.now() }); $("monthlyStatus").innerHTML = '<span class="ok">Ticked off for ' + job + ' — ' + monthlyFocus.month + '.</span>'; }
-  saveMonthly();
-  backendPost({ action: "monthlyTick", month: monthlyFocus.month, taskId: taskId, job: job, date: localDateStr(), done: i < 0 });
-};
-$("monthlyJob").addEventListener("change", renderMonthlyFocus);
 $("guideSearch").addEventListener("input", e => { guideGlobalQuery = e.target.value; renderGuide(); });
-$("monthlyJobOther").addEventListener("input", renderMonthlyFocus);
 
 const GUIDEKEY = "ravenSuppliesGuideV1";
 // Supplies Guide — "What to use for what". SEPARATE from House instructions:
@@ -1602,6 +1661,14 @@ function pullBackendData() {
         reason: r.Reason || r.reason || "", status: r.Status || r.status || "PENDING",
         declineReason: r.DeclineReason || r.declineReason || "", created: Date.now() };
     }), function (r) { return [r.name, r.date, r.type].join("|"); });
+    if (d.schedule) {
+      // The backend already filtered this to the employee's own rows, and
+      // the Sheet is the source of truth, so the backend wins outright.
+      schedule = d.schedule.map(function (r) {
+        return { Employee: r.Employee || r.employee || "", Day: r.Day || r.day || "", Shift: r.Shift || r.shift || "" };
+      }).filter(function (r) { return r.Day && r.Shift; });
+      saveSchedule();
+    }
     if (d.mileage) mileage = mergeByKey(mileage, d.mileage.map(function (r) {
       return { date: r.Date || r.date, start: r.Start || r.start, end: r.End || r.end,
         km: Number(r.Km || r.km), type: "between", name: r.Employee || r.name };
@@ -1656,13 +1723,14 @@ function applySession() {
   if (tn) tn.style.display = (session && Number(session.rate) === 20) ? "block" : "none";
   updateBanner();
   updateWatermark();
+  maybeShowColouringQr();
   if (session && session.role !== "review") pullBackendData();
 }
 function updateBanner() {
   var b = $("backendBanner"); if (!b) return;
   if (!BACKEND_ENABLED) {
     b.className = "";
-    b.innerHTML = "<strong>Not connected to the shared backend yet — entries save on this phone only.</strong> Use “Export for Krystal (JSON)” below to send your day to Krystal until the backend is connected. Review mode only — do not treat this as the live app.";
+    b.innerHTML = "<strong>Not connected to the shared backend yet — entries save on this phone only.</strong> Review mode only — do not treat this as the live app.";
   } else if (session && session.role === "review") {
     b.className = "";
     b.innerHTML = "<strong>Review mode</strong> — backend is set but you are not signed in with a code. Sign out and sign in with your code to sync.";
@@ -1794,17 +1862,39 @@ setInterval(updateWatermark, 60000);
 
 // ============================================================================
 // SHIFT REMINDERS + AUTO SIGN-OUT — Krystal, 2026-11-08.
-// Only on actual shift days (Tue–Fri), and never on a day the employee has
-// approved time off. Reminders only appear while the app is open — a web
-// app cannot pop up a notification when it is closed.
-//   9:00  — remind to clock in (signed in but not clocked in yet)
+// Only on actual shift days (Tue–Fri), only for the shifts this employee
+// works (from the schedule Krystal sets in the manager app), and never on
+// a day the employee has approved time off. Reminders only appear while
+// the app is open — a web app cannot pop up a notification when it is closed.
+//   9:00  — remind to clock in (morning shift, signed in but not clocked in)
 //   12:00 — remind to clock out of the morning shift
+//   13:00 — remind to clock in (afternoon shift, signed in but not clocked in)
 //   16:00 — remind to clock out of the afternoon shift
-//   16:20 — sign out automatically
+//   16:20 — sign out automatically (end-of-day security backstop, no matter
+//           which shifts were worked today)
 // A saved session is also refused on load if it is from a previous day, or
 // if it is past 16:20 and the session was last active before 16:20 today —
 // so the 16:20 sign-out holds even when the app was closed at 16:20.
 // ============================================================================
+// This employee's shifts today, from the schedule Krystal set in the manager
+// app. If no schedule rows exist yet at all, fall back to both shifts so the
+// existing reminders keep working until Krystal sets a schedule.
+function todaysShifts() {
+  var today = new Date().toLocaleString("en-US", { weekday: "long" });
+  var shifts = { morning: false, afternoon: false };
+  if (!schedule.length) {
+    shifts.morning = true;
+    shifts.afternoon = true;
+    return shifts;
+  }
+  schedule.forEach(function (r) {
+    if (r.Day === today) {
+      if (r.Shift === "Morning" || r.Shift === "Both") shifts.morning = true;
+      if (r.Shift === "Afternoon" || r.Shift === "Both") shifts.afternoon = true;
+    }
+  });
+  return shifts;
+}
 var REMINDER_KEY = "ravenRemindersV1";
 function todayStr(d) {
   d = d || new Date();
@@ -1826,10 +1916,72 @@ function getReminders() {
     var r = JSON.parse(localStorage.getItem(REMINDER_KEY) || "null");
     if (r && r.date === todayStr()) return r;
   } catch (e) {}
-  return { date: todayStr(), start: false, noon: false, four: false };
+  return { date: todayStr(), start: false, noon: false, one: false, four: false };
 }
 function saveReminders(r) {
   try { localStorage.setItem(REMINDER_KEY, JSON.stringify(r)); } catch (e) {}
+}
+// Friday vacuum (Krystal, 2026-11-08): on Fridays the vacuum is cleaned at
+// the start of the day. A reminder shows near the top until the employee
+// taps to confirm. Confirmation is saved per-date (like the reminders) so
+// it survives a reload, and it is captured at clock-out so Krystal sees it.
+const VACUUMKEY = "ravenVacuumV1";
+function getVacuum() {
+  try {
+    var v = JSON.parse(localStorage.getItem(VACUUMKEY) || "null");
+    if (v && v.date === todayStr()) return !!v.done;
+  } catch (e) {}
+  return false;
+}
+function setVacuum(done) {
+  try { localStorage.setItem(VACUUMKEY, JSON.stringify({ date: todayStr(), done: !!done })); } catch (e) {}
+  renderFridayVacuum();
+}
+function renderFridayVacuum() {
+  var card = $("fridayVacuumCard"); if (!card) return;
+  var isFriday = new Date().getDay() === 5;
+  if (!isFriday) { card.style.display = "none"; return; }
+  card.style.display = "";
+  if (getVacuum()) {
+    card.innerHTML = "<h2>🧹 Friday — vacuum</h2><p class='small'><strong>✓ Vacuum cleaned</strong> — confirmed for today. Thank you.</p>";
+  } else {
+    card.innerHTML = "<h2>🧹 Friday — clean the vacuum</h2><p>It is Friday — please clean the vacuum at the start of your day.</p><button id='vacuumBtn' class='tap'>Vacuum cleaned</button>";
+    var b = $("vacuumBtn");
+    if (b) b.onclick = function () { setVacuum(true); };
+  }
+}
+// ============================================================================
+// COLOURING BOOK QR POP-UP — Krystal, 2026-11-08.
+// After sign-in, show the free colouring book QR once per day so the
+// employee can share it with clients (or save it to their phone).
+// "Don't show this again" stops it for good; the End of job card has a
+// button to open it on demand any time.
+// ============================================================================
+const COLOURINGQRKEY = "ravenColouringQrV1";
+function getColouringQr() {
+  try {
+    var q = JSON.parse(localStorage.getItem(COLOURINGQRKEY) || "null");
+    if (q) return q;
+  } catch (e) {}
+  return { date: "", never: false };
+}
+function setColouringQr(q) {
+  try { localStorage.setItem(COLOURINGQRKEY, JSON.stringify(q)); } catch (e) {}
+}
+function showColouringQr() {
+  var ov = $("colouringQrOverlay"); if (!ov) return;
+  ov.classList.add("open");
+}
+function hideColouringQr() {
+  var ov = $("colouringQrOverlay"); if (!ov) return;
+  ov.classList.remove("open");
+}
+function maybeShowColouringQr() {
+  var q = getColouringQr();
+  if (q.never) return; // employee chose "Don't show this again"
+  if (q.date === todayStr()) return; // already shown today
+  setColouringQr({ date: todayStr(), never: false });
+  showColouringQr();
 }
 function touchSession() {
   if (!session || !session.token) return;
@@ -1849,20 +2001,27 @@ function tickShiftReminders() {
   if (hasApprovedTimeOffToday()) return;
   var mins = now.getHours() * 60 + now.getMinutes();
   var r = getReminders();
-  // 9:00–11:59 — clock-in reminder (signed in, not clocked in yet)
-  if (!current && mins >= 540 && mins < 720 && !r.start) {
+  var shifts = todaysShifts();
+  // 9:00–11:59 — clock-in reminder, morning shift (signed in, not clocked in)
+  if (!current && shifts.morning && mins >= 540 && mins < 720 && !r.start) {
     r.start = true; saveReminders(r);
     alert("Your shift starts at 9:00 — don't forget to clock in.");
     return;
   }
   // 12:00–12:59 — clock-out reminder, morning shift only
-  if (current && current.in && new Date(current.in).getHours() < 12 && mins >= 720 && mins < 780 && !r.noon) {
+  if (current && current.in && new Date(current.in).getHours() < 12 && shifts.morning && mins >= 720 && mins < 780 && !r.noon) {
     r.noon = true; saveReminders(r);
     alert("It's 12:00 — time to clock out of your morning shift?");
     return;
   }
+  // 13:00–15:59 — clock-in reminder, afternoon shift (signed in, not clocked in)
+  if (!current && shifts.afternoon && mins >= 780 && mins < 960 && !r.one) {
+    r.one = true; saveReminders(r);
+    alert("Your afternoon shift starts at 1:00 — don't forget to clock in.");
+    return;
+  }
   // 16:00–16:19 — clock-out reminder, afternoon shift
-  if (current && mins >= 960 && mins < 980 && !r.four) {
+  if (current && shifts.afternoon && mins >= 960 && mins < 980 && !r.four) {
     r.four = true; saveReminders(r);
     alert("It's 4:00 — time to clock out of your shift?");
     return;
@@ -1990,8 +2149,15 @@ renderMileage();
 renderMileageSubmissions();
 $("emp").addEventListener("input", renderMileageSubmissions);
 renderHouses();
-renderMonthlyFocus();
+renderMonthlyFocusBanner();
+renderFridayVacuum();
 renderGuide();
+// Colouring book QR pop-up wiring: Got it / Don't show again / tap the
+// dark overlay to close / reopen button in the End of job card.
+var qrGotIt = $("colouringQrGotIt"); if (qrGotIt) qrGotIt.onclick = hideColouringQr;
+var qrNever = $("colouringQrNever"); if (qrNever) qrNever.onclick = function () { setColouringQr({ date: todayStr(), never: true }); hideColouringQr(); };
+var qrOverlay = $("colouringQrOverlay"); if (qrOverlay) qrOverlay.addEventListener("click", function (e) { if (e.target === qrOverlay) hideColouringQr(); });
+var qrBtn = $("colouringQrBtn"); if (qrBtn) qrBtn.onclick = function () { showColouringQr(); };
 </script>
 </body>
 </html>
