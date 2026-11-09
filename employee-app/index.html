@@ -375,13 +375,13 @@ function jumpToSection(sel){
 }
 
 const KIT = [
-  {name:"Cleaning solutions (bulk)", pic:"🧴", best_use:"", photo:"kit-photos/multi-purpose-ecomax-mpc-256.png", supplyId:"s-solutions"},
+  {name:"Cleaning solutions (bulk)", pic:"🧴", best_use:"", photo:"kit-photos/multi-purpose-ecomax-mpc-256.png", supplyId:"s-solutions", isCleaner:true},
   {name:"Gloves", pic:"🧤", best_use:"", photo:"", supplyId:"s-gloves"},
   {name:"Scrub Daddies / sponges", pic:"🧽", best_use:"", photo:"kit-photos/scrub-mommy-8-pack.png", supplyId:"s-sponges"},
   {name:"Paper towel", pic:"🧻", best_use:"", photo:"kit-photos/paper-towel-roll.png", supplyId:"s-papertowel"},
   {name:"Laundry soap (for cloths)", pic:"🫧", best_use:"", photo:"kit-photos/laundry-soap-tide.png", supplyId:"s-soap"},
   {name:"Cloths / mop heads", pic:"🧹", best_use:"", photo:"kit-photos/cloths-all-together.png", supplyId:"s-cloths"},
-  {name:"Bar Keepers Friend (only if Krystal confirms)", pic:"🫙", discontinued:false, photo:"kit-photos/bar-keepers-friend-soft-cleanser.png", supplyId:"s-bkf"},
+  {name:"Bar Keepers Friend (only if Krystal confirms)", pic:"🫙", discontinued:false, photo:"kit-photos/bar-keepers-friend-soft-cleanser.png", supplyId:"s-bkf", isCleaner:true},
   // Example only, not a real discontinued item yet:
   // {name:"Old cleaner (example)", pic:"🧴", discontinued:true},
 ];
@@ -457,14 +457,17 @@ KIT.forEach(item => {
     else { low.add(item.name); card.classList.add("need"); b.classList.add("needbtn"); b.textContent = "✓ Need refill"; stocked = false; $("stockedBtn").classList.remove("on"); }
   };
   card.appendChild(b);
-  // Second button: what this supply is used for — jumps to the matching
+  // Second button: what this supply is used for — cleaners ONLY (Krystal:
+  // "Only the cleaners get a what its used for"). Jumps to the matching
   // supply in "What to use" (Supplies Guide) and shows its uses. Does not
   // touch the low set or the clock-out payload.
-  const w = document.createElement("button");
-  w.textContent = "What it cleans";
-  w.className = "secondary";
-  w.onclick = () => { guideShowSupply(item.supplyId); };
-  card.appendChild(w);
+  if (item.isCleaner) {
+    const w = document.createElement("button");
+    w.textContent = "What it cleans";
+    w.className = "secondary";
+    w.onclick = () => { guideShowSupply(item.supplyId); };
+    card.appendChild(w);
+  }
   $("lowList").appendChild(card);
 });
 $("refilledBtn").onclick = e => { refilled = !refilled; e.target.classList.toggle("on", refilled); };
