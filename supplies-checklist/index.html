@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Your Supplies Checklist | Raven &amp; Roses Cleaning Co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f7f1e3; color: #1d1d23; font-family: "EB Garamond", Georgia, serif; font-size: 19px; line-height: 1.55; }
+  h1, h2, h3, .brand, .slogan { font-family: "Pirata One", "EB Garamond", serif; font-weight: 400; }
+  .topbar { background: #111; color: #f5d76e; text-align: center; padding: 26px 16px 20px; border-bottom: 4px solid #c9a227; }
+  .brand { font-size: 34px; letter-spacing: 1px; line-height: 1.1; }
+  .slogan { font-size: 20px; color: #e8c96a; margin-top: 6px; }
+  .pagetitle { font-size: 27px; color: #fff; margin-top: 14px; line-height: 1.2; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 20px 16px 60px; }
+  .card { background: #fffdf6; border: 1px solid #d8cba8; border-radius: 14px; padding: 20px 18px; margin: 18px 0; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .card h2 { font-size: 26px; color: #7a5c14; margin: 0 0 10px; line-height: 1.25; }
+  .intro { font-size: 20px; }
+  label.big { display: block; font-family: "Pirata One", serif; font-size: 24px; color: #7a5c14; margin-bottom: 8px; }
+  input[type="text"] { width: 100%; font-family: "EB Garamond", Georgia, serif; font-size: 20px; padding: 14px 16px; border: 2px solid #c9a227; border-radius: 10px; background: #fff; color: #1d1d23; }
+  input[type="text"]:focus { outline: 3px solid #f5d76e; border-color: #7a5c14; }
+  .hint { font-size: 16px; color: #666; margin-top: 8px; }
+  .check { display: flex; align-items: flex-start; gap: 12px; padding: 12px 4px; border-bottom: 1px solid #e8dcc0; cursor: pointer; }
+  .check:last-child { border-bottom: none; }
+  .check input[type="checkbox"] { width: 26px; height: 26px; flex: none; margin-top: 2px; accent-color: #7a5c14; cursor: pointer; }
+  .check span { font-size: 20px; line-height: 1.35; }
+  .check input:checked + span { color: #7a5c14; }
+  .check { align-items: center; }
+  .item-img { width: 64px; height: 64px; flex: none; object-fit: contain; border-radius: 8px; background: #fff; border: 1px solid #e8dcc0; }
+  .item-img.no-img { background: #f7f1e3; }
+  .check span { flex: 1; }
+  .check input[type="checkbox"] { width: 32px; height: 32px; margin: 0; }
+  .check:has(input:checked) { background: #fdf6dd; border-radius: 10px; }
+
+  .note { font-size: 16px; color: #666; margin: 6px 0 0; }
+  .count { font-size: 17px; color: #8a7a4a; margin: 10px 0 0; }
+  .btn { display: block; width: 100%; border: none; border-radius: 12px; font-family: "Pirata One", serif; font-size: 24px; padding: 16px 20px; margin: 14px 0; cursor: pointer; }
+  .btn-gold { background: #111; color: #f5d76e; }
+  .btn-gold:disabled { background: #555; color: #ccc; cursor: default; }
+  .msg { border-radius: 10px; padding: 14px 16px; margin: 14px 0; font-size: 19px; display: none; }
+  .msg.err { display: block; background: #fdecea; border: 2px solid #c0392b; color: #7b1f16; }
+  .msg.warn { display: block; background: #fdf6dd; border: 2px solid #c9a227; color: #5c4a12; }
+  #done { display: none; text-align: center; padding: 40px 18px; }
+  #done .tick { font-size: 64px; color: #7a5c14; }
+  #done h2 { font-size: 30px; color: #7a5c14; margin: 10px 0; }
+  #done p { font-size: 21px; }
+  .footer { text-align: center; font-size: 15px; color: #8a7a4a; margin-top: 30px; }
+</style>
+</head>
+<body>
+
+<div id="main">
+  <div class="topbar">
+    <div class="brand">Raven &amp; Roses Cleaning Co.</div>
+    <div class="slogan">Smart Cleaning. Beautiful Results.</div>
+    <div class="pagetitle">Your Supplies Checklist</div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="card">
+      <label class="big" for="empName">Your full name</label>
+      <input type="text" id="empName" autocomplete="name" placeholder="Type your full name">
+      <div class="hint">Type your full name first, then tick everything you have received.</div>
+    </div>
+
+    <div class="card">
+      <p class="intro">Tick every item you have received. Anything you do <strong>not</strong> tick is something missing — Krystal will see it and bring it to you. Your supplies are delivered in a tote.</p>
+      <p class="count" id="countLine"></p>
+    </div>
+
+    <div class="card">
+      <h2>Cleaners</h2>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/degreaser-rmc-tough-job.png" alt=""><span>Degreaser</span><input type="checkbox" data-item="Degreaser"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/multi-purpose-ecomax-mpc-256.png" alt=""><span>Multi-purpose</span><input type="checkbox" data-item="Multi-purpose"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/disinfect-regard-peroxide.png" alt=""><span>Disinfect</span><input type="checkbox" data-item="Disinfect"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/floor-cleaner-diversey-stride-citrus.png" alt=""><span>Floor cleaner</span><input type="checkbox" data-item="Floor cleaner"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/vim-eucalyptus-lemon.png" alt=""><span>Vim</span><input type="checkbox" data-item="Vim"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/dawn-powerwash-regular.png" alt=""><span>Dawn Powerwash</span><input type="checkbox" data-item="Dawn Powerwash"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/windex-original.png" alt=""><span>Windex</span><input type="checkbox" data-item="Windex"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/bar-keepers-friend-soft-cleanser.png" alt=""><span>Bar Keeper Friend</span><input type="checkbox" data-item="Bar Keeper Friend"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/stainless-steel-polish-bkf-spray.png" alt=""><span>Stainless steel polish</span><input type="checkbox" data-item="Stainless steel polish"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/wood-polish-liquid-gold.png" alt=""><span>Wood polish</span><input type="checkbox" data-item="Wood polish"></label>
+    </div>
+
+    <div class="card">
+      <h2>Laundry</h2>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/laundry-soap-tide.png" alt=""><span>Laundry soap</span><input type="checkbox" data-item="Laundry soap"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/laundry-bin-clean.png" alt=""><span>Clean laundry bin</span><input type="checkbox" data-item="Clean laundry bin"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/laundry-bin-dirty.png" alt=""><span>Dirty laundry bin</span><input type="checkbox" data-item="Dirty laundry bin"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/laundry-oxi-kirkland.png" alt=""><span>Oxi-clean</span><input type="checkbox" data-item="Oxi-clean"></label>
+      <label class="check"><span class="item-img no-img"></span><span>Instructions to clean cloths</span><input type="checkbox" data-item="Instructions to clean cloths"></label>
+    </div>
+
+    <div class="card">
+      <h2>Equipment &amp; supplies — delivered in your tote</h2>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/tote.png" alt=""><span>Tote — your supplies are delivered in this</span><input type="checkbox" data-item="Tote"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/mop-handle-red.png" alt=""><span>Mop handle</span><input type="checkbox" data-item="Mop handle"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/bissell-powerforce-helix-turbo-pet-3332-stock.png" alt=""><span>Vacuum</span><input type="checkbox" data-item="Vacuum"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/apron-rose.png" alt=""><span>Apron</span><input type="checkbox" data-item="Apron"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/kit-bag-rose-exterior.png" alt=""><span>Bag for Cleaners</span><input type="checkbox" data-item="Bag for Cleaners"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/cloth-bag.png" alt=""><span>Cloth Bag</span><input type="checkbox" data-item="Cloth Bag"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/cloths-all-together.png" alt=""><span>Cloths</span><input type="checkbox" data-item="Cloths"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/mop-cloths-blue.png" alt=""><span>Mop cloths</span><input type="checkbox" data-item="Mop cloths"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/laundry-bag-purple-mesh.png" alt=""><span>2 laundry bags</span><input type="checkbox" data-item="2 laundry bags"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/knee-pads-awp.png" alt=""><span>Knee pads</span><input type="checkbox" data-item="Knee pads"></label>
+    </div>
+
+    <div class="card">
+      <h2>Tools</h2>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/pumice-stone.png" alt=""><span>Pumice stone</span><input type="checkbox" data-item="Pumice stone"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/dusters-head.png" alt=""><span>Dusters</span><input type="checkbox" data-item="Dusters"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/media-generation-nitrile-glove-generic-0-a9558842-b2e1-4c36-86ac-065286334550.png" alt=""><span>Gloves</span><input type="checkbox" data-item="Gloves"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/squeegee.png" alt=""><span>Squeegee</span><input type="checkbox" data-item="Squeegee"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/grout-brush.png" alt=""><span>Grout brush</span><input type="checkbox" data-item="Grout brush"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/wire-brush-twisted.png" alt=""><span>Wire brushes</span><input type="checkbox" data-item="Wire brushes"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/scrub-mommy-8-pack.png" alt=""><span>Scrub Daddy</span><input type="checkbox" data-item="Scrub Daddy"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/glass-razor-duramax-pro.png" alt=""><span>Glass razor</span><input type="checkbox" data-item="Glass razor"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/toilet-brush-bag.png" alt=""><span>Toilet brush / bag</span><input type="checkbox" data-item="Toilet brush / bag"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/large-black-garbage-bag.png" alt=""><span>Garbage bags — large black</span><input type="checkbox" data-item="Garbage bags — large black"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/garbage-bags-small-white-roll.png" alt=""><span>Garbage bags — small white</span><input type="checkbox" data-item="Garbage bags — small white"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/paper-towel-roll.png" alt=""><span>Paper towel</span><input type="checkbox" data-item="Paper towel"></label>
+    </div>
+
+    <div class="card">
+      <h2>Dog treats</h2>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/dog-treats-naturbites.png" alt=""><span>Dog treats — refill container for bag</span><input type="checkbox" data-item="Dog treats — refill container for bag"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/dog-treats-naturbites.png" alt=""><span>Dog treats — large bag</span><input type="checkbox" data-item="Dog treats — large bag"></label>
+    </div>
+
+    <div class="card">
+      <h2>You provide — your own</h2>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/crocs.png" alt=""><span>Crocs</span><input type="checkbox" data-item="Crocs"></label>
+      <label class="check"><img class="item-img" src="../employee-app/kit-photos/water-bottle.png" alt=""><span>Water bottle</span><input type="checkbox" data-item="Water bottle"></label>
+      <p class="note">Crocs and a water bottle are yours to provide — Krystal does not supply them.</p>
+    </div>
+
+    <div class="card">
+      <div class="msg warn" id="warnMsg"></div>
+      <div class="msg err" id="errMsg"></div>
+      <button class="btn btn-gold" type="button" id="sendBtn">Send it back to Krystal</button>
+      <p class="hint" style="text-align:center;">One tap sends your checklist straight to Krystal. No account or code needed.</p>
+    </div>
+
+    <p class="footer">Raven &amp; Roses Cleaning Co. &nbsp;•&nbsp; RavenRosesCleaning@gmail.com &nbsp;•&nbsp; 778.268.4183</p>
+  </div>
+</div>
+
+<div id="done">
+  <div class="tick">✓</div>
+  <h2>Thank you!</h2>
+  <p>Your supplies checklist has been sent to Krystal.</p>
+  <p>Sent by <strong id="doneName"></strong><br>on <strong id="doneDate"></strong></p>
+  <p id="doneMissing"></p>
+  <p>Krystal will bring anything you are missing.</p>
+</div>
+
+<script>
+var BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec";
+
+// ---- Name + date ----
+var nameInput = document.getElementById("empName");
+var today = new Date();
+function isoDate(d) {
+  var m = d.getMonth() + 1, day = d.getDate();
+  return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+}
+function friendlyDate(d) {
+  return d.toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+}
+var DATE_ISO = isoDate(today);
+var DATE_FRIENDLY = friendlyDate(today);
+try {
+  var q = new URLSearchParams(window.location.search).get("name");
+  if (q) nameInput.value = q;
+} catch (e) {}
+
+// ---- Tick counter ----
+var boxes = Array.prototype.slice.call(document.querySelectorAll("input[type='checkbox'][data-item]"));
+var countLine = document.getElementById("countLine");
+function updateCount() {
+  var n = boxes.filter(function (b) { return b.checked; }).length;
+  countLine.textContent = n + " of " + boxes.length + " ticked.";
+}
+boxes.forEach(function (b) { b.addEventListener("change", updateCount); });
+updateCount();
+
+// ---- Messages ----
+function showMsg(id, text) {
+  var el = document.getElementById(id);
+  el.textContent = text;
+  el.style.display = "block";
+}
+function hideMsg(id) {
+  var el = document.getElementById(id);
+  el.textContent = "";
+  el.style.display = "none";
+}
+
+// ---- Send ----
+var sendBtn = document.getElementById("sendBtn");
+var sending = false;
+sendBtn.addEventListener("click", function () {
+  if (sending) return;
+  hideMsg("warnMsg"); hideMsg("errMsg");
+  var name = nameInput.value.trim();
+  if (!name) {
+    showMsg("warnMsg", "Please type your full name first.");
+    nameInput.focus();
+    return;
+  }
+  var checked = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.getAttribute("data-item"); });
+  var missing = boxes.filter(function (b) { return !b.checked; }).map(function (b) { return b.getAttribute("data-item"); });
+  sending = true;
+  sendBtn.disabled = true;
+  sendBtn.textContent = "Sending…";
+  var payload = {
+    action: "suppliesChecklist",
+    name: name,
+    date: DATE_ISO,
+    checked: checked,
+    missing: missing
+  };
+  fetch(BACKEND_URL, {
+    method: "POST", mode: "no-cors",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(payload)
+  }).then(function () {
+    // no-cors: the reply cannot be read, so a resolved request is a send.
+    document.getElementById("main").style.display = "none";
+    document.getElementById("doneName").textContent = name;
+    document.getElementById("doneDate").textContent = DATE_FRIENDLY;
+    document.getElementById("doneMissing").textContent = missing.length
+      ? "Missing: " + missing.join(", ") + "."
+      : "Everything ticked — nothing missing.";
+    document.getElementById("done").style.display = "block";
+    window.scrollTo(0, 0);
+  }).catch(function () {
+    sending = false;
+    sendBtn.disabled = false;
+    sendBtn.textContent = "Send it back to Krystal";
+    showMsg("errMsg", "Couldn't send — check your connection and tap Send again.");
+  });
+});
+</script>
+</body>
+</html>
