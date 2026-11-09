@@ -122,6 +122,16 @@
   .colouring-qr-card img{width:220px;height:220px;max-width:80vw;display:block;margin:10px auto;border:1px solid #c9a86a;border-radius:10px;background:#fff}
   .colouring-qr-card .qr-save-btn{display:block;text-decoration:none;background:#1d1d23;color:#f5d76e;border:1px solid #d4af37;border-radius:8px;padding:.6em;margin:.4em 0;font-size:1rem}
   .colouring-qr-card .qr-never{background:none;border:none;color:#5a5346;text-decoration:underline;width:auto;padding:.4em;font-size:.9rem}
+  /* Repair request pop-up (Krystal, 2026-11-09): same dark overlay, cream
+     card, gold accents as the colouring-book QR pop-up. */
+  #repairOverlay{position:fixed;inset:0;background:rgba(29,29,35,.72);z-index:9996;display:none;padding:20px;overflow:auto}
+  #repairOverlay.open{display:flex;align-items:center;justify-content:center}
+  .repair-card{max-width:420px;width:100%;background:#fffdf7;border:2px solid #b58900;border-radius:16px;padding:20px;box-shadow:0 8px 32px rgba(29,29,35,.4)}
+  .repair-card h2{font-family:"Playfair Display",serif;color:#7a5c14;margin-top:.2em}
+  .repair-card label{font-family:"Cormorant Garamond",serif;font-size:1.05rem;color:#7a5c14}
+  .repair-card textarea{width:100%;box-sizing:border-box;border:1px solid #c9a86a;border-radius:8px;padding:.6em;font-family:inherit;font-size:1rem;background:#fff}
+  .repair-card .repair-btns{margin-top:12px}
+  .repair-card .repair-btns button{margin:.2em .2em .2em 0}
 </style>
 </head>
 <body>
@@ -137,6 +147,24 @@
     <button id="colouringQrGotIt" type="button">Got it</button>
     <p><button id="colouringQrNever" type="button" class="qr-never">Don't show this again</button></p>
     <p class="small">Tip: you can also press and hold the picture to save it.</p>
+  </div>
+</div>
+<div id="repairOverlay" role="dialog" aria-label="Request a repair">
+  <div class="repair-card">
+    <h2 id="repairTitle">Request a repair</h2>
+    <p class="small">Tell Krystal what is wrong. A photo helps but is optional — write it, or add a photo, or both.</p>
+    <label for="repairText">What needs repairing?</label>
+    <textarea id="repairText" rows="3" placeholder="e.g. Apron strap torn at the shoulder"></textarea>
+    <div style="margin-top:10px">
+      <button type="button" id="repairPhotoBtn" class="secondary">Add a photo (optional)</button>
+      <input type="file" id="repairPhotoInput" accept="image/*" capture="environment" style="display:none">
+      <div id="repairPhotoPreview" style="display:none"><img id="repairPhotoImg" alt="Repair photo preview" style="width:100%;max-width:220px;border-radius:8px;margin-top:8px;display:block"><button type="button" id="repairPhotoRemove" class="secondary">Remove photo</button></div>
+    </div>
+    <div class="repair-btns">
+      <button type="button" id="repairSaveBtn">Save repair request</button>
+      <button type="button" id="repairCancelBtn" class="secondary">Cancel</button>
+      <button type="button" id="repairRemoveBtn" class="secondary" style="display:none">Remove request</button>
+    </div>
   </div>
 </div>
 <div id="loginOverlay">
@@ -539,10 +567,33 @@ function syncRequestLow(){
   var s = stoolReqText(); if (s) low.add(s);
   var p = sprayReqText(); if (p) low.add(p);
 }
+// Repair requests (Krystal, 2026-11-09): the Apron, the two bags (Bag for
+// Cleaners + Cloth Bag) and the Vacuum can be reported for repair. The
+// request is text + an optional photo. The text rides the clock-out
+// payload like the other requests (same route, no backend change for the
+// text); the photo goes with the clockout post and the backend attaches
+// it to Krystal's clock-out email. Repairs are NOT stock, so "All stocked"
+// never clears them.
+var REPAIRABLE = ["Apron", "Bag for Cleaners", "Cloth Bag", "Vacuum"];
+var repairs = {}; // item name -> { text: "", photo: "" (data URL) }
+function repairText(name){
+  var r = repairs[name]; if (!r) return "";
+  var t = (r.text || "").trim();
+  return "REPAIR — " + name + ": " + (t || (r.photo ? "photo attached" : "needs repair"));
+}
+function repairPhotosList(){
+  var out = [];
+  Object.keys(repairs).forEach(function(name){
+    var r = repairs[name];
+    if (r && r.photo) out.push({ item: name, text: (r.text || "").trim(), photo: r.photo });
+  });
+  return out;
+}
 // The clock-out / send payload low list: tile flags + stool/spray requests
 // + the two free-text boxes (request + feedback), each clearly labelled.
 function payloadLow(){
   var out = [...low];
+  Object.keys(repairs).forEach(function(name){ out.push(repairText(name)); });
   var o = $("otherReqBox") ? $("otherReqBox").value.trim() : "";
   var f = $("feedbackBox") ? $("feedbackBox").value.trim() : "";
   if (o) out.push("OTHER REQUEST: " + o);
@@ -575,6 +626,7 @@ KIT.forEach(item => {
   const card = document.createElement("div");
   card.className = "piccard" + (item.discontinued ? " discontinued" : "");
   card.dataset.cat = item.cat;
+  card.dataset.item = item.name;
   card.innerHTML = (item.photo ? "<img src='" + item.photo + "' alt='" + item.name + "' style='width:100%;max-width:140px;border-radius:8px'>" : (item.pic ? "<div class='pic'>" + item.pic + "</div>" : "")) + "<div><strong>" + item.name + "</strong></div>" + (item.best_use ? "<div class='small'>Best for: " + item.best_use + "</div>" : "") + (item.discontinued ? "<div class='disc'>Discontinued — still available on request</div>" : "");
   const b = document.createElement("button");
   if (item.discontinued) {
@@ -644,7 +696,7 @@ KIT.forEach(item => {
   b.textContent = act.label;
   b.dataset.action = act.label;
   b.onclick = () => {
-    if (low.has(item.name)) { low.delete(item.name); card.classList.remove("need"); b.classList.remove("needbtn"); b.textContent = act.label; }
+    if (low.has(item.name)) { low.delete(item.name); card.classList.toggle("need", !!repairs[item.name]); b.classList.remove("needbtn"); b.textContent = act.label; }
     else { low.add(item.name); card.classList.add("need"); b.classList.add("needbtn"); b.textContent = act.need; stocked = false; $("stockedBtn").classList.remove("on"); }
   };
   card.appendChild(b);
@@ -659,10 +711,21 @@ KIT.forEach(item => {
     w.onclick = () => { guideShowSupply(item.supplyId); };
     card.appendChild(w);
   }
+  // Repair button (Krystal, 2026-11-09): Apron, both bags and the Vacuum
+  // can be reported for repair. Opens a pop-up to write what is wrong
+  // and optionally add a photo. Independent of Refill/Replace.
+  if (REPAIRABLE.indexOf(item.name) !== -1) {
+    const rb = document.createElement("button");
+    rb.textContent = "Request repair";
+    rb.className = "secondary repairbtn";
+    rb.dataset.repairFor = item.name;
+    rb.onclick = () => { openRepairModal(item); };
+    card.appendChild(rb);
+  }
   $("lowList").appendChild(card);
 });
 $("refilledBtn").onclick = e => { refilled = !refilled; e.target.classList.toggle("on", refilled); };
-$("stockedBtn").onclick = e => { stocked = !stocked; e.target.classList.toggle("on", stocked); if (stocked) { low.clear(); stoolReq = ""; sprayQty = 0; renderStoolBtns(); document.querySelectorAll(".qtyRow").forEach(function(r){ r.style.display = "none"; }); document.querySelectorAll("#lowList .piccard").forEach(x=>{x.classList.remove("need"); const bb=x.querySelector("button"); if(bb){bb.classList.remove("needbtn"); bb.textContent=bb.dataset.action || "Refill";}}); } };
+$("stockedBtn").onclick = e => { stocked = !stocked; e.target.classList.toggle("on", stocked); if (stocked) { low.clear(); stoolReq = ""; sprayQty = 0; renderStoolBtns(); document.querySelectorAll(".qtyRow").forEach(function(r){ r.style.display = "none"; }); document.querySelectorAll("#lowList .piccard").forEach(x=>{x.classList.remove("need"); const bb=x.querySelector("button"); if(bb){bb.classList.remove("needbtn"); bb.textContent=bb.dataset.action || "Refill";} if (x.dataset.item && repairs[x.dataset.item]) x.classList.add("need");}); } };
 // 2-step stool request buttons (mutually exclusive; tap again to undo).
 $("stoolTempBtn").onclick = () => { stoolReq = (stoolReq === "temp") ? "" : "temp"; syncRequestLow(); renderStoolBtns(); };
 $("stoolPermBtn").onclick = () => { stoolReq = (stoolReq === "perm") ? "" : "perm"; syncRequestLow(); renderStoolBtns(); };
@@ -679,6 +742,80 @@ function filterKit(){
 $("kitCat").onchange = filterKit;
 filterKit();
 $("clothBtn").onclick = e => { cloth = !cloth; e.target.classList.toggle("on", cloth); };
+
+// Repair request pop-up (Krystal, 2026-11-09). Opens from the "Request
+// repair" button on the Apron, Bag for Cleaners, Cloth Bag and Vacuum
+// tiles. Text + optional photo; the text rides the clock-out payload, the
+// photo goes with the clockout post for Krystal's email.
+var repairCurrent = null; // item name the pop-up is open for
+var repairPhotoData = ""; // downscaled JPEG data URL for the photo in the open pop-up
+function openRepairModal(item){
+  repairCurrent = item.name;
+  var r = repairs[item.name] || { text: "", photo: "" };
+  $("repairTitle").textContent = "Request a repair — " + item.name;
+  $("repairText").value = r.text || "";
+  repairPhotoData = r.photo || "";
+  renderRepairPhotoPreview();
+  $("repairRemoveBtn").style.display = (r.text || r.photo) ? "" : "none";
+  $("repairOverlay").classList.add("open");
+  $("repairOverlay").style.display = "";
+}
+function closeRepairModal(){
+  $("repairOverlay").classList.remove("open");
+  $("repairOverlay").style.display = "none";
+  repairCurrent = null;
+}
+function renderRepairPhotoPreview(){
+  var has = !!repairPhotoData;
+  $("repairPhotoPreview").style.display = has ? "" : "none";
+  if (has) $("repairPhotoImg").src = repairPhotoData;
+  $("repairPhotoBtn").textContent = has ? "Change photo" : "Add a photo (optional)";
+}
+function renderRepairBtns(){
+  document.querySelectorAll(".repairbtn").forEach(function(b){
+    var name = b.dataset.repairFor;
+    var has = !!repairs[name];
+    b.textContent = has ? "✓ Repair requested" : "Request repair";
+    b.classList.toggle("needbtn", has);
+    var card = b.closest(".piccard");
+    if (card) card.classList.toggle("need", has || low.has(name));
+  });
+}
+$("repairPhotoBtn").onclick = () => { $("repairPhotoInput").click(); };
+$("repairPhotoInput").onchange = (e) => {
+  var f = e.target.files && e.target.files[0]; if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    var img = new Image();
+    img.onload = function(){
+      var max = 1000, w = img.width, h = img.height;
+      if (w > max || h > max) { var s = Math.min(max / w, max / h); w = Math.round(w * s); h = Math.round(h * s); }
+      var c = document.createElement("canvas"); c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      repairPhotoData = c.toDataURL("image/jpeg", 0.75);
+      renderRepairPhotoPreview();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(f);
+};
+$("repairPhotoRemove").onclick = () => { repairPhotoData = ""; $("repairPhotoInput").value = ""; renderRepairPhotoPreview(); };
+$("repairSaveBtn").onclick = () => {
+  if (!repairCurrent) return;
+  var t = $("repairText").value.trim();
+  if (!t && !repairPhotoData) { alert("Write what needs repairing, or add a photo."); return; }
+  repairs[repairCurrent] = { text: t, photo: repairPhotoData };
+  renderRepairBtns();
+  closeRepairModal();
+};
+$("repairRemoveBtn").onclick = () => {
+  if (!repairCurrent) return;
+  delete repairs[repairCurrent];
+  renderRepairBtns();
+  closeRepairModal();
+};
+$("repairCancelBtn").onclick = closeRepairModal;
+$("repairOverlay").addEventListener("click", function(e){ if (e.target === $("repairOverlay")) closeRepairModal(); });
 
 function saveAdj(){ localStorage.setItem(ADJKEY, JSON.stringify(adjustments)); renderPending(); }
 function parseDateTime(date, time){ return new Date(date + "T" + time).getTime(); }
@@ -769,7 +906,9 @@ $("outBtn").onclick = () => {
   save();
   backendPost({ action: "clockout", date: doneEntry.date, job: doneEntry.job, in: doneEntry.in, out: doneEntry.out,
     hours: doneEntry.hours, training: doneEntry.training, issue: doneEntry.issue, refilled: doneEntry.refilled,
-    low: doneEntry.low, stocked: doneEntry.stocked, cloth: doneEntry.cloth, vacuum: doneEntry.vacuum });
+    low: doneEntry.low, stocked: doneEntry.stocked, cloth: doneEntry.cloth, vacuum: doneEntry.vacuum,
+    repairPhotos: repairPhotosList() });
+  repairs = {}; renderRepairBtns();
 };
 $("sendBtn").onclick = () => {
   const msg = navigator.onLine
@@ -790,9 +929,10 @@ function summaryText(){
     "Total hours: " + total.toFixed(2)];
   d.forEach(e => {
     // Split the low list so requests are not confused with low items.
-    var lowItems = [], reqs = [], other = [], fb = [];
+    var lowItems = [], reqs = [], reps = [], other = [], fb = [];
     (e.low || []).forEach(function(x){
-      if (x.indexOf("2-STEP STOOL — REQUEST") === 0) reqs.push(x);
+      if (x.indexOf("REPAIR —") === 0) reps.push(x.replace("REPAIR — ", ""));
+      else if (x.indexOf("2-STEP STOOL — REQUEST") === 0) reqs.push(x);
       else if (x.indexOf("OTHER REQUEST:") === 0) other.push(x.replace("OTHER REQUEST: ", ""));
       else if (x.indexOf("FEEDBACK:") === 0) fb.push(x.replace("FEEDBACK: ", ""));
       else lowItems.push(x);
@@ -802,6 +942,7 @@ function summaryText(){
       + " | Supplies refilled: " + (e.refilled ? "yes" : "not confirmed")
       + " | Low: " + (lowItems.length ? lowItems.join("; ") : (e.stocked ? "all stocked" : "none noted"))
       + (reqs.length ? " | Requests: " + reqs.join("; ") : "")
+      + (reps.length ? " | Repairs: " + reps.join("; ") : "")
       + (other.length ? " | Other request: " + other.join("; ") : "")
       + (fb.length ? " | Feedback / questions / concerns: " + fb.join("; ") : "")
       + " | Cloths: " + (e.cloth ? "washed (confirmed)" : "not needed today")
