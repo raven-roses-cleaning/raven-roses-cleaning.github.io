@@ -113,8 +113,8 @@
   #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
   #watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);transform-origin:center;z-index:9998;pointer-events:none;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#1d1d23;opacity:.05;letter-spacing:.05em}
   body.app-hidden #appContent{filter:blur(10px)}
-  /* Colouring book QR pop-up (Krystal, 2026-11-08): a free gift for the
-     employee to share with clients. Dark overlay, cream card, gold accents. */
+  /* Colouring book QR pop-up (Krystal, 2026-11-08; wording fixed 2026-11-09): a free gift for the
+     employee, to share with friends and family if they want. Dark overlay, cream card, gold accents. */
   #colouringQrOverlay{position:fixed;inset:0;background:rgba(29,29,35,.72);z-index:9996;display:none;padding:20px;overflow:auto}
   #colouringQrOverlay.open{display:flex;align-items:center;justify-content:center}
   .colouring-qr-card{max-width:420px;width:100%;background:#fffdf7;border:2px solid #b58900;border-radius:16px;padding:20px;text-align:center;box-shadow:0 8px 32px rgba(29,29,35,.4)}
@@ -139,8 +139,8 @@
 <div id="copyWarning" role="alert"></div>
 <div id="colouringQrOverlay" role="dialog" aria-label="Free colouring book">
   <div class="colouring-qr-card">
-    <h2>🎨 A free gift for your clients!</h2>
-    <p>Our Raven &amp; Roses colouring book is free. Share it with your clients — scan the QR, or save it to your phone to share later.</p>
+    <h2>🎨 A free gift for you!</h2>
+    <p>Our Raven &amp; Roses colouring book is free — a gift for you, to share with friends and family if you want. Scan the QR, or save it to your phone to share later.</p>
     <img src="raven-colouring-book-qr.png" alt="QR code for the free Raven &amp; Roses colouring book">
     <p class="small">Scan to open the free colouring book</p>
     <a class="qr-save-btn" href="raven-colouring-book-qr.png" download="raven-colouring-book-qr.png">Save the QR to my phone</a>
@@ -406,7 +406,7 @@
   <p><label for="feedbackBox"><strong>Feedback, questions or concerns</strong></label></p>
   <textarea id="feedbackBox" rows="2" style="width:100%" placeholder="e.g. Feedback, a question, or a concern"></textarea>
   <hr>
-  <p class="small"><strong>Free colouring book</strong> — a free gift for you, to share with friends if you want.</p>
+  <p class="small"><strong>Free colouring book</strong> — a free gift for you, to share with friends and family if you want.</p>
   <button id="colouringQrBtn" class="secondary">🎨 Free colouring book — QR to share</button>
 </div>
 
