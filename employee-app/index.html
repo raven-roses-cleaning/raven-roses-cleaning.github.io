@@ -193,8 +193,8 @@
 <option>Clock in / out</option>
 <option>⏱ Adjust time — request a correction</option>
 <option>🏠 House instructions</option>
-<option>My schedule</option>
 <option>🧴 What to use — Supplies Guide</option>
+<option>My schedule</option>
 <option>🚗 Mileage tracker</option>
 <option>⚠️ Job issue note</option>
 <option>🗓️ Time off / sick day request</option>
@@ -263,20 +263,6 @@
   <div id="houseCodes" class="codes-box">Pick a job above to see its house codes.</div>
   <p class="small">Codes are blurred until you tap them. Tap to reveal at the door — they blur again after 30 seconds, or when you pick another house. Never share them. The address stays visible in the mileage list so you can open it in a map.</p>
 </div>
-
-<div class="card" id="scheduleCard">
-  <h2>My schedule</h2>
-  <p class="small">Your shifts, set by Krystal. Only your shifts are shown here.</p>
-  <div class="cal-nav">
-    <button id="calPrev" class="secondary" type="button" onclick="calMove(-1)">‹</button>
-    <h3 id="calTitle"></h3>
-    <button id="calNext" class="secondary" type="button" onclick="calMove(1)">›</button>
-  </div>
-  <div class="cal-grid" id="calGrid"></div>
-  <div id="calDetail" class="cal-detail" style="display:none"></div>
-  <p class="small" id="calEmpty" style="display:none">No shifts set yet — Krystal will set your schedule.</p>
-</div>
-
 <div class="card" id="suppliesGuideCard">
   <h2>🧴 What to use — Supplies Guide</h2>
   <p class="small"><strong>Not sure what to use?</strong> Tap a supply below to see everything it is good for. Or search below.</p>
@@ -289,6 +275,18 @@
   <div id="guideDetail"></div>
   <div id="guideSupplies"></div>
   <p class="small">How updates reach you: when Krystal changes it in her manager app, you see the new guide here automatically — no separate message needed.</p>
+</div>
+<div class="card" id="scheduleCard">
+  <h2>My schedule</h2>
+  <p class="small">Your shifts, set by Krystal. Only your shifts are shown here.</p>
+  <div class="cal-nav">
+    <button id="calPrev" class="secondary" type="button" onclick="calMove(-1)">‹</button>
+    <h3 id="calTitle"></h3>
+    <button id="calNext" class="secondary" type="button" onclick="calMove(1)">›</button>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div id="calDetail" class="cal-detail" style="display:none"></div>
+  <p class="small" id="calEmpty" style="display:none">No shifts set yet — Krystal will set your schedule.</p>
 </div>
 <div class="card" id="mileageCard">
   <h2>🚗 Mileage tracker</h2>
