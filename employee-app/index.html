@@ -1690,7 +1690,7 @@ $("loginBtn").onclick = function () {
   $("loginError").textContent = "Checking…";
   backendJsonp("login", { name: name, code: code }).then(function (d) {
     if (d && d.ok) {
-      session = { name: d.name, token: d.token, role: d.role || "Employee", rate: d.rate || "" };
+      session = { name: d.name, token: d.token, role: d.role || "Employee", rate: d.rate || "", lastActive: Date.now() };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
       $("loginCode").value = "";
       if (d.mustChangeCode) { showChangeCode(); return; }
@@ -1740,6 +1740,24 @@ function initLoginGate() {
       // ends when the tab closes, by design. A revoked code still fails
       // here, because the first backend pull re-checks the token.
       session = saved;
+      // Refuse a stale session: from a previous day, or past 16:20 on a
+      // workday when it was last active before 16:20 today (the 16:20
+      // auto sign-out holds even when the app was closed at 16:20).
+      if (saved.lastActive) {
+        var la = new Date(saved.lastActive), nw = new Date();
+        var stale = todayStr(la) !== todayStr(nw);
+        if (!stale && isWorkDay(nw)) {
+          var nm = nw.getHours() * 60 + nw.getMinutes();
+          var lm = la.getHours() * 60 + la.getMinutes();
+          if (nm >= 980 && lm < 980) stale = true;
+        }
+        if (stale) {
+          session = null;
+          try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+          showLogin();
+          return;
+        }
+      }
       if (BACKEND_ENABLED && session.token) {
         backendJsonp("getData", { name: session.name, token: session.token }).then(function (d) {
           if (d && d.ok) {
@@ -1773,6 +1791,88 @@ function updateWatermark() {
   el.textContent = who ? (who + "  •  " + stamp + "  •  " + who + "  •  " + stamp) : "";
 }
 setInterval(updateWatermark, 60000);
+
+// ============================================================================
+// SHIFT REMINDERS + AUTO SIGN-OUT — Krystal, 2026-11-08.
+// Only on actual shift days (Tue–Fri), and never on a day the employee has
+// approved time off. Reminders only appear while the app is open — a web
+// app cannot pop up a notification when it is closed.
+//   9:00  — remind to clock in (signed in but not clocked in yet)
+//   12:00 — remind to clock out of the morning shift
+//   16:00 — remind to clock out of the afternoon shift
+//   16:20 — sign out automatically
+// A saved session is also refused on load if it is from a previous day, or
+// if it is past 16:20 and the session was last active before 16:20 today —
+// so the 16:20 sign-out holds even when the app was closed at 16:20.
+// ============================================================================
+var REMINDER_KEY = "ravenRemindersV1";
+function todayStr(d) {
+  d = d || new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function isWorkDay(d) {
+  var day = (d || new Date()).getDay();
+  return day >= 2 && day <= 5; // Tue–Fri
+}
+function hasApprovedTimeOffToday() {
+  if (!session || !session.name) return false;
+  var t = todayStr();
+  return timeOff.some(function (r) {
+    return r.name === session.name && r.date === t && r.status === "APPROVED";
+  });
+}
+function getReminders() {
+  try {
+    var r = JSON.parse(localStorage.getItem(REMINDER_KEY) || "null");
+    if (r && r.date === todayStr()) return r;
+  } catch (e) {}
+  return { date: todayStr(), start: false, noon: false, four: false };
+}
+function saveReminders(r) {
+  try { localStorage.setItem(REMINDER_KEY, JSON.stringify(r)); } catch (e) {}
+}
+function touchSession() {
+  if (!session || !session.token) return;
+  session.lastActive = Date.now();
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {}
+}
+function autoSignOut() {
+  session = null;
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+  location.reload();
+}
+function tickShiftReminders() {
+  if (!session || !session.token) return; // review mode: no reminders
+  touchSession();
+  var now = new Date();
+  if (!isWorkDay(now)) return;
+  if (hasApprovedTimeOffToday()) return;
+  var mins = now.getHours() * 60 + now.getMinutes();
+  var r = getReminders();
+  // 9:00–11:59 — clock-in reminder (signed in, not clocked in yet)
+  if (!current && mins >= 540 && mins < 720 && !r.start) {
+    r.start = true; saveReminders(r);
+    alert("Your shift starts at 9:00 — don't forget to clock in.");
+    return;
+  }
+  // 12:00–12:59 — clock-out reminder, morning shift only
+  if (current && current.in && new Date(current.in).getHours() < 12 && mins >= 720 && mins < 780 && !r.noon) {
+    r.noon = true; saveReminders(r);
+    alert("It's 12:00 — time to clock out of your morning shift?");
+    return;
+  }
+  // 16:00–16:19 — clock-out reminder, afternoon shift
+  if (current && mins >= 960 && mins < 980 && !r.four) {
+    r.four = true; saveReminders(r);
+    alert("It's 4:00 — time to clock out of your shift?");
+    return;
+  }
+  // 16:20 — sign out automatically
+  if (mins >= 980) {
+    autoSignOut();
+  }
+}
+setInterval(tickShiftReminders, 60000);
 
 // ============================================================================
 // COPY PROTECTION — honest limits, written here and in the app.
