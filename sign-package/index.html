@@ -108,6 +108,17 @@
       <input type="text" id="ecRel" autocomplete="off" placeholder="e.g. Mother, Partner, Friend">
     </div>
 
+    <div class="card" id="payCard">
+      <h2 style="font-family:'Pirata One',serif;font-weight:400;font-size:26px;color:#7a5c14;margin:0 0 10px;">How you get paid</h2>
+      <p>Payday is bi-weekly on Fridays. Pay is sent by e-transfer on the morning of payday.</p>
+      <label class="big" for="etEmail">Your e-transfer email address</label>
+      <input type="text" id="etEmail" autocomplete="email" placeholder="The email where your pay should be sent">
+      <div class="hint">This is the email Krystal will send your pay to. Check it carefully — if it is wrong, your pay goes to the wrong place.</div>
+      <label class="small" for="etEmail2">Type it again to confirm</label>
+      <input type="text" id="etEmail2" autocomplete="email" placeholder="Type the same email again">
+      <label class="small" style="margin-top:16px;"><input type="checkbox" id="etAgree" style="width:26px;height:26px;vertical-align:middle;"> I agree to be paid by e-transfer to the email address above.</label>
+    </div>
+
     <div class="card">
       <p class="intro">Please read both documents below, then sign at the end. It only takes a few minutes. If anything is unclear, ask Krystal before you sign.</p>
     </div>
@@ -544,6 +555,11 @@ function hideMsg(id) {
   el.style.display = "none";
 }
 
+// ---- E-transfer agreement + email ----
+var etEmailInput = document.getElementById("etEmail");
+var etEmail2Input = document.getElementById("etEmail2");
+var etAgreeInput = document.getElementById("etAgree");
+
 // ---- Send ----
 var sendBtn = document.getElementById("sendBtn");
 var sending = false;
@@ -555,6 +571,9 @@ sendBtn.addEventListener("click", function () {
   var ecName = ecNameInput.value.trim();
   var ecPhone = ecPhoneInput.value.trim();
   var ecRel = ecRelInput.value.trim();
+  var etEmail = etEmailInput.value.trim();
+  var etEmail2 = etEmail2Input.value.trim();
+  var etAgree = etAgreeInput.checked;
   var missing = [];
   var firstMissing = null;
   if (!name) { missing.push("your full name"); firstMissing = firstMissing || nameInput; }
@@ -562,9 +581,25 @@ sendBtn.addEventListener("click", function () {
   if (!ecName) { missing.push("your emergency contact's name"); firstMissing = firstMissing || ecNameInput; }
   if (!ecPhone) { missing.push("your emergency contact's phone number"); firstMissing = firstMissing || ecPhoneInput; }
   if (!ecRel) { missing.push("your emergency contact's relationship to you"); firstMissing = firstMissing || ecRelInput; }
+  if (!etEmail) { missing.push("your e-transfer email address"); firstMissing = firstMissing || etEmailInput; }
   if (missing.length) {
     showMsg("warnMsg", "Please fill in: " + missing.join(", ") + ".");
     if (firstMissing) firstMissing.focus();
+    return;
+  }
+  if (etEmail.indexOf("@") < 1 || etEmail.indexOf(".") < 0) {
+    showMsg("warnMsg", "That e-transfer email doesn't look right — please check it.");
+    etEmailInput.focus();
+    return;
+  }
+  if (etEmail !== etEmail2) {
+    showMsg("warnMsg", "The two e-transfer emails don't match — please type the same email in both boxes.");
+    etEmail2Input.focus();
+    return;
+  }
+  if (!etAgree) {
+    showMsg("warnMsg", "Please tick the box to agree to be paid by e-transfer.");
+    etAgreeInput.focus();
     return;
   }
   if (!hasDrawn) {
@@ -582,7 +617,9 @@ sendBtn.addEventListener("click", function () {
     date: DATE_ISO,
     documents: DOC_NAMES,
     address: address,
-    emergencyContact: { name: ecName, phone: ecPhone, relationship: ecRel }
+    emergencyContact: { name: ecName, phone: ecPhone, relationship: ecRel },
+    etransferEmail: etEmail,
+    etransferAgreed: true
   };
   fetch(BACKEND_URL, {
     method: "POST", mode: "no-cors",
