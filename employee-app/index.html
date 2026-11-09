@@ -246,7 +246,7 @@
 
 <div class="card" id="suppliesGuideCard">
   <h2>🧴 What to use — Supplies Guide</h2>
-  <p class="small"><strong>Not sure what to use?</strong> Pick a room, tap the thing you are cleaning, and it tells you what to use. Or search below.</p>
+  <p class="small"><strong>Not sure what to use?</strong> Tap a supply below to see everything it is good for. Or search below.</p>
   <p class="small">Use only supplies Krystal provides. Anything marked &ldquo;TO CONFIRM&rdquo; is not final until Krystal confirms it.</p>
   <label for="guideSearch">🔍 Search anything — item, dirt / stain, or supply</label>
   <input id="guideSearch" class="guide-search" placeholder="e.g. stove, grease, limescale, soap scum, oven, mirror">
@@ -335,6 +335,17 @@
   <p class="small">Not washed today? Leave it unchecked — no penalty.</p>
   <button id="sendBtn">Send to Krystal</button>
   <p id="sendStatus" class="small"></p>
+  <div class="piccard" id="stool2Card" style="margin-top:10px">
+    <img src="kit-photos/step-stool-2.png" alt="2-step stool" style="width:100%;max-width:140px;border-radius:8px">
+    <div><strong>2-step stool</strong></div>
+    <div class="small">For move in / move out cleans, or fixtures if the homeowner doesn't have one. Request it here — temp use for one job, or permanent to keep.</div>
+    <button id="stoolTempBtn">Request temp use</button>
+    <button id="stoolPermBtn">Request permanent</button>
+  </div>
+  <p><label for="otherReqBox"><strong>Need something else? Write it here.</strong></label></p>
+  <textarea id="otherReqBox" rows="2" style="width:100%" placeholder="e.g. An item not listed, or anything else you need"></textarea>
+  <p><label for="feedbackBox"><strong>Feedback, questions or concerns</strong></label></p>
+  <textarea id="feedbackBox" rows="2" style="width:100%" placeholder="e.g. Feedback, a question, or a concern"></textarea>
   <hr>
   <p class="small"><strong>Free colouring book</strong> — a free gift for you, to share with friends if you want.</p>
   <button id="colouringQrBtn" class="secondary">🎨 Free colouring book — QR to share</button>
@@ -415,14 +426,16 @@ const KIT = [
   {cat:"tools", name:"Paper towel", pic:"", best_use:"", photo:"kit-photos/paper-towel-roll.png", supplyId:"s-papertowel"},
   {cat:"tools", name:"Crocs", pic:"", best_use:"", photo:"kit-photos/crocs.png", noRefill:true, note:"You provide this"},
   {cat:"tools", name:"Water bottle", pic:"", best_use:"", photo:"kit-photos/water-bottle.png", noRefill:true, note:"You provide this"},
+  {cat:"tools", name:"1-step stool", pic:"", best_use:"", photo:"kit-photos/step-stool-1.png"},
+  {cat:"tools", name:"Spray bottles", pic:"", best_use:"", photo:"kit-photos/spray-bottles.png", qtyPicker:true},
   // 4. LAUNDRY (Krystal's notebook order) — soap + Oxi-clean are refilled;
   // the laundry bins are replaced. "Instructions to
   // clean cloths" is info, not a supply: tile only, no Refill/Replace button.
   {cat:"laundry", name:"Laundry soap (for cloths)", pic:"", best_use:"", photo:"kit-photos/laundry-soap-tide.png", supplyId:"s-soap"},
-  {cat:"laundry", name:"Clean laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-clean.png"},
-  {cat:"laundry", name:"Dirty laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-dirty.png"},
+  {cat:"laundry", name:"Clean laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-real.png"},
+  {cat:"laundry", name:"Dirty laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-real.png"},
   {cat:"laundry", name:"Oxi-clean", pic:"", best_use:"", photo:"kit-photos/laundry-oxi-kirkland.png"},
-  {cat:"laundry", name:"Instructions to clean cloths", pic:"", best_use:"", photo:"", noRefill:true},
+  {cat:"laundry", name:"Instructions to clean cloths", pic:"", best_use:"", photo:"", noRefill:true, note:"Wash: hot, heavy duty, with laundry soap & Oxi-clean. Fresh scent optional. Dry: medium heat, no Bounce sheet, 1 hour."},
   // 5. SUPPLY LIST (Krystal's notebook order) — Replace.
   {cat:"supply", name:"Mop handle", pic:"", best_use:"", photo:"kit-photos/mop-handle-red.png"},
   {cat:"supply", name:"Vacuum", pic:"", best_use:"", photo:"kit-photos/bissell-powerforce-helix-turbo-pet-3332-stock.png"},
@@ -481,6 +494,39 @@ let monthlyDone = JSON.parse(localStorage.getItem(MONTHLYDONEKEY) || "[]");
 let adjustingEntryIdx = -1; // -1 = new / missed shift, otherwise index into entries
 let current = null; // {name, job, date, in, out}
 let refilled = false, low = new Set(), stocked = false, cloth = false;
+// 2-step stool request + spray bottle quantity. These live in `low` as
+// labelled entries so they reach Krystal in the clock-out payload / email
+// (same route as the "REUSE REQUEST:" entries) — no backend change.
+var stoolReq = ""; // "" | "temp" | "perm"
+var sprayQty = 0; // 0 = none, 1-4 = bottles requested
+function stoolReqText(){ return stoolReq === "temp" ? "2-STEP STOOL — REQUEST TEMP USE" : (stoolReq === "perm" ? "2-STEP STOOL — REQUEST PERMANENT" : ""); }
+function sprayReqText(){ return sprayQty > 0 ? "Spray bottles ×" + sprayQty : ""; }
+function syncRequestLow(){
+  low.delete("2-STEP STOOL — REQUEST TEMP USE");
+  low.delete("2-STEP STOOL — REQUEST PERMANENT");
+  for (var q = 1; q <= 4; q++) low.delete("Spray bottles ×" + q);
+  var s = stoolReqText(); if (s) low.add(s);
+  var p = sprayReqText(); if (p) low.add(p);
+}
+// The clock-out / send payload low list: tile flags + stool/spray requests
+// + the two free-text boxes (request + feedback), each clearly labelled.
+function payloadLow(){
+  var out = [...low];
+  var o = $("otherReqBox") ? $("otherReqBox").value.trim() : "";
+  var f = $("feedbackBox") ? $("feedbackBox").value.trim() : "";
+  if (o) out.push("OTHER REQUEST: " + o);
+  if (f) out.push("FEEDBACK: " + f);
+  return out;
+}
+function renderStoolBtns(){
+  var t = $("stoolTempBtn"), p = $("stoolPermBtn"), card = $("stool2Card");
+  if (!t || !p) return;
+  t.textContent = stoolReq === "temp" ? "✓ Temp use requested" : "Request temp use";
+  p.textContent = stoolReq === "perm" ? "✓ Permanent requested" : "Request permanent";
+  t.classList.toggle("needbtn", stoolReq === "temp");
+  p.classList.toggle("needbtn", stoolReq === "perm");
+  if (card) card.classList.toggle("need", stoolReq !== "");
+}
 
 const $ = id => document.getElementById(id);
 function localDateStr(){ const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
@@ -525,6 +571,44 @@ KIT.forEach(item => {
     $("lowList").appendChild(card);
     return;
   }
+  // Spray bottles (Krystal, 2026-11-08): tap Replace to pick how many
+  // bottles are needed (1-4). Recorded as "Spray bottles ×N" in the low
+  // set so Krystal sees the quantity. Tapping the flagged button clears it.
+  if (item.qtyPicker) {
+    b.textContent = "Replace";
+    b.dataset.action = "Replace";
+    const qtyRow = document.createElement("div");
+    qtyRow.className = "qtyRow";
+    qtyRow.style.display = "none";
+    qtyRow.style.marginTop = "6px";
+    [1,2,3,4].forEach(function(n){
+      const qb = document.createElement("button");
+      qb.textContent = String(n);
+      qb.className = "secondary";
+      qb.style.marginRight = "4px";
+      qb.onclick = (ev) => {
+        ev.stopPropagation();
+        sprayQty = n; syncRequestLow();
+        b.textContent = "✓ Need replacing ×" + n; b.classList.add("needbtn"); card.classList.add("need");
+        qtyRow.style.display = "none";
+        stocked = false; $("stockedBtn").classList.remove("on");
+      };
+      qtyRow.appendChild(qb);
+    });
+    b.onclick = () => {
+      if (sprayQty > 0) {
+        sprayQty = 0; syncRequestLow();
+        b.textContent = "Replace"; b.classList.remove("needbtn"); card.classList.remove("need");
+        qtyRow.style.display = "none";
+      } else {
+        qtyRow.style.display = "";
+      }
+    };
+    card.appendChild(b);
+    card.appendChild(qtyRow);
+    $("lowList").appendChild(card);
+    return;
+  }
   var act = kitAction(item);
   b.textContent = act.label;
   b.dataset.action = act.label;
@@ -547,7 +631,10 @@ KIT.forEach(item => {
   $("lowList").appendChild(card);
 });
 $("refilledBtn").onclick = e => { refilled = !refilled; e.target.classList.toggle("on", refilled); };
-$("stockedBtn").onclick = e => { stocked = !stocked; e.target.classList.toggle("on", stocked); if (stocked) { low.clear(); document.querySelectorAll("#lowList .piccard").forEach(x=>{x.classList.remove("need"); const bb=x.querySelector("button"); if(bb){bb.classList.remove("needbtn"); bb.textContent=bb.dataset.action || "Refill";}}); } };
+$("stockedBtn").onclick = e => { stocked = !stocked; e.target.classList.toggle("on", stocked); if (stocked) { low.clear(); stoolReq = ""; sprayQty = 0; renderStoolBtns(); document.querySelectorAll(".qtyRow").forEach(function(r){ r.style.display = "none"; }); document.querySelectorAll("#lowList .piccard").forEach(x=>{x.classList.remove("need"); const bb=x.querySelector("button"); if(bb){bb.classList.remove("needbtn"); bb.textContent=bb.dataset.action || "Refill";}}); } };
+// 2-step stool request buttons (mutually exclusive; tap again to undo).
+$("stoolTempBtn").onclick = () => { stoolReq = (stoolReq === "temp") ? "" : "temp"; syncRequestLow(); renderStoolBtns(); };
+$("stoolPermBtn").onclick = () => { stoolReq = (stoolReq === "perm") ? "" : "perm"; syncRequestLow(); renderStoolBtns(); };
 // Refill category picker (Krystal: no huge scroll list — pick a section
 // first). Cards are only hidden/shown, never re-built, so anything flagged
 // in one group stays flagged when you switch groups, and the flagged items
@@ -642,7 +729,7 @@ $("inBtn").onclick = () => {
 $("outBtn").onclick = () => {
   if (!current) return;
   current.out = Date.now();
-  current.refilled = refilled; current.low = [...low]; current.stocked = stocked; current.cloth = cloth; current.vacuum = getVacuum(); current.issue = $("issueNote").value.trim(); $("issueNote").value = "";
+  current.refilled = refilled; current.low = payloadLow(); current.stocked = stocked; current.cloth = cloth; current.vacuum = getVacuum(); current.issue = $("issueNote").value.trim(); $("issueNote").value = ""; if ($("otherReqBox")) $("otherReqBox").value = ""; if ($("feedbackBox")) $("feedbackBox").value = "";
   current.hours = Math.round(hours(current.in, current.out) * 100) / 100;
   entries.push(current);
   const doneEntry = current;
@@ -660,7 +747,7 @@ $("sendBtn").onclick = () => {
   $("sendStatus").innerHTML = '<span class="ok">' + msg + "</span>";
   // Attach the latest taps to the most recent entry for today, if one exists
   const today = entries.filter(e => e.date === $("workdate").value);
-  if (today.length) { const last = today[today.length-1]; last.refilled = refilled; last.low = [...low]; last.stocked = stocked; last.cloth = cloth; last.vacuum = getVacuum(); const iss = $("issueNote").value.trim(); if (iss) { last.issue = iss; $("issueNote").value = ""; } save(); }
+  if (today.length) { const last = today[today.length-1]; last.refilled = refilled; last.low = payloadLow(); last.stocked = stocked; last.cloth = cloth; last.vacuum = getVacuum(); const iss = $("issueNote").value.trim(); if (iss) { last.issue = iss; $("issueNote").value = ""; } save(); }
 };
 
 function dayEntries(){ return entries.filter(e => e.date === $("workdate").value); }
@@ -671,10 +758,21 @@ function summaryText(){
   const lines = ["Raven & Roses — End-of-day summary — " + $("workdate").value,
     "Total hours: " + total.toFixed(2)];
   d.forEach(e => {
+    // Split the low list so requests are not confused with low items.
+    var lowItems = [], reqs = [], other = [], fb = [];
+    (e.low || []).forEach(function(x){
+      if (x.indexOf("2-STEP STOOL — REQUEST") === 0) reqs.push(x);
+      else if (x.indexOf("OTHER REQUEST:") === 0) other.push(x.replace("OTHER REQUEST: ", ""));
+      else if (x.indexOf("FEEDBACK:") === 0) fb.push(x.replace("FEEDBACK: ", ""));
+      else lowItems.push(x);
+    });
     lines.push("- " + e.job + ": " + fmt(e.in) + "–" + (e.out ? fmt(e.out) : "?") + " (" + (e.hours||0).toFixed(2) + "h)"
       + (e.adjustmentApproved ? " [time adjusted, approved: " + e.adjustmentReason + "]" : "")
       + " | Supplies refilled: " + (e.refilled ? "yes" : "not confirmed")
-      + " | Low: " + (e.low && e.low.length ? e.low.join("; ") : (e.stocked ? "all stocked" : "none noted"))
+      + " | Low: " + (lowItems.length ? lowItems.join("; ") : (e.stocked ? "all stocked" : "none noted"))
+      + (reqs.length ? " | Requests: " + reqs.join("; ") : "")
+      + (other.length ? " | Other request: " + other.join("; ") : "")
+      + (fb.length ? " | Feedback / questions / concerns: " + fb.join("; ") : "")
       + " | Cloths: " + (e.cloth ? "washed (confirmed)" : "not needed today")
       + (e.training ? " | TRAINING shift" : "")
       + (e.issue ? " | Issue: " + e.issue : ""));
@@ -790,14 +888,115 @@ function supplyLinkPhrases(){
   list.sort(function (a, b) { return b.phrase.length - a.phrase.length; });
   return list;
 }
+// Clickable ITEM links in House instructions (Krystal, 2026-11-08): item
+// words in the house text ("counter", "toilet", "shower" ...) link to the
+// guide item and show what to use for it. Phrases come from the live guide
+// item names plus the short words Krystal uses in notes. Only words with a
+// matching guide item are linked; all other text is unchanged.
+function itemLinkPhrases(){
+  var list = [];
+  var seen = {};
+  function add(phrase, roomId, itemId){
+    var k = String(phrase || "").toLowerCase().trim();
+    if (!k || seen[k]) return;
+    seen[k] = true;
+    list.push({ phrase: String(phrase).trim(), roomId: roomId, itemId: itemId });
+  }
+  // Short words Krystal uses in house notes — authoritative, listed first
+  // so they win over any auto-generated phrase for the same word.
+  var shorts = [
+    { phrase: "counter", roomId: "kitchen", itemId: "k-counters" },
+    { phrase: "counters", roomId: "kitchen", itemId: "k-counters" },
+    { phrase: "worktop", roomId: "kitchen", itemId: "k-counters" },
+    { phrase: "worktops", roomId: "kitchen", itemId: "k-counters" },
+    { phrase: "countertop", roomId: "kitchen", itemId: "k-counters" },
+    { phrase: "countertops", roomId: "kitchen", itemId: "k-counters" },
+    { phrase: "toilet", roomId: "bathroom", itemId: "b-toilet" },
+    { phrase: "toilets", roomId: "bathroom", itemId: "b-toilet" },
+    { phrase: "shower", roomId: "bathroom", itemId: "b-shower" },
+    { phrase: "tub", roomId: "bathroom", itemId: "b-shower" },
+    { phrase: "tubs", roomId: "bathroom", itemId: "b-shower" },
+    { phrase: "bath", roomId: "bathroom", itemId: "b-shower" },
+    { phrase: "stove", roomId: "kitchen", itemId: "k-stove" },
+    { phrase: "cooktop", roomId: "kitchen", itemId: "k-stove" },
+    { phrase: "hob", roomId: "kitchen", itemId: "k-stove" },
+    { phrase: "fridge", roomId: "kitchen", itemId: "k-fridge" },
+    { phrase: "refrigerator", roomId: "kitchen", itemId: "k-fridge" },
+    { phrase: "microwave", roomId: "kitchen", itemId: "k-microwave" },
+    { phrase: "oven", roomId: "kitchen", itemId: "k-oven" },
+    { phrase: "mirror", roomId: "bathroom", itemId: "b-mirror" },
+    { phrase: "mirrors", roomId: "bathroom", itemId: "b-mirror" },
+    { phrase: "glass", roomId: "bathroom", itemId: "b-mirror" },
+    { phrase: "floor", roomId: "living", itemId: "l-floors" },
+    { phrase: "floors", roomId: "living", itemId: "l-floors" },
+    { phrase: "cabinet", roomId: "kitchen", itemId: "k-cabinets" },
+    { phrase: "cabinets", roomId: "kitchen", itemId: "k-cabinets" },
+    { phrase: "backsplash", roomId: "kitchen", itemId: "k-backsplash" },
+    { phrase: "appliance", roomId: "kitchen", itemId: "k-appliances" },
+    { phrase: "appliances", roomId: "kitchen", itemId: "k-appliances" },
+    { phrase: "vent", roomId: "general", itemId: "g-vents" },
+    { phrase: "vents", roomId: "general", itemId: "g-vents" },
+    { phrase: "scuff", roomId: "general", itemId: "g-scuff" },
+    { phrase: "scuff marks", roomId: "general", itemId: "g-scuff" },
+    { phrase: "kitchen sink", roomId: "kitchen", itemId: "k-sink" },
+    { phrase: "bathroom sink", roomId: "bathroom", itemId: "b-taps" },
+    { phrase: "stone sink", roomId: "kitchen", itemId: "k-stonesink" },
+    { phrase: "black sink", roomId: "kitchen", itemId: "k-stonesink" },
+    { phrase: "sink", roomId: "bathroom", itemId: "b-taps" },
+    { phrase: "sinks", roomId: "bathroom", itemId: "b-taps" },
+    { phrase: "dresser", roomId: "bedroom", itemId: "be-dresser" },
+    { phrase: "bedside", roomId: "bedroom", itemId: "be-bedside" },
+    { phrase: "bedside table", roomId: "bedroom", itemId: "be-bedside" },
+    { phrase: "bedside tables", roomId: "bedroom", itemId: "be-bedside" },
+    { phrase: "sofa", roomId: "living", itemId: "l-sofa" },
+    { phrase: "upholstery", roomId: "living", itemId: "l-sofa" },
+    { phrase: "tv", roomId: "living", itemId: "l-tv" },
+    { phrase: "screen", roomId: "living", itemId: "l-tv" },
+    { phrase: "washing machine", roomId: "general", itemId: "g-washer" },
+    { phrase: "washer", roomId: "general", itemId: "g-washer" },
+    { phrase: "table", roomId: "living", itemId: "l-table" }
+  ];
+  shorts.forEach(function (sh) { add(sh.phrase, sh.roomId, sh.itemId); });
+  // Plus the guide item names themselves (slash-parts), so new items Krystal
+  // adds later link automatically. "wood furniture" is left out: it names
+  // two different items (coffee table and dresser).
+  guideAllItems().forEach(function (x) {
+    String(x.item.name || "").split("/").forEach(function (p) {
+      var t = p.trim();
+      if (t && t.toLowerCase() !== "wood furniture") add(t, x.room.id, x.item.id);
+    });
+  });
+  list.sort(function (a, b) { return b.phrase.length - a.phrase.length; });
+  return list;
+}
+// Earliest occurrence of phrase in rest; for item words it must be a whole
+// word, so "sink" never matches inside "think" and "bath" never matches
+// inside "bathroom".
+function findLinkPhrase(rest, phrase, wholeWord){
+  var low = rest.toLowerCase();
+  var p = phrase.toLowerCase();
+  var from = 0;
+  while (true) {
+    var idx = low.indexOf(p, from);
+    if (idx < 0) return -1;
+    if (!wholeWord) return idx;
+    var before = idx === 0 ? "" : rest[idx - 1];
+    var after = rest[idx + p.length] || "";
+    var isWord = function (c) { return /[A-Za-z0-9]/.test(c); };
+    if ((!before || !isWord(before)) && (!after || !isWord(after))) return idx;
+    from = idx + 1;
+  }
+}
 function linkSupplies(text){
   var out = "";
   var rest = String(text == null ? "" : text);
-  var phrases = supplyLinkPhrases();
+  var phrases = supplyLinkPhrases().map(function (p) { return { phrase: p.phrase, kind: "supply", id: p.id }; })
+    .concat(itemLinkPhrases().map(function (p) { return { phrase: p.phrase, kind: "item", roomId: p.roomId, itemId: p.itemId }; }));
+  phrases.sort(function (a, b) { return b.phrase.length - a.phrase.length; });
   while (rest.length) {
     var best = null, bestIdx = -1;
     for (var i = 0; i < phrases.length; i++) {
-      var idx = rest.toLowerCase().indexOf(phrases[i].phrase.toLowerCase());
+      var idx = findLinkPhrase(rest, phrases[i].phrase, phrases[i].kind === "item");
       if (idx >= 0 && (bestIdx < 0 || idx < bestIdx || (idx === bestIdx && phrases[i].phrase.length > best.phrase.length))) {
         best = phrases[i]; bestIdx = idx;
       }
@@ -805,7 +1004,11 @@ function linkSupplies(text){
     if (!best) { out += esc(rest); break; }
     out += esc(rest.slice(0, bestIdx));
     var matched = rest.slice(bestIdx, bestIdx + best.phrase.length);
-    out += "<button class='guide-chip' onclick=\"guideShowSupply('" + best.id + "')\">" + esc(matched) + "</button>";
+    if (best.kind === "supply") {
+      out += "<button class='guide-chip' onclick=\"guideShowSupply('" + best.id + "')\">" + esc(matched) + "</button>";
+    } else {
+      out += "<button class='guide-chip' onclick=\"guideShowItem('" + best.roomId + "','" + best.itemId + "')\">" + esc(matched) + "</button>";
+    }
     rest = rest.slice(bestIdx + best.phrase.length);
   }
   return out;
@@ -980,14 +1183,14 @@ const DEFAULT_GUIDE = {
         {
           "id": "k-stove",
           "name": "Stove / cooktop",
-          "supply": "Bar Keepers Friend Soft Cleanser, Dawn Powerwash, glass razor",
+          "supply": "Bar Keepers Friend Soft Cleanser, Dawn Powerwash, glass razor, Degreaser",
           "goodFor": [
             "Grease",
             "Cooking splatters",
             "Build-up",
             "Everyday cooking dirt"
           ],
-          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, wipe with a cloth, rinse the cloth and wipe again, then dry. For build-up, use the glass razor as Krystal shows you. Wear gloves.",
+          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, wipe with a cloth, rinse the cloth and wipe again, then dry. For build-up, use the glass razor as Krystal shows you. Wear gloves. Always polish after BKF — use Windex or vinegar.",
           "notes": "Use caution with the glass razor — use it properly, as Krystal shows you.",
           "tags": "stove cooktop hob grease razor"
         },
@@ -1025,14 +1228,14 @@ const DEFAULT_GUIDE = {
             "Dull stainless steel",
             "Stains in the sink"
           ],
-          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, then wipe and dry. Follow the notes on the bottle.",
+          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, then wipe and dry. Follow the notes on the bottle. Always polish after BKF — use Windex or vinegar.",
           "notes": "Confirmed by Krystal — Bar Keepers Friend and Dawn Powerwash are both good for sinks and stainless steel.",
           "tags": "sink stainless water marks limescale"
         },
         {
           "id": "k-counters",
           "name": "Counters / worktops",
-          "supply": "Multi-purpose cleaner, Vim",
+          "supply": "Multi-purpose cleaner, Vim, Dawn Powerwash",
           "goodFor": [
             "Food marks",
             "Sticky spots",
@@ -1045,7 +1248,7 @@ const DEFAULT_GUIDE = {
         {
           "id": "k-microwave",
           "name": "Microwave",
-          "supply": "Paper towel",
+          "supply": "Multi-purpose cleaner",
           "goodFor": [
             "Food splatters inside",
             "Sticky marks"
@@ -1057,15 +1260,54 @@ const DEFAULT_GUIDE = {
         {
           "id": "k-cabinets",
           "name": "Wood cabinets",
-          "supply": "Wood polish",
+          "supply": "Vim, Multi-purpose cleaner, Dawn Powerwash",
           "goodFor": [
             "Dust",
             "Fingerprints",
             "Grease marks"
           ],
-          "how": "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.",
-          "notes": "Use wood polish on wood cabinets occasionally.",
+          "how": "Clean with Vim, Multi-purpose cleaner or Dawn Powerwash on a cloth, then wipe with a clean damp cloth and dry. Use wood polish with a paper towel on wood cabinets only if looking dull — not every time. Use on furniture only if they request it — never on raw wood.",
+          "notes": "Wood polish with a paper towel on wood cabinets only if looking dull — not every time. On furniture only if they request it — never on raw wood.",
           "tags": "wood cabinets polish"
+        },
+        {
+          "id": "k-backsplash",
+          "name": "Backsplash",
+          "supply": "Multi-purpose cleaner, Vim, Dawn Powerwash",
+          "goodFor": [
+            "Food marks",
+            "Sticky spots",
+            "Everyday dirt"
+          ],
+          "how": "Clean the same way as the counters.",
+          "notes": "",
+          "tags": "backsplash counters"
+        },
+        {
+          "id": "k-appliances",
+          "name": "Counter appliances",
+          "supply": "Multi-purpose cleaner",
+          "goodFor": [
+            "Dust",
+            "Fingerprints",
+            "Everyday dirt"
+          ],
+          "how": "Wipe with multi-purpose cleaner on a cloth, then wipe with a clean damp cloth and dry.",
+          "notes": "",
+          "tags": "appliances counter"
+        },
+        {
+          "id": "k-stonesink",
+          "name": "Stone / black sinks",
+          "supply": "Vim, Bar Keepers Friend Soft Cleanser",
+          "goodFor": [
+            "Water marks",
+            "Stains",
+            "Drains"
+          ],
+          "how": "Clean with Vim, then use Bar Keepers Friend on drains with the grout brush.",
+          "notes": "",
+          "tags": "stone black sink drains grout brush"
         }
       ]
     },
@@ -1076,13 +1318,13 @@ const DEFAULT_GUIDE = {
         {
           "id": "b-toilet",
           "name": "Toilet",
-          "supply": "Vim, disinfectant",
+          "supply": "Vim, disinfectant, paper towel",
           "goodFor": [
             "Stains",
-            "Limescale — to confirm",
+            "Limescale",
             "Everyday dirt"
           ],
-          "how": "Clean the inside of the toilet with Vim. Clean the toilet and around it with disinfectant. Wear gloves. Rinse / flush and wipe dry where needed.",
+          "how": "Clean the inside of the toilet with Vim. Clean the toilet and around it with disinfectant. Wear gloves. Rinse / flush and wipe dry where needed. Use Bar Keepers Friend in the bowl if needed.",
           "notes": "Vim is for the inside of the toilet. Disinfectant is for the toilet and around it. Never mix cleaning products.",
           "tags": "toilet stains limescale"
         },
@@ -1096,20 +1338,20 @@ const DEFAULT_GUIDE = {
             "Mould marks — to confirm",
             "Build-up between tiles"
           ],
-          "how": "Use Vim for showers and tubs. If there is really dark build-up, use Bar Keepers Friend to get rid of it. Dawn Powerwash can be used instead of Vim — they are interchangeable, go back and forth. Degreaser works really well with a grout brush on shower floors if there is build-up between the tiles.",
+          "how": "Use Vim for showers and tubs. If there is really dark build-up, use Bar Keepers Friend to get rid of it. Dawn Powerwash can be used instead of Vim — they are interchangeable, go back and forth. Degreaser works really well with a grout brush on shower floors if there is build-up between the tiles. Always polish after BKF — use Windex or vinegar.",
           "notes": "Vim and Dawn Powerwash are interchangeable for showers and tubs. Bar Keepers Friend is for really dark build-up. Degreaser with a grout brush gets build-up out from between the tiles on shower floors.",
           "tags": "shower bath soap scum water marks grout brush degreaser"
         },
         {
           "id": "b-taps",
           "name": "Bathroom sink & taps",
-          "supply": "Vim, Dawn Powerwash, Bar Keepers Friend Soft Cleanser",
+          "supply": "Vim, Dawn Powerwash, Scrub Daddies / sponges, Bar Keepers Friend Soft Cleanser",
           "goodFor": [
             "Water spots",
-            "Limescale — to confirm",
+            "Limescale",
             "Toothpaste marks"
           ],
-          "how": "Clean with Vim or Dawn Powerwash, then wipe and dry so no water spots are left. If there is really nasty build-up, use Bar Keepers Friend.",
+          "how": "Clean with Vim or Dawn Powerwash, then wipe and dry so no water spots are left. If there is really nasty build-up, use Bar Keepers Friend. Always polish after BKF — use Windex or vinegar.",
           "notes": "Confirmed by Krystal.",
           "tags": "sink taps limescale water spots"
         },
@@ -1270,6 +1512,19 @@ const DEFAULT_GUIDE = {
           "how": "Wipe with cleaning solution on a cloth, then wipe with a clean damp cloth and dry.",
           "notes": "TO CONFIRM WITH KRYSTAL.",
           "tags": "washing machine"
+        },
+        {
+          "id": "g-scuff",
+          "name": "Scuff marks",
+          "supply": "Vim",
+          "goodFor": [
+            "Scuff marks",
+            "Marks on cabinets",
+            "Marks on walls"
+          ],
+          "how": "Use Vim on scuff marks on cabinets and walls, as Krystal shows you.",
+          "notes": "",
+          "tags": "scuff marks cabinets walls"
         }
       ]
     }
@@ -1325,7 +1580,7 @@ const DEFAULT_GUIDE = {
       "goodFor": [
         "Washing cleaning cloths"
       ],
-      "how": "Use to wash cloths as Krystal shows you. Tap 'Cloths washed' in the app only when actually washed.",
+      "how": "Wash: hot, heavy duty, with laundry soap & Oxi-clean. Fresh scent optional. Dry: medium heat, no Bounce sheet, 1 hour. Tap 'Cloths washed' in the app only when actually washed.",
       "notes": "For cloths only — not a surface cleaner."
     },
     {
@@ -1352,9 +1607,13 @@ const DEFAULT_GUIDE = {
         "Tough build-up",
         "Really dark build-up in showers and tubs",
         "Water marks",
-        "Dull stainless steel"
+        "Dull stainless steel",
+        "Soap scum",
+        "Limescale",
+        "Rust",
+        "All sinks"
       ],
-      "how": "Use as Krystal shows you. Follow the notes on the bottle.",
+      "how": "Use as Krystal shows you. Follow the notes on the bottle. Always polish after BKF — use Windex or vinegar.",
       "notes": "Confirmed by Krystal — good for stainless steel, sinks, fridges, stoves and tough build-up."
     },
     {
@@ -1401,7 +1660,9 @@ const DEFAULT_GUIDE = {
         "Showers and tubs",
         "Inside of toilets",
         "Bathroom countertops and sinks",
-        "Kitchen counters"
+        "Kitchen counters",
+        "Cabinets",
+        "Scuff marks"
       ],
       "how": "Use as Krystal shows you.",
       "notes": "Interchangeable with Dawn Powerwash for showers and tubs."
@@ -1444,7 +1705,7 @@ const DEFAULT_GUIDE = {
         "Wood cabinets",
         "Wood furniture"
       ],
-      "how": "Use as Krystal shows you.",
+      "how": "Use wood polish with a paper towel on wood cabinets. Use on furniture only if they request it — never on raw wood.",
       "notes": "Use on wood cabinets if they are looking dull — not every time."
     },
     {
@@ -1453,7 +1714,7 @@ const DEFAULT_GUIDE = {
       "goodFor": [
         "Dusting"
       ],
-      "how": "Use to dust as Krystal shows you.",
+      "how": "Dust with a duster, or use a damp cloth with multi-purpose cleaner for dusting.",
       "notes": "Used for dusting."
     },
     {
@@ -1464,7 +1725,8 @@ const DEFAULT_GUIDE = {
         "Build-up between tiles",
         "Grease"
       ],
-      "how": "Use with a grout brush on shower floors to get rid of build-up between the tiles."
+      "how": "Use with a grout brush on shower floors to get rid of build-up between the tiles.",
+      "notes": null
     }
   ]
 };
@@ -1482,6 +1744,21 @@ function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace
 function saveGuide(){ localStorage.setItem(GUIDEKEY, JSON.stringify(guide)); }
 function guideAllItems(){ const out = []; (guide.rooms || []).forEach(r => (r.items || []).forEach(it => out.push({ room: r, item: it }))); return out; }
 function guideSupplyByName(name){ return (guide.supplies || []).find(s => s.name === name); }
+// Does a guide item's Supply field name this supply? Items list supplies
+// as a comma / "or" list ("Vim, Dawn Powerwash", "Dawn Powerwash or Bar
+// Keepers Friend Soft Cleanser"), so match by part, not by exact string.
+// Short forms count too ("Bar Keepers Friend" = "Bar Keepers Friend Soft
+// Cleanser"; "Windex" = "Windex / vinegar"). This is what builds the
+// "Use it for" list under each supply (Krystal, 2026-11-08) — derived
+// from the data, never hand-maintained.
+function guideItemUsesSupply(item, s){
+  var parts = String(item.supply || "").split(/,|\bor\b/i).map(function (p) { return p.trim().toLowerCase(); }).filter(Boolean);
+  var name = String(s.name || "").toLowerCase();
+  var short = name.split("/")[0].trim();
+  return parts.some(function (p) {
+    return p === name || p === short || name.indexOf(p) === 0 || p.indexOf(short) === 0;
+  });
+}
 function guideMatches(q, it){
   if (!q) return true;
   q = q.toLowerCase();
@@ -1503,8 +1780,8 @@ function guideShowSupply(supplyId){
   renderGuide();
   const el = $("guideDetail"); if (el) el.scrollIntoView();
 }
-// One clear page: pick a room (or Supplies) first, then see just that
-// section. Back always goes up one level, never all the way to the top.
+// One clear page: supplies first, then see just that section. Back always
+// goes up one level, never all the way to the top.
 function guideShowMenu(){
   guideOpenRoom = null; guideOpenItem = null; guideOpenSupply = null;
   guideSuppliesOpen = false; guideAllUses = false; guideRefillMode = false;
@@ -1534,9 +1811,10 @@ function guideRequestRefill(supplyId){
 window.guideShowItem = guideShowItem;
 window.guideClose = function(){
   // Back one level: from a supply detail to the supply list, from an item
-  // detail to its room, otherwise back to the room menu.
+  // detail to the guide menu (rooms are no longer a menu), otherwise back
+  // to the menu.
   if (guideOpenSupply) { guideOpenSupply = null; }
-  else if (guideOpenItem) { guideOpenItem = null; }
+  else if (guideOpenItem) { guideOpenItem = null; guideOpenRoom = null; }
   else { guideShowMenu(); return; }
   renderGuide();
 };
@@ -1596,11 +1874,16 @@ function renderGuide(){
     roomsEl.innerHTML = "";
     if (supEl) supEl.innerHTML = "<button class='secondary' onclick='guideShowSupplies()'>← Back to supplies</button>"
       + "<h3 style='font-size:1rem'>What is everything used for?</h3>"
-      + (guide.supplies || []).map(s => "<div class='guide-room'><h3>" + esc(s.name) + "</h3><p class='small'><strong>Good for:</strong> " + esc((s.goodFor || []).join(", ")) + "</p><p class='small'>" + esc(s.how || "") + "</p></div>").join("");
+      + (guide.supplies || []).map(s => {
+          const uses = guideAllItems().filter(x => guideItemUsesSupply(x.item, s));
+          return "<div class='guide-room'><h3>" + esc(s.name) + "</h3><p class='small'><strong>Good for:</strong> " + esc((s.goodFor || []).join(", ")) + "</p>"
+            + (uses.length ? "<p class='small'><strong>Use it for:</strong> " + uses.map(x => "<button class='guide-chip' onclick=\"guideShowItem('" + x.room.id + "','" + x.item.id + "')\">" + esc(x.item.name) + "</button>").join(" ") + "</p>" : "")
+            + "<p class='small'>" + esc(s.how || "") + "</p></div>";
+        }).join("");
   } else if (guideSuppliesOpen) {
     if (menuEl) menuEl.innerHTML = "";
     roomsEl.innerHTML = "";
-    if (supEl) supEl.innerHTML = "<button class='secondary' onclick='guideShowMenu()'>← Back to rooms</button>"
+    if (supEl) supEl.innerHTML = "<button class='secondary' onclick='guideShowMenu()'>← Back</button>"
       + "<h3 style='font-size:1rem'>Supplies</h3>"
       + "<p class='small'>Tap a supply to see everything it is good for.</p>"
       + "<div><button class='tap' onclick='guideToggleRefillMode()'>" + (guideRefillMode ? "Done requesting refills" : "Request refills") + "</button> "
@@ -1619,15 +1902,15 @@ function renderGuide(){
     if (supEl) supEl.innerHTML = "";
     if (r) {
       const q = esc(guideRoomQuery[r.id] || "");
-      roomsEl.innerHTML = "<button class='secondary' onclick='guideShowMenu()'>← Back to rooms</button>"
+      roomsEl.innerHTML = "<button class='secondary' onclick='guideShowMenu()'>← Back</button>"
         + "<h3 style='font-size:1rem'>" + esc(r.name) + "</h3>"
         + "<label for='guide-room-search-" + r.id + "'>Search in " + esc(r.name) + " only</label><input id='guide-room-search-" + r.id + "' placeholder='e.g. stove' value='" + q + "' oninput=\"guideRoomSearch('" + r.id + "', this.value)\"><div id='guide-items-" + r.id + "'></div>";
       renderGuideRoomItems(r.id);
     } else { roomsEl.innerHTML = ""; }
   } else {
-    if (menuEl) menuEl.innerHTML = "<h3 style='font-size:1rem'>Pick a room</h3>"
-      + (guide.rooms || []).map(r => "<button class='guide-item' onclick=\"guideToggleRoom('" + r.id + "')\"><strong>" + esc(r.name) + "</strong><br><small>" + (r.items || []).length + " things to clean</small></button>").join("")
-      + "<button class='guide-item' onclick='guideShowSupplies()'><strong>Supplies</strong><br><small>Look up a cleaner, request refills, or see what everything is used for</small></button>";
+    // No room picker (Krystal, 2026-11-08): the guide is supplies-first.
+    // Tap a supply to see everything it is good for, or search above.
+    if (menuEl) menuEl.innerHTML = "<button class='guide-item' onclick='guideShowSupplies()'><strong>Supplies</strong><br><small>Look up a cleaner, request refills, or see what everything is used for</small></button>";
     roomsEl.innerHTML = "";
     if (supEl) supEl.innerHTML = "";
   }
@@ -1652,7 +1935,7 @@ function renderGuide(){
   if (guideOpenSupply) {
     const s = (guide.supplies || []).find(x => x.id === guideOpenSupply);
     if (s) {
-      const usedFor = guideAllItems().filter(x => x.item.supply === s.name);
+      const usedFor = guideAllItems().filter(x => guideItemUsesSupply(x.item, s));
       det.innerHTML = "<div class='guide-detail'><h3>" + esc(s.name) + "</h3>"
         + "<p><strong>Good for:</strong></p><ul>" + (s.goodFor || []).map(g => "<li>" + esc(g) + "</li>").join("") + "</ul>"
         + "<p><strong>How to use it:</strong> " + esc(s.how || "—") + "</p>"
