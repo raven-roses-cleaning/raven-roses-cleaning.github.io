@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="/icon-employee-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 
-<title>Raven &amp; Roses — Time Card</title>
+<title>Raven &amp; Roses — Employee App</title>
 <style>
   body{font-family:"EB Garamond",Georgia,serif;max-width:640px;margin:0 auto;padding:16px;line-height:1.5;background:#f7f1e3;color:#221f1a}
   body::before{content:"";position:fixed;inset:0;background-image:url('../cream-velvet-roses.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;opacity:.5;pointer-events:none;z-index:0}
@@ -49,14 +49,15 @@
   .monthly-task .donebtn{width:auto;padding:.5em 1em;background:#1a7a2e}
   .monthly-task .donebtn.undobtn{background:#5a5346}
   /* Monthly Focus — gold ribbon banner (Krystal, 2026-11-08): a decorative
-     gold ribbon, not a plain box. Gold band, dark text, folded ribbon ends. */
-  #monthlyFocusBanner{background:linear-gradient(180deg,#f7dd85 0%,#f5d76e 45%,#e9c95c 100%);border:2px solid #b58900;border-radius:6px;color:#221f1a;box-shadow:0 2px 10px rgba(122,92,20,.35);position:relative;margin-left:10px;margin-right:10px}
+     gold ribbon, not a plain box. Gold band, dark text, large folded ribbon
+     tails with swallowtail notches that tuck behind the band. */
+  #monthlyFocusBanner{background:linear-gradient(180deg,#f7dd85 0%,#f5d76e 45%,#e9c95c 100%);border:2px solid #b58900;border-radius:4px;color:#221f1a;box-shadow:0 4px 14px rgba(122,92,20,.45),inset 0 1px 0 rgba(255,255,255,.65);position:relative;z-index:1;margin-left:24px;margin-right:24px}
   #monthlyFocusBanner h2{color:#3a2f10;margin-top:.2em}
   #monthlyFocusBanner .small{color:#4a3f1a}
   #monthlyFocusBanner .monthly-task{background:rgba(255,253,247,.72);border-color:#b58900}
-  #monthlyFocusBanner::before,#monthlyFocusBanner::after{content:"";position:absolute;top:50%;width:0;height:0;border-style:solid;transform:translateY(-50%)}
-  #monthlyFocusBanner::before{left:-11px;border-width:11px 11px 11px 0;border-color:transparent #b58900 transparent transparent}
-  #monthlyFocusBanner::after{right:-11px;border-width:11px 0 11px 11px;border-color:transparent transparent transparent #b58900}
+  #monthlyFocusBanner::before,#monthlyFocusBanner::after{content:"";position:absolute;top:8px;bottom:8px;width:30px;z-index:-1;background:linear-gradient(180deg,#c89b1e 0%,#a87f00 100%)}
+  #monthlyFocusBanner::before{left:-24px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,30% 50%)}
+  #monthlyFocusBanner::after{right:-24px;clip-path:polygon(100% 0,0 0,0 100%,100% 100%,70% 50%)}
   .guide-room{border:1px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
   .guide-room h3{margin:.2em 0;font-size:1rem;font-family:"Playfair Display",serif;color:#7a5c14}
   .guide-room input{margin:.4em 0}
@@ -158,7 +159,7 @@
   </div>
 </div>
 <div id="appContent">
-<h1><img src="/icon-employee-192.png" alt="" style="height:40px;width:40px;vertical-align:middle;border-radius:8px;margin-right:6px"> Raven &amp; Roses — Time Card</h1>
+<h1><img src="/icon-employee-192.png" alt="" style="height:40px;width:40px;vertical-align:middle;border-radius:8px;margin-right:6px"> Raven &amp; Roses — Employee App</h1>
 <div id="privacyNote">Private information — for work purposes only. Do not share, copy, screenshot, or photograph this information.</div>
 <div id="backendBanner"></div>
 <div class="card" id="monthlyFocusBanner"></div>
@@ -1879,46 +1880,13 @@ $("signOutBtn").onclick = function () {
   location.reload();
 };
 function initLoginGate() {
-  try {
-    var saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
-    if (saved && saved.role) {
-      // A session survives a reload in the same tab only — sessionStorage
-      // ends when the tab closes, by design. A revoked code still fails
-      // here, because the first backend pull re-checks the token.
-      session = saved;
-      // Refuse a stale session: from a previous day, or past 16:20 on a
-      // workday when it was last active before 16:20 today (the 16:20
-      // auto sign-out holds even when the app was closed at 16:20).
-      if (saved.lastActive) {
-        var la = new Date(saved.lastActive), nw = new Date();
-        var stale = todayStr(la) !== todayStr(nw);
-        if (!stale && isWorkDay(nw)) {
-          var nm = nw.getHours() * 60 + nw.getMinutes();
-          var lm = la.getHours() * 60 + la.getMinutes();
-          if (nm >= 980 && lm < 980) stale = true;
-        }
-        if (stale) {
-          session = null;
-          try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
-          showLogin();
-          return;
-        }
-      }
-      if (BACKEND_ENABLED && session.token) {
-        backendJsonp("getData", { name: session.name, token: session.token }).then(function (d) {
-          if (d && d.ok) {
-            // Still on a temporary code (app closed before picking their
-            // own): keep the app locked behind the create-your-own-code
-            // screen instead of opening it.
-            if (d.mustChangeCode) { showChangeCode(); }
-            else { hideLogin(); applySession(); }
-          }
-          else { session = null; try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {} showLogin(); }
-        });
-      } else { hideLogin(); applySession(); }
-      return;
-    }
-  } catch (e) {}
+  // Krystal, 2026-11-08: a code is required EVERY time the app is opened.
+  // Never restore a saved session on load — clear it and show the login
+  // form. (The session is still saved after a successful sign-in, so API
+  // calls work during that session; and the in-session 16:20 auto
+  // sign-out elsewhere in this file is untouched.)
+  session = null;
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
   showLogin();
 }
 
