@@ -437,6 +437,9 @@
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec"; // <-- PASTE THE BACKEND /exec URL HERE after deployment
 const BACKEND_ENABLED = BACKEND_URL !== "";
 // Section jump menu — Krystal: no long scrolling to find a section.
+// FIXED 2026-11-09: scrollIntoView() was unreliable on phones (heading ended
+// up hidden under the sticky nav, or no visible scroll). Use window.scrollTo
+// with the heading's absolute position, offset below the sticky nav.
 function jumpToSection(sel){
   var label = sel.value;
   if(!label){ return; }
@@ -446,7 +449,9 @@ function jumpToSection(sel){
   var heads = document.querySelectorAll("h2");
   for(var i=0;i<heads.length;i++){
     if(norm(heads[i].textContent) === norm(label)){
-      heads[i].scrollIntoView({behavior:"smooth", block:"start"});
+      var y = heads[i].getBoundingClientRect().top + window.pageYOffset - 80;
+      if(y < 0){ y = 0; }
+      window.scrollTo({top:y, behavior:"smooth"});
       heads[i].style.outline = "3px solid #b58900";
       heads[i].style.outlineOffset = "4px";
       (function(h){ setTimeout(function(){ h.style.outline=""; h.style.outlineOffset=""; }, 2000); })(heads[i]);
