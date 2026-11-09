@@ -306,7 +306,7 @@
 
 <div class="card" id="suppliesCard">
   <h2>End of job — no typing required</h2>
-  <p>🔔 Reminder: refill supplies for today’s jobs.</p>
+  <p>🔔 When you get home at the end of the day, refill supplies for tomorrow.</p>
   <button id="refilledBtn" class="tap">Supplies refilled</button>
   <p><strong>Running low / needed</strong> — find the picture, tap <b>Refill</b> if you need it. Tap again to undo. No typing needed.</p>
   <div id="lowList" class="picgrid"></div>
@@ -504,7 +504,7 @@ function renderPending(){
       ? "Original: " + fmt(r.origIn) + "–" + (r.origOut ? fmt(r.origOut) : "?") + " (" + (r.origHours||0).toFixed(2) + "h) → "
       : "New / missed shift: ";
     const btns = "";
-    return "<div class='card'><strong>" + r.job + "</strong> — " + r.date + "<br>" + orig + "Requested: " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h)<br>Reason: " + r.reason + "<br>Status: <b>" + r.status + "</b>" + (r.status === "PENDING" ? " — original hours still apply" : "") + btns + "</div>";
+    return "<div class='card'><strong>" + r.job + "</strong> — " + r.date + "<br>" + orig + "Requested: " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h)<br>Reason: " + r.reason + "<br>Status: <b>" + r.status + "</b>" + (r.status === "PENDING" ? " — original hours still apply" : "") + (r.status === "DECLINED" && r.declineReason ? "<br>Krystal's reason: " + r.declineReason : "") + btns + "</div>";
   }).join("");
 }
 
@@ -540,7 +540,6 @@ $("outBtn").onclick = () => {
   entries.push(current);
   const doneEntry = current;
   $("status").innerHTML = "Clocked out at <b>" + fmt(current.out) + "</b> — " + current.hours.toFixed(2) + " hours.";
-  if (!refilled && !stocked && low.size === 0) { alert("Gentle reminder: supplies screen not answered for this job. You can still tap it above — no penalty."); }
   current = null; $("inBtn").disabled = false; $("outBtn").disabled = true;
   save();
   backendPost({ action: "clockout", date: doneEntry.date, job: doneEntry.job, in: doneEntry.in, out: doneEntry.out,
@@ -578,6 +577,7 @@ function summaryText(){
   if (monthlyFocus.tasks.length) lines.push("Monthly Focus (" + monthlyFocus.month + ", every house): " + monthlyFocus.tasks.map(t => t.title).join("; ") + ". Ticked off today: " + (monthlyDone.filter(d => d.date === $("workdate").value && d.month === monthlyFocus.month).map(d => d.job + " — " + (monthlyFocus.tasks.find(t => t.id === d.taskId) || {}).title).join("; ") || "none yet today") + ".");
   const pend = adjustments.filter(r => r.status === "PENDING" && r.date === $("workdate").value);
   if (pend.length) lines.push("Pending time adjustments (NOT approved, NOT counted above): " + pend.map(r => r.job + " " + fmt(r.reqIn) + "–" + fmt(r.reqOut) + " (" + r.reqHours.toFixed(2) + "h) — " + r.reason).join("; "));
+  if (!d.some(e => e.refilled)) lines.push("Reminder: refill your supplies when you get home — supplies are refilled at the end of the day, after your last shift.");
   return lines.join("\n");
 }
 $("summaryBtn").onclick = () => { $("summary").textContent = summaryText(); };
@@ -770,7 +770,7 @@ function saveTimeOff(){ localStorage.setItem(TIMEOFFKEY, JSON.stringify(timeOff)
 function renderTimeOff(){
   const el = $("toList"); if (!el) return;
   const mine = timeOff.filter(r => r.name === $("emp").value.trim());
-  el.innerHTML = mine.length ? mine.map(r => "<div class='card'><strong>" + r.date + " — " + (r.type === "sick" ? "Sick day (paid)" : "Time off (unpaid)") + "</strong><br>Reason: " + (r.reason || "—") + "<br>Status: <b>" + r.status + "</b></div>").join("") : "<p class='small'>No time off / sick requests yet.</p>";
+  el.innerHTML = mine.length ? mine.map(r => "<div class='card'><strong>" + r.date + " — " + (r.type === "sick" ? "Sick day (paid)" : "Time off (unpaid)") + "</strong><br>Reason: " + (r.reason || "—") + "<br>Status: <b>" + r.status + "</b>" + (r.status === "DECLINED" && r.declineReason ? "<br>Krystal's reason: " + r.declineReason : "") + "</div>").join("") : "<p class='small'>No time off / sick requests yet.</p>";
 }
 $("toSubmitBtn").onclick = () => {
   const name = $("emp").value.trim();
