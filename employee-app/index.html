@@ -307,13 +307,7 @@
 <div class="card" id="scheduleCard">
   <h2>My schedule</h2>
   <p class="small">Your shifts, set by Krystal. Only your shifts are shown here.</p>
-  <div class="cal-nav">
-    <button id="calPrev" class="secondary" type="button" onclick="calMove(-1)">‹</button>
-    <h3 id="calTitle"></h3>
-    <button id="calNext" class="secondary" type="button" onclick="calMove(1)">›</button>
-  </div>
-  <div class="cal-grid" id="calGrid"></div>
-  <div id="calDetail" class="cal-detail" style="display:none"></div>
+  <div id="calGrid"></div>
   <p class="small" id="calEmpty" style="display:none">No shifts set yet — Krystal will set your schedule.</p>
 </div>
 <div class="card" id="mileageCard">
@@ -2229,9 +2223,10 @@ function pullBackendData() {
     if (d.schedule) {
       // The backend already filtered this to the employee's own rows, and
       // the Sheet is the source of truth, so the backend wins outright.
+      // Per-shift format (2026-11-09): Employee, Date, Client, Start, End, Type.
       schedule = d.schedule.map(function (r) {
-        return { Employee: r.Employee || r.employee || "", Day: r.Day || r.day || "", Shift: r.Shift || r.shift || "" };
-      }).filter(function (r) { return r.Day && r.Shift; });
+        return { Employee: r.Employee || r.employee || "", Date: r.Date || r.date || "", Client: r.Client || r.client || "", Start: r.Start || r.start || "", End: r.End || r.end || "", Type: r.Type || r.type || "" };
+      }).filter(function (r) { return r.Date && r.Client; });
       saveSchedule();
     }
     if (d.mileage) mileage = mergeByKey(mileage, d.mileage.map(function (r) {
@@ -2461,30 +2456,29 @@ function hasApprovedTimeOffToday() {
   });
 }
 // ===========================================================================
-// MY SCHEDULE CALENDAR (Krystal, 2026-11-08): a month view of THIS
-// employee's own shifts only. The schedule is recurring by weekday
-// (Krystal sets it in the manager app); the backend only ever sends this
-// employee's own rows, so nothing here can show anyone else's shifts.
-// Approved time off shows as "Time off" instead of a shift. If no shifts
-// are set yet, the calendar still renders with no markers and a short line
-// saying Krystal will set the schedule.
 // ===========================================================================
-var CAL_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-var CAL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-var calYear = new Date().getFullYear();
-var calMonth = new Date().getMonth();
-function shiftForWeekday(dayName) {
-  var found = "";
-  schedule.forEach(function (r) {
-    if (r.Day === dayName) found = r.Shift;
-  });
-  return found;
+// MY SCHEDULE (Krystal, 2026-11-09): a list of THIS employee's own shifts
+// only. Per-shift assignments — one row per shift with a date, a client,
+// actual start/end times and a clean type (Training / Regular / Deep clean
+// / Move-in / Move-out). The backend only ever sends this employee's own
+// rows, so nothing here can show anyone else's shifts. Upcoming shifts
+// first; past shifts stay visible below. Approved time off is shown as a
+// note on that date.
+// ===========================================================================
+function schedFmtTime(t) {
+  if (!t) return "";
+  var parts = String(t).split(":");
+  var h = parseInt(parts[0], 10), m = parts[1] || "00";
+  var ap = h >= 12 ? "pm" : "am";
+  var hh = h % 12; if (hh === 0) hh = 12;
+  return hh + ":" + m + ap;
 }
-function shiftLabel(shift) {
-  if (shift === "Morning") return "Morning 9–12";
-  if (shift === "Afternoon") return "Afternoon 1–4";
-  if (shift === "Both") return "Morning 9–12\nAfternoon 1–4";
-  return "";
+function schedFmtDate(d) {
+  if (!d) return "";
+  var parts = String(d).split("-");
+  var dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  if (isNaN(dt.getTime())) return d;
+  return dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 }
 // Approved time off on one date, for the logged-in employee only (same
 // approved-only logic as hasApprovedTimeOffToday). Returns the row or null.
@@ -2496,69 +2490,25 @@ function approvedTimeOffOn(dateStr) {
   });
   return hit;
 }
-function calMove(dir) {
-  calMonth += dir;
-  if (calMonth < 0) { calMonth = 11; calYear--; }
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  var det = $("calDetail"); if (det) { det.style.display = "none"; det.innerHTML = ""; }
-  renderScheduleCalendar();
-}
-function showCalDay(y, m, d) {
-  var date = new Date(y, m, d);
-  var dateStr = todayStr(date);
-  var full = date.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  var off = approvedTimeOffOn(dateStr);
-  var html = "<h3>" + full + "</h3>";
-  if (off) {
-    html += "<p><strong>Time off</strong> — approved.</p>";
-    if (off.reason) html += "<p class=\"small\">" + off.reason + "</p>";
-  } else {
-    var shift = shiftForWeekday(CAL_DAYS[date.getDay()]);
-    if (shift) {
-      html += "<p><strong>" + shiftLabel(shift).replace(/\n/g, "<br>") + "</strong></p>";
-      html += "<p class=\"small\">Your shift is set by Krystal.</p>";
-    } else {
-      html += "<p>No shift.</p>";
-    }
-  }
-  html += "<button class=\"secondary\" type=\"button\" onclick=\"document.getElementById('calDetail').style.display='none';document.getElementById('calDetail').innerHTML=''\">Close</button>";
-  var det = $("calDetail"); det.innerHTML = html; det.style.display = "block";
-}
 function renderScheduleCalendar() {
   var grid = $("calGrid"); if (!grid) return;
-  $("calTitle").textContent = CAL_MONTHS[calMonth] + " " + calYear;
   var empty = $("calEmpty");
-  if (empty) empty.style.display = schedule.length ? "none" : "block";
-  var first = new Date(calYear, calMonth, 1);
-  var daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-  var today = todayStr();
-  var html = "";
-  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(function (d) {
-    html += "<div class=\"cal-dow\">" + d + "</div>";
+  var rows = (schedule || []).slice().sort(function (a, b) {
+    return String(a.Date || "").localeCompare(String(b.Date || "")) || String(a.Start || "").localeCompare(String(b.Start || ""));
   });
-  var i;
-  for (i = 0; i < first.getDay(); i++) html += "<div class=\"cal-day blank\"></div>";
-  for (i = 1; i <= daysInMonth; i++) {
-    var date = new Date(calYear, calMonth, i);
-    var dateStr = todayStr(date);
-    var dayName = CAL_DAYS[date.getDay()];
-    var work = isWorkDay(date);
-    var off = approvedTimeOffOn(dateStr);
-    var shift = off ? "" : shiftForWeekday(dayName);
-    var cls = "cal-day";
-    if (!work) cls += " offday";
-    if (shift) cls += " shift";
-    if (off) cls += " timeoff";
-    if (dateStr === today) cls += " today";
-    var label = "";
-    if (off) label = "Time off";
-    else if (shift === "Morning") label = "Morning 9–12";
-    else if (shift === "Afternoon") label = "Afternoon 1–4";
-    else if (shift === "Both") label = "Morning 9–12<br>Afternoon 1–4";
-    html += "<div class=\"" + cls + "\" onclick=\"showCalDay(" + calYear + "," + calMonth + "," + i + ")\"><span class=\"cal-num\">" + i + "</span>" +
-      (label ? "<span class=\"cal-shift\">" + label + "</span>" : "") + "</div>";
-  }
-  grid.innerHTML = html;
+  if (empty) empty.style.display = rows.length ? "none" : "block";
+  if (!rows.length) { grid.innerHTML = ""; return; }
+  var today = todayStr();
+  grid.innerHTML = rows.map(function (s) {
+    var off = approvedTimeOffOn(s.Date);
+    var isToday = s.Date === today;
+    var html = "<div class='card'><strong>" + esc(schedFmtDate(s.Date)) + "</strong>" + (isToday ? " — <strong>Today</strong>" : "") + "<br>" +
+      esc(s.Client || "") + "<br>" +
+      esc(schedFmtTime(s.Start)) + " – " + esc(schedFmtTime(s.End)) + " · " + esc(s.Type || "");
+    if (off) html += "<br><strong>Time off</strong> — approved." + (off.reason ? " " + esc(off.reason) : "");
+    html += "</div>";
+    return html;
+  }).join("");
 }
 function getReminders() {
   try {
