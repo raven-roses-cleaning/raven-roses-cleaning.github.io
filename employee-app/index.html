@@ -375,15 +375,54 @@ function jumpToSection(sel){
 }
 
 const KIT = [
-  {name:"Cleaning solutions (bulk)", pic:"🧴", best_use:"", photo:"kit-photos/multi-purpose-ecomax-mpc-256.png", supplyId:"s-solutions", isCleaner:true},
-  {name:"Gloves", pic:"🧤", best_use:"", photo:"", supplyId:"s-gloves"},
-  {name:"Scrub Daddies / sponges", pic:"🧽", best_use:"", photo:"kit-photos/scrub-mommy-8-pack.png", supplyId:"s-sponges"},
-  {name:"Paper towel", pic:"🧻", best_use:"", photo:"kit-photos/paper-towel-roll.png", supplyId:"s-papertowel"},
-  {name:"Laundry soap (for cloths)", pic:"🫧", best_use:"", photo:"kit-photos/laundry-soap-tide.png", supplyId:"s-soap"},
-  {name:"Cloths / mop heads", pic:"🧹", best_use:"", photo:"kit-photos/cloths-all-together.png", supplyId:"s-cloths"},
-  {name:"Bar Keepers Friend (only if Krystal confirms)", pic:"🫙", discontinued:false, photo:"kit-photos/bar-keepers-friend-soft-cleanser.png", supplyId:"s-bkf", isCleaner:true},
+  // Cleaners FIRST, in Krystal's notebook order (2026-11-08). Every cleaner
+  // gets the "What it cleans" button. Stainless steel polish was crossed
+  // out on the paper — not included.
+  {name:"Degreaser", pic:"", best_use:"", photo:"kit-photos/degreaser-rmc-tough-job.png", supplyId:"s-degreaser", isCleaner:true},
+  {name:"Cleaning solutions (bulk)", pic:"", best_use:"", photo:"kit-photos/multi-purpose-ecomax-mpc-256.png", supplyId:"s-multi", isCleaner:true},
+  {name:"Disinfect", pic:"", best_use:"", photo:"kit-photos/disinfect-regard-peroxide.png", supplyId:"s-disinfectant", isCleaner:true},
+  {name:"Floor cleaner", pic:"", best_use:"", photo:"kit-photos/floor-cleaner-diversey-stride-citrus.png", supplyId:"s-floor", isCleaner:true},
+  {name:"Vim", pic:"", best_use:"", photo:"kit-photos/vim-eucalyptus-lemon.png", supplyId:"s-vim", isCleaner:true},
+  {name:"Dawn Powerwash", pic:"", best_use:"", photo:"kit-photos/dawn-powerwash-regular.png", supplyId:"s-dawn", isCleaner:true},
+  {name:"Windex", pic:"", best_use:"", photo:"kit-photos/windex-original.png", supplyId:"s-windex", isCleaner:true},
+  {name:"Bar Keepers Friend (only if Krystal confirms)", pic:"", discontinued:false, photo:"kit-photos/bar-keepers-friend-soft-cleanser.png", supplyId:"s-bkf", isCleaner:true},
+  {name:"Wood polish", pic:"", best_use:"", photo:"kit-photos/wood-polish-liquid-gold.png", supplyId:"s-woodpolish", isCleaner:true},
+  // 2. DOG TREATS (Krystal's notebook) — Refill only.
+  {name:"Dog treats", pic:"", best_use:"", photo:"kit-photos/dog-treats-naturbites.png"},
+  // 3. TOOLS (Krystal's notebook order) — Refill only. Crocs + water bottle
+  // are "Employee responsible": no Refill button, "You provide this" note.
+  {name:"Pumice stone", pic:"", best_use:"", photo:"kit-photos/pumice-stone.png"},
+  {name:"Dusters", pic:"", best_use:"", photo:"kit-photos/dusters-head.png", supplyId:"s-dusters"},
+  {name:"Gloves", pic:"", best_use:"", photo:"kit-photos/media-generation-nitrile-glove-generic-0-a9558842-b2e1-4c36-86ac-065286334550.png", supplyId:"s-gloves"},
+  {name:"Squeegee", pic:"", best_use:"", photo:"kit-photos/squeegee.png"},
+  {name:"Grout brush", pic:"", best_use:"", photo:"kit-photos/grout-brush.png"},
+  {name:"Wire brushes", pic:"", best_use:"", photo:"kit-photos/wire-brush-twisted.png"},
+  {name:"Scrub Daddies / sponges", pic:"", best_use:"", photo:"kit-photos/scrub-mommy-8-pack.png", supplyId:"s-sponges"},
+  {name:"Glass razor", pic:"", best_use:"", photo:"kit-photos/glass-razor-duramax-pro.png", supplyId:"s-razor"},
+  {name:"Toilet brush / bag", pic:"", best_use:"", photo:"kit-photos/toilet-brush-bag.png"},
+  {name:"Garbage bags", pic:"", best_use:"", photo:"kit-photos/garbage-bags-small-white-roll.png"},
+  {name:"Paper towel", pic:"", best_use:"", photo:"kit-photos/paper-towel-roll.png", supplyId:"s-papertowel"},
+  {name:"Crocs", pic:"", best_use:"", photo:"kit-photos/crocs.png", noRefill:true, note:"You provide this"},
+  {name:"Water bottle", pic:"", best_use:"", photo:"kit-photos/water-bottle.png", noRefill:true, note:"You provide this"},
+  // 4. LAUNDRY (Krystal's notebook order) — Refill only. "Instructions to
+  // clean cloths" is info, not a supply: tile only, no Refill button.
+  {name:"Laundry soap (for cloths)", pic:"", best_use:"", photo:"kit-photos/laundry-soap-tide.png", supplyId:"s-soap"},
+  {name:"Clean laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-clean.png"},
+  {name:"Dirty laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-dirty.png"},
+  {name:"Oxi-clean", pic:"", best_use:"", photo:"kit-photos/laundry-oxi-kirkland.png"},
+  {name:"Instructions to clean cloths", pic:"", best_use:"", photo:"", noRefill:true},
+  // 5. SUPPLY LIST (Krystal's notebook order) — Refill only.
+  {name:"Mop handle", pic:"", best_use:"", photo:"kit-photos/mop-handle-red.png"},
+  {name:"Vacuum", pic:"", best_use:"", photo:"kit-photos/bissell-powerforce-helix-turbo-pet-3332-stock.png"},
+  {name:"Apron", pic:"", best_use:"", photo:"kit-photos/apron-rose.png"},
+  {name:"Bag for Cleaners", pic:"", best_use:"", photo:"kit-photos/kit-bag-rose-exterior.png"},
+  {name:"Cloth Bag", pic:"", best_use:"", photo:"kit-photos/cloth-bag.png"},
+  {name:"Cloths", pic:"", best_use:"", photo:"kit-photos/cloths-all-together.png", supplyId:"s-cloths"},
+  {name:"Mop cloth", pic:"", best_use:"", photo:"kit-photos/mop-cloths-blue.png"},
+  {name:"Laundry bags", pic:"", best_use:"", photo:"kit-photos/laundry-bag-purple-mesh.png"},
+  {name:"Knee pads", pic:"", best_use:"", photo:"kit-photos/knee-pads-awp.png"},
   // Example only, not a real discontinued item yet:
-  // {name:"Old cleaner (example)", pic:"🧴", discontinued:true},
+  // {name:"Old cleaner (example)", pic:"", discontinued:true},
 ];
 const KEY = "ravenTimeCardDemoV1";
 const ADJKEY = "ravenTimeCardAdjustmentsV1";
@@ -438,7 +477,7 @@ $("workdate").value = localDateStr();
 KIT.forEach(item => {
   const card = document.createElement("div");
   card.className = "piccard" + (item.discontinued ? " discontinued" : "");
-  card.innerHTML = (item.photo ? "<img src='" + item.photo + "' alt='" + item.name + "' style='width:100%;max-width:140px;border-radius:8px'>" : "<div class='pic'>" + item.pic + "</div>") + "<div><strong>" + item.name + "</strong></div>" + (item.best_use ? "<div class='small'>Best for: " + item.best_use + "</div>" : "") + (item.discontinued ? "<div class='disc'>Discontinued — still available on request</div>" : "");
+  card.innerHTML = (item.photo ? "<img src='" + item.photo + "' alt='" + item.name + "' style='width:100%;max-width:140px;border-radius:8px'>" : (item.pic ? "<div class='pic'>" + item.pic + "</div>" : "")) + "<div><strong>" + item.name + "</strong></div>" + (item.best_use ? "<div class='small'>Best for: " + item.best_use + "</div>" : "") + (item.discontinued ? "<div class='disc'>Discontinued — still available on request</div>" : "");
   const b = document.createElement("button");
   if (item.discontinued) {
     b.textContent = "Request to reuse";
@@ -448,6 +487,20 @@ KIT.forEach(item => {
       else { low.add("REUSE REQUEST: " + item.name); card.classList.add("need"); b.classList.add("needbtn"); b.textContent = "✓ Reuse requested"; }
     };
     card.appendChild(b);
+    $("lowList").appendChild(card);
+    return;
+  }
+  // No-button tiles (Krystal's notebook): employee-provided items (Crocs,
+  // water bottle) and info-only items (Instructions to clean cloths). No
+  // Refill button, no low-set entry, nothing in the clock-out payload.
+  // Crocs / water bottle carry a "You provide this" note.
+  if (item.noRefill) {
+    if (item.note) {
+      const n = document.createElement("div");
+      n.className = "small";
+      n.textContent = item.note;
+      card.appendChild(n);
+    }
     $("lowList").appendChild(card);
     return;
   }
