@@ -33,6 +33,15 @@
   .card.sent{border-color:#1a7a2e;background:#f0f8f0}
   .card.warncard{border:2px solid #b58900;background:#fffdf0}
   .warn{color:#b00020;font-weight:700}
+  .dueitem{display:flex;gap:10px;align-items:flex-start;border:1px solid #ddd2b8;border-radius:10px;padding:10px;margin:8px 0;background:#fffdf7}
+  .dueitem .dot{flex:0 0 auto;width:14px;height:14px;border-radius:50%;margin-top:4px}
+  .dueitem .dot.red{background:#b00020} .dueitem .dot.amber{background:#b58900} .dueitem .dot.green{background:#1a7a2e}
+  .dueitem .txt{flex:1} .dueitem .txt b{font-size:1.02rem}
+  .dueitem button{width:auto;padding:.4em .9em;margin:.3em 0 0;font-size:.92rem}
+  #dueModal{position:fixed;inset:0;background:rgba(20,16,8,.6);z-index:10000;display:none;padding:20px;overflow:auto}
+  #dueModal .modal-card{max-width:520px;margin:8vh auto 0;background:#fffdf7;border:2px solid #b58900;border-radius:16px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,.35)}
+  #dueModal h3{font-family:"Cormorant Garamond",serif;color:#7a5c14;margin-top:0}
+  #dueModal ol{padding-left:1.2em} #dueModal li{margin:.5em 0}
   @media print { button, input, select, textarea, .noprint, #loginOverlay, #signOutBtn { display:none !important; } }
   #loginOverlay{position:fixed;inset:0;background:linear-gradient(rgba(247,241,227,.72),rgba(247,241,227,.72)),url('../cream-velvet-roses.jpg') center/cover fixed;z-index:9999;padding:24px;overflow:auto}
   #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #b58900;border-radius:16px;padding:24px;background:rgba(255,253,247,.97);box-shadow:0 0 0 4px rgba(212,175,55,.25),0 6px 24px rgba(122,92,20,.3)}
@@ -79,6 +88,7 @@
 <select id="sectionJump" onchange="jumpToSection(this)" style="margin-top:.3em">
 <option value="">— Pick a section —</option>
 <option>Top of the page</option>
+<option>What's due — at a glance</option>
 <option>0. Pay data — from the backend</option>
 <option>1. This pay run</option>
 <option>2. Year-to-date BEFORE this pay (for CPP / EI caps)</option>
@@ -93,6 +103,12 @@
 </select>
 </div>
 
+<h2>What's due — at a glance</h2>
+<div class="card">
+  <p class="small">Next payday, next CRA payment, and anything still missing — all in one place. Tap <strong>How to do this</strong> on any item for plain steps: where to go and what to do.</p>
+  <div id="whatsDueList"><p class="small">Loading…</p></div>
+  <button id="whatsDueRefreshBtn" class="secondary smallbtn">Refresh this list</button>
+</div>
 
 <h2>0. Pay data — from the backend</h2>
 <div class="card">
@@ -435,6 +451,7 @@ function pullBackendData() {
     $("pullStatus").textContent = "";
     renderEmailList();
     renderRemitList();
+    renderWhatsDue();
   });
 }
 function showLogin() {
@@ -841,6 +858,7 @@ $("saveRunBtn").onclick = () => {
   renderRuns();
   renderEmailList();
   renderCraReport();
+  renderWhatsDue();
 };
 $("exportRunsBtn").onclick = () => {
   const head = "employee,pay_period_start,pay_period_end,pay_date,hours,rate,gross,cpp,cpp2,ei,federal_tax,bc_tax,income_tax,net,employer_cpp,employer_ei,remit_total";
@@ -848,7 +866,7 @@ $("exportRunsBtn").onclick = () => {
   const csv = [head, ...rows].join("\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"})); a.download = "raven-payroll-runs.csv"; a.click();
 };
-$("clearRunsBtn").onclick = () => { if (confirm("Clear all saved pay runs on this device?")) { runs = []; localStorage.setItem(KEY, JSON.stringify(runs)); renderRuns(); renderEmailList(); renderCraReport(); } };
+$("clearRunsBtn").onclick = () => { if (confirm("Clear all saved pay runs on this device?")) { runs = []; localStorage.setItem(KEY, JSON.stringify(runs)); renderRuns(); renderEmailList(); renderCraReport(); renderWhatsDue(); } };
 $("importBtn").onclick = () => $("importFile").click();
 $("importFile").addEventListener("change", async (e) => {
   const f = e.target.files[0]; if (!f) return;
@@ -1069,6 +1087,7 @@ $("bnRpSaveBtn").onclick = function () {
   backendPost({ action: "settingsSave", businessNumber: bn, rpAccount: rp });
   $("bnRpStatus").innerHTML = '<span class="ok">Saved. Business number ' + (bn ? "entered" : "still blank") + ', RP account ' + (rp ? "entered" : "still blank — remember, the old account was closed and needs reopening before you can remit.") + '.</span>';
   renderCraReport();
+  renderWhatsDue();
 };
 $("remitSaveBtn").onclick = function () {
   var month = $("craMonth").value;
@@ -1087,7 +1106,119 @@ $("remitSaveBtn").onclick = function () {
   backendPost({ action: "remittanceSave", month: month, dueDate: rec.dueDate, remitTotal: rec.remitTotal, paidDate: paidDate, confirmation: conf, paidAmount: rec.paidAmount });
   $("remitStatus").innerHTML = '<span class="ok">' + esc(monthName(month)) + ' marked as remitted — paid ' + esc(paidDate) + ', ' + money(rec.paidAmount) + (conf ? ', confirmation ' + esc(conf) : '') + '.</span>';
   renderCraReport();
+  renderWhatsDue();
 };
+// ============================================================================
+// WHAT'S DUE — at-a-glance summary + pop-up guides.
+// Each item has a "How to do this" button that opens a plain-steps pop-up:
+// where to go and what to do. Two items (first-run check, TD1 forms) can be
+// marked done — that flag lives on this phone only (localStorage).
+// ============================================================================
+const DUE_DONE_KEY = "ravenPayrollDueDoneV1";
+let dueDone = JSON.parse(localStorage.getItem(DUE_DONE_KEY) || "{}");
+function saveDueDone(){ localStorage.setItem(DUE_DONE_KEY, JSON.stringify(dueDone)); }
+const DUE_GUIDES = {
+  payday: { title: "Payday — how to run a pay run", steps: [
+    "Go to section 1, “This pay run”, on this page.",
+    "Pick the employee, then check the pay period dates are right (they default to the 14 days ending this Friday).",
+    "Tap “Pull this employee + period into the pay run” to fill the hours and mileage from the time-card backend.",
+    "Check the hours, the rate and the vacation pay, then tap “Calculate” and look the numbers over.",
+    "Tap “Save this pay run”, then send the paystub from “Email paystubs for this pay period”.",
+    "Pay the employee by e-transfer on the morning of payday (Friday). That is the payday — the app does not send the money for you."
+  ]},
+  remit: { title: "CRA remittance — how to pay it", steps: [
+    "Go to “Monthly CRA remittance report” on this page and pick the month you are paying for.",
+    "The report shows the total to remit. Pay that total to CRA — either in CRA My Business Account, or at your bank as “CRA Payroll (PD7A)”, using your 15-digit payroll (RP) account number.",
+    "It is due on the 15th of the month after the pay month (regular / new remitter — confirm your remitter type with CRA).",
+    "After you pay, come back here, enter the date paid, the amount and the confirmation number, and tap “Mark this month as remitted”. That stops the app warning you about it twice."
+  ]},
+  bn: { title: "Business number — where to find it", steps: [
+    "Your business number is the 9-digit number CRA gave your business. Find it on any CRA letter or notice, or in CRA My Business Account.",
+    "If you have a GST/HST number, the first 9 digits of it are the same business number.",
+    "Enter it in “Monthly CRA remittance report”, in the “CRA business number” box, then tap “Save business number + RP account”.",
+    "If you cannot find it anywhere, call CRA business enquiries at 1-800-959-5525 and they will confirm it."
+  ]},
+  rp: { title: "Payroll (RP) account — how to get one", steps: [
+    "Your old payroll account was closed, so it must be reopened or a new one opened before you can remit anything to CRA.",
+    "Go to CRA My Business Account and open a payroll (RP) account, or call CRA business enquiries at 1-800-959-5525 and ask them to reopen it.",
+    "The payroll account number is 15 digits: your 9-digit business number, then “RP”, then a 4-digit reference number.",
+    "Enter it in “Monthly CRA remittance report”, in the “Payroll (RP) account number” box, then tap “Save business number + RP account”.",
+    "Do not try to remit to CRA until this is in place — the payment needs that number."
+  ]},
+  crate: { title: "CRA mileage rate — where to find it", steps: [
+    "The CRA automobile allowance rate is the per-kilometre amount you pay an employee for driving between clients. Check the current rate on the CRA website (search “CRA automobile allowance rates”) or ask White Rapids Books.",
+    "Enter the rate in section 1, “This pay run”, in the “CRA mileage rate ($/km)” box. It is saved when you save a pay run.",
+    "Mileage is paid to the employee and is not part of the CRA remittance — the app keeps it separate for you."
+  ]},
+  verify: { title: "First pay run check — how to verify it", steps: [
+    "Before you pay anyone from this app, check the first pay run against CRA’s Payroll Deductions Online Calculator (PDOC) — search “CRA PDOC” and enter the same pay period, gross pay and TD1 amounts, then compare the tax, CPP and EI it gives you with what this app calculated.",
+    "Then ask White Rapids Books to look the run over and confirm it before you pay.",
+    "If anything does not match, do not pay from this app until it is fixed.",
+    "When the check is done and confirmed, tap “Mark as done” below and this item leaves the list."
+  ], markDone: "verify" },
+  td1: { title: "TD1 forms — how to collect them", steps: [
+    "Before an employee’s first paycheque, give them a federal TD1 form and a BC TD1 form to fill in and sign. The forms are on the CRA website (search “CRA TD1”).",
+    "Enter the total claim amount from each signed form in section 3, “TD1 claims”, on this page — the federal amount and the BC amount. The basic amounts are already filled in as the default.",
+    "Keep the signed paper TD1 forms in the locked box in your office, with the other employee paperwork. Do not put a SIN in this app.",
+    "When every employee’s signed TD1s are on file, tap “Mark as done” below."
+  ], markDone: "td1" }
+};
+let dueModalKey = "";
+function showDueGuide(key){
+  var g = DUE_GUIDES[key]; if (!g) return;
+  dueModalKey = key;
+  $("dueModalTitle").textContent = g.title;
+  $("dueModalBody").innerHTML = "<ol>" + g.steps.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ol>";
+  $("dueModalDoneWrap").style.display = g.markDone ? "" : "none";
+  $("dueModal").style.display = "block";
+}
+function closeDueModal(){ $("dueModal").style.display = "none"; dueModalKey = ""; }
+$("dueModalCloseBtn").onclick = closeDueModal;
+$("dueModal").addEventListener("click", function (e) { if (e.target === $("dueModal")) closeDueModal(); });
+$("dueModalDoneBtn").onclick = function () {
+  var g = DUE_GUIDES[dueModalKey];
+  if (g && g.markDone) { dueDone[g.markDone] = true; saveDueDone(); }
+  closeDueModal();
+  renderWhatsDue();
+};
+function nextFridayStr(){
+  var dp = defaultPeriod();
+  var d = new Date(dp.payDate + "T12:00:00");
+  return d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" }) + " (" + dp.payDate + ")";
+}
+function renderWhatsDue(){
+  var el = $("whatsDueList"); if (!el) return;
+  var items = [];
+  // 1. Next payday.
+  items.push({ key: "payday", dot: "amber", title: "Next payday — " + nextFridayStr(), sub: "Bi-weekly, e-transfer in the morning. Run the pay run in section 1 first." });
+  // 2. Next CRA remittance.
+  var months = runs.map(function (r) { return String(r.ppEnd || r.payDate || "").slice(0, 7); }).filter(Boolean);
+  var remMonth = months.sort().pop() || localDateStr().slice(0, 7);
+  var remDue = dueDateForMonth(remMonth);
+  var already = remittances.some(function (r) { return r.month === remMonth; });
+  items.push({ key: "remit", dot: already ? "green" : "red", title: already ? "CRA remittance for " + monthName(remMonth) + " — already paid" : "CRA remittance for " + monthName(remMonth) + " — due " + remDue, sub: already ? "Marked as remitted. Do not pay this month again unless it is a correction." : "Pay by the 15th of the following month (regular / new remitter)." });
+  // 3. Business number.
+  var bn = bnSaved && bnSaved.bn ? bnSaved.bn : "";
+  items.push({ key: "bn", dot: bn ? "green" : "red", title: bn ? "Business number — entered" : "Business number — still missing", sub: bn ? "On file: " + bn : "Needed before you can remit to CRA." });
+  // 4. RP account.
+  var rp = bnSaved && bnSaved.rp ? bnSaved.rp : "";
+  items.push({ key: "rp", dot: rp ? "green" : "red", title: rp ? "Payroll (RP) account — entered" : "Payroll (RP) account — still missing", sub: rp ? "On file." : "Your old account was closed — it must be reopened or a new one opened before the first pay." });
+  // 5. CRA mileage rate.
+  var rate = (typeof $ !== "undefined" && $("craRate") && $("craRate").value) ? $("craRate").value : craRateSaved;
+  items.push({ key: "crate", dot: rate ? "green" : "amber", title: rate ? "CRA mileage rate — $" + rate + "/km" : "CRA mileage rate — not set yet", sub: rate ? "Mileage will be paid in dollars." : "Mileage shows as kilometres only until you enter the rate." });
+  // 6. First pay run verification.
+  if (!dueDone.verify) {
+    items.push({ key: "verify", dot: runs.length ? "amber" : "red", title: runs.length ? "First pay run check — still to confirm" : "First pay run check — not done yet", sub: "Check the first run against CRA PDOC and White Rapids Books before paying anyone." });
+  }
+  // 7. TD1 forms.
+  if (!dueDone.td1) {
+    items.push({ key: "td1", dot: "amber", title: "TD1 forms — signed forms still to collect", sub: "A signed federal TD1 and BC TD1 for each employee, kept in the locked office box." });
+  }
+  el.innerHTML = items.map(function (it) {
+    return "<div class='dueitem'><span class='dot " + it.dot + "'></span><div class='txt'><b>" + esc(it.title) + "</b><br><span class='small'>" + esc(it.sub) + "</span><br><button class='secondary' onclick='showDueGuide(\"" + it.key + "\")'>How to do this</button></div></div>";
+  }).join("") + (items.length === 0 ? "<p class='small'>Nothing outstanding.</p>" : "");
+}
+$("whatsDueRefreshBtn").onclick = renderWhatsDue;
 // ============================================================================
 // INIT
 // ============================================================================
@@ -1104,8 +1235,19 @@ $("remitSaveBtn").onclick = function () {
   renderEmailList();
   renderCraReport();
   renderRemitList();
+  renderWhatsDue();
   initLoginGate();
 })();
 </script>
+<div id="dueModal">
+  <div class="modal-card">
+    <h3 id="dueModalTitle"></h3>
+    <div id="dueModalBody"></div>
+    <div id="dueModalDoneWrap" style="display:none;margin-top:10px">
+      <button id="dueModalDoneBtn" class="sendbtn">Mark as done</button>
+    </div>
+    <button id="dueModalCloseBtn" class="secondary" style="margin-top:10px">Close</button>
+  </div>
+</div>
 </body>
 </html>
