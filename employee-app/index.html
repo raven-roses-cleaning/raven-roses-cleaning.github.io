@@ -317,6 +317,15 @@
   <p>🔔 When you get home at the end of the day, refill supplies for tomorrow.</p>
   <button id="refilledBtn" class="tap">Supplies refilled</button>
   <p><strong>Running low / needed</strong> — find the picture, tap <b>Refill</b> if you need it. Tap again to undo. No typing needed.</p>
+  <p><label for="kitCat"><strong>Show:</strong></label>
+  <select id="kitCat">
+    <option value="cleaners" selected>Cleaners</option>
+    <option value="dog">Dog treats</option>
+    <option value="tools">Tools</option>
+    <option value="laundry">Laundry</option>
+    <option value="supply">Supplies</option>
+    <option value="all">Whole list</option>
+  </select></p>
   <div id="lowList" class="picgrid"></div>
   <button id="stockedBtn" class="tap">All stocked</button>
   <p><strong>Cloths</strong> — tap only when actually washed:</p>
@@ -378,49 +387,49 @@ const KIT = [
   // Cleaners FIRST, in Krystal's notebook order (2026-11-08). Every cleaner
   // gets the "What it cleans" button. Stainless steel polish was crossed
   // out on the paper — not included.
-  {name:"Degreaser", pic:"", best_use:"", photo:"kit-photos/degreaser-rmc-tough-job.png", supplyId:"s-degreaser", isCleaner:true},
-  {name:"Cleaning solutions (bulk)", pic:"", best_use:"", photo:"kit-photos/multi-purpose-ecomax-mpc-256.png", supplyId:"s-multi", isCleaner:true},
-  {name:"Disinfect", pic:"", best_use:"", photo:"kit-photos/disinfect-regard-peroxide.png", supplyId:"s-disinfectant", isCleaner:true},
-  {name:"Floor cleaner", pic:"", best_use:"", photo:"kit-photos/floor-cleaner-diversey-stride-citrus.png", supplyId:"s-floor", isCleaner:true},
-  {name:"Vim", pic:"", best_use:"", photo:"kit-photos/vim-eucalyptus-lemon.png", supplyId:"s-vim", isCleaner:true},
-  {name:"Dawn Powerwash", pic:"", best_use:"", photo:"kit-photos/dawn-powerwash-regular.png", supplyId:"s-dawn", isCleaner:true},
-  {name:"Windex", pic:"", best_use:"", photo:"kit-photos/windex-original.png", supplyId:"s-windex", isCleaner:true},
-  {name:"Bar Keepers Friend (only if Krystal confirms)", pic:"", discontinued:false, photo:"kit-photos/bar-keepers-friend-soft-cleanser.png", supplyId:"s-bkf", isCleaner:true},
-  {name:"Wood polish", pic:"", best_use:"", photo:"kit-photos/wood-polish-liquid-gold.png", supplyId:"s-woodpolish", isCleaner:true},
+  {cat:"cleaners", name:"Degreaser", pic:"", best_use:"", photo:"kit-photos/degreaser-rmc-tough-job.png", supplyId:"s-degreaser", isCleaner:true},
+  {cat:"cleaners", name:"Cleaning solutions (bulk)", pic:"", best_use:"", photo:"kit-photos/multi-purpose-ecomax-mpc-256.png", supplyId:"s-multi", isCleaner:true},
+  {cat:"cleaners", name:"Disinfect", pic:"", best_use:"", photo:"kit-photos/disinfect-regard-peroxide.png", supplyId:"s-disinfectant", isCleaner:true},
+  {cat:"cleaners", name:"Floor cleaner", pic:"", best_use:"", photo:"kit-photos/floor-cleaner-diversey-stride-citrus.png", supplyId:"s-floor", isCleaner:true},
+  {cat:"cleaners", name:"Vim", pic:"", best_use:"", photo:"kit-photos/vim-eucalyptus-lemon.png", supplyId:"s-vim", isCleaner:true},
+  {cat:"cleaners", name:"Dawn Powerwash", pic:"", best_use:"", photo:"kit-photos/dawn-powerwash-regular.png", supplyId:"s-dawn", isCleaner:true},
+  {cat:"cleaners", name:"Windex", pic:"", best_use:"", photo:"kit-photos/windex-original.png", supplyId:"s-windex", isCleaner:true},
+  {cat:"cleaners", name:"Bar Keepers Friend (only if Krystal confirms)", pic:"", discontinued:false, photo:"kit-photos/bar-keepers-friend-soft-cleanser.png", supplyId:"s-bkf", isCleaner:true},
+  {cat:"cleaners", name:"Wood polish", pic:"", best_use:"", photo:"kit-photos/wood-polish-liquid-gold.png", supplyId:"s-woodpolish", isCleaner:true},
   // 2. DOG TREATS (Krystal's notebook) — Refill only.
-  {name:"Dog treats", pic:"", best_use:"", photo:"kit-photos/dog-treats-naturbites.png"},
+  {cat:"dog", name:"Dog treats", pic:"", best_use:"", photo:"kit-photos/dog-treats-naturbites.png"},
   // 3. TOOLS (Krystal's notebook order) — Refill only. Crocs + water bottle
   // are "Employee responsible": no Refill button, "You provide this" note.
-  {name:"Pumice stone", pic:"", best_use:"", photo:"kit-photos/pumice-stone.png"},
-  {name:"Dusters", pic:"", best_use:"", photo:"kit-photos/dusters-head.png", supplyId:"s-dusters"},
-  {name:"Gloves", pic:"", best_use:"", photo:"kit-photos/media-generation-nitrile-glove-generic-0-a9558842-b2e1-4c36-86ac-065286334550.png", supplyId:"s-gloves"},
-  {name:"Squeegee", pic:"", best_use:"", photo:"kit-photos/squeegee.png"},
-  {name:"Grout brush", pic:"", best_use:"", photo:"kit-photos/grout-brush.png"},
-  {name:"Wire brushes", pic:"", best_use:"", photo:"kit-photos/wire-brush-twisted.png"},
-  {name:"Scrub Daddies / sponges", pic:"", best_use:"", photo:"kit-photos/scrub-mommy-8-pack.png", supplyId:"s-sponges"},
-  {name:"Glass razor", pic:"", best_use:"", photo:"kit-photos/glass-razor-duramax-pro.png", supplyId:"s-razor"},
-  {name:"Toilet brush / bag", pic:"", best_use:"", photo:"kit-photos/toilet-brush-bag.png"},
-  {name:"Garbage bags", pic:"", best_use:"", photo:"kit-photos/garbage-bags-small-white-roll.png"},
-  {name:"Paper towel", pic:"", best_use:"", photo:"kit-photos/paper-towel-roll.png", supplyId:"s-papertowel"},
-  {name:"Crocs", pic:"", best_use:"", photo:"kit-photos/crocs.png", noRefill:true, note:"You provide this"},
-  {name:"Water bottle", pic:"", best_use:"", photo:"kit-photos/water-bottle.png", noRefill:true, note:"You provide this"},
+  {cat:"tools", name:"Pumice stone", pic:"", best_use:"", photo:"kit-photos/pumice-stone.png"},
+  {cat:"tools", name:"Dusters", pic:"", best_use:"", photo:"kit-photos/dusters-head.png", supplyId:"s-dusters"},
+  {cat:"tools", name:"Gloves", pic:"", best_use:"", photo:"kit-photos/media-generation-nitrile-glove-generic-0-a9558842-b2e1-4c36-86ac-065286334550.png", supplyId:"s-gloves"},
+  {cat:"tools", name:"Squeegee", pic:"", best_use:"", photo:"kit-photos/squeegee.png"},
+  {cat:"tools", name:"Grout brush", pic:"", best_use:"", photo:"kit-photos/grout-brush.png"},
+  {cat:"tools", name:"Wire brushes", pic:"", best_use:"", photo:"kit-photos/wire-brush-twisted.png"},
+  {cat:"tools", name:"Scrub Daddies / sponges", pic:"", best_use:"", photo:"kit-photos/scrub-mommy-8-pack.png", supplyId:"s-sponges"},
+  {cat:"tools", name:"Glass razor", pic:"", best_use:"", photo:"kit-photos/glass-razor-duramax-pro.png", supplyId:"s-razor"},
+  {cat:"tools", name:"Toilet brush / bag", pic:"", best_use:"", photo:"kit-photos/toilet-brush-bag.png"},
+  {cat:"tools", name:"Garbage bags", pic:"", best_use:"", photo:"kit-photos/garbage-bags-small-white-roll.png"},
+  {cat:"tools", name:"Paper towel", pic:"", best_use:"", photo:"kit-photos/paper-towel-roll.png", supplyId:"s-papertowel"},
+  {cat:"tools", name:"Crocs", pic:"", best_use:"", photo:"kit-photos/crocs.png", noRefill:true, note:"You provide this"},
+  {cat:"tools", name:"Water bottle", pic:"", best_use:"", photo:"kit-photos/water-bottle.png", noRefill:true, note:"You provide this"},
   // 4. LAUNDRY (Krystal's notebook order) — Refill only. "Instructions to
   // clean cloths" is info, not a supply: tile only, no Refill button.
-  {name:"Laundry soap (for cloths)", pic:"", best_use:"", photo:"kit-photos/laundry-soap-tide.png", supplyId:"s-soap"},
-  {name:"Clean laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-clean.png"},
-  {name:"Dirty laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-dirty.png"},
-  {name:"Oxi-clean", pic:"", best_use:"", photo:"kit-photos/laundry-oxi-kirkland.png"},
-  {name:"Instructions to clean cloths", pic:"", best_use:"", photo:"", noRefill:true},
+  {cat:"laundry", name:"Laundry soap (for cloths)", pic:"", best_use:"", photo:"kit-photos/laundry-soap-tide.png", supplyId:"s-soap"},
+  {cat:"laundry", name:"Clean laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-clean.png"},
+  {cat:"laundry", name:"Dirty laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-dirty.png"},
+  {cat:"laundry", name:"Oxi-clean", pic:"", best_use:"", photo:"kit-photos/laundry-oxi-kirkland.png"},
+  {cat:"laundry", name:"Instructions to clean cloths", pic:"", best_use:"", photo:"", noRefill:true},
   // 5. SUPPLY LIST (Krystal's notebook order) — Refill only.
-  {name:"Mop handle", pic:"", best_use:"", photo:"kit-photos/mop-handle-red.png"},
-  {name:"Vacuum", pic:"", best_use:"", photo:"kit-photos/bissell-powerforce-helix-turbo-pet-3332-stock.png"},
-  {name:"Apron", pic:"", best_use:"", photo:"kit-photos/apron-rose.png"},
-  {name:"Bag for Cleaners", pic:"", best_use:"", photo:"kit-photos/kit-bag-rose-exterior.png"},
-  {name:"Cloth Bag", pic:"", best_use:"", photo:"kit-photos/cloth-bag.png"},
-  {name:"Cloths", pic:"", best_use:"", photo:"kit-photos/cloths-all-together.png", supplyId:"s-cloths"},
-  {name:"Mop cloth", pic:"", best_use:"", photo:"kit-photos/mop-cloths-blue.png"},
-  {name:"Laundry bags", pic:"", best_use:"", photo:"kit-photos/laundry-bag-purple-mesh.png"},
-  {name:"Knee pads", pic:"", best_use:"", photo:"kit-photos/knee-pads-awp.png"},
+  {cat:"supply", name:"Mop handle", pic:"", best_use:"", photo:"kit-photos/mop-handle-red.png"},
+  {cat:"supply", name:"Vacuum", pic:"", best_use:"", photo:"kit-photos/bissell-powerforce-helix-turbo-pet-3332-stock.png"},
+  {cat:"supply", name:"Apron", pic:"", best_use:"", photo:"kit-photos/apron-rose.png"},
+  {cat:"supply", name:"Bag for Cleaners", pic:"", best_use:"", photo:"kit-photos/kit-bag-rose-exterior.png"},
+  {cat:"supply", name:"Cloth Bag", pic:"", best_use:"", photo:"kit-photos/cloth-bag.png"},
+  {cat:"supply", name:"Cloths", pic:"", best_use:"", photo:"kit-photos/cloths-all-together.png", supplyId:"s-cloths"},
+  {cat:"supply", name:"Mop cloth", pic:"", best_use:"", photo:"kit-photos/mop-cloths-blue.png"},
+  {cat:"supply", name:"Laundry bags", pic:"", best_use:"", photo:"kit-photos/laundry-bag-purple-mesh.png"},
+  {cat:"supply", name:"Knee pads", pic:"", best_use:"", photo:"kit-photos/knee-pads-awp.png"},
   // Example only, not a real discontinued item yet:
   // {name:"Old cleaner (example)", pic:"", discontinued:true},
 ];
@@ -477,6 +486,7 @@ $("workdate").value = localDateStr();
 KIT.forEach(item => {
   const card = document.createElement("div");
   card.className = "piccard" + (item.discontinued ? " discontinued" : "");
+  card.dataset.cat = item.cat;
   card.innerHTML = (item.photo ? "<img src='" + item.photo + "' alt='" + item.name + "' style='width:100%;max-width:140px;border-radius:8px'>" : (item.pic ? "<div class='pic'>" + item.pic + "</div>" : "")) + "<div><strong>" + item.name + "</strong></div>" + (item.best_use ? "<div class='small'>Best for: " + item.best_use + "</div>" : "") + (item.discontinued ? "<div class='disc'>Discontinued — still available on request</div>" : "");
   const b = document.createElement("button");
   if (item.discontinued) {
@@ -525,6 +535,18 @@ KIT.forEach(item => {
 });
 $("refilledBtn").onclick = e => { refilled = !refilled; e.target.classList.toggle("on", refilled); };
 $("stockedBtn").onclick = e => { stocked = !stocked; e.target.classList.toggle("on", stocked); if (stocked) { low.clear(); document.querySelectorAll("#lowList .piccard").forEach(x=>{x.classList.remove("need"); const bb=x.querySelector("button"); if(bb){bb.classList.remove("needbtn"); bb.textContent="Refill";}}); } };
+// Refill category picker (Krystal: no huge scroll list — pick a section
+// first). Cards are only hidden/shown, never re-built, so anything flagged
+// in one group stays flagged when you switch groups, and the flagged items
+// still reach Krystal in the clock-out payload / end-of-day summary.
+function filterKit(){
+  var v = $("kitCat").value;
+  document.querySelectorAll("#lowList .piccard").forEach(function(c){
+    c.style.display = (v === "all" || c.dataset.cat === v) ? "" : "none";
+  });
+}
+$("kitCat").onchange = filterKit;
+filterKit();
 $("clothBtn").onclick = e => { cloth = !cloth; e.target.classList.toggle("on", cloth); };
 
 function saveAdj(){ localStorage.setItem(ADJKEY, JSON.stringify(adjustments)); renderPending(); }
