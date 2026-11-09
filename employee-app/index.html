@@ -1771,6 +1771,11 @@ function pullBackendData() {
 function showLogin() {
   $("loginOverlay").style.display = "block";
   $("loginError").textContent = "";
+  // Krystal, 2026-11-08: never show the login form with a name or code
+  // already in it. The browser can restore the code field's value when
+  // the user goes Back, and that let someone in without typing a code.
+  var ln = $("loginName"); if (ln) ln.value = "";
+  var lc = $("loginCode"); if (lc) lc.value = "";
   var f = $("signInForm"); if (f) f.style.display = "block";
   var c = $("changeCodeBox"); if (c) c.style.display = "none";
   if (BACKEND_ENABLED) {
@@ -1889,6 +1894,18 @@ function initLoginGate() {
   try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
   showLogin();
 }
+
+// Krystal, 2026-11-08: when the browser restores this page from its
+// back-forward cache (Back button), scripts do not re-run, so the login
+// gate above never fires — but the browser restores the login form's
+// field values, including the code. Treat a cache restore as a fresh
+// open: clear the session and the form and show the login form.
+window.addEventListener("pageshow", function (e) {
+  if (!e.persisted) return;
+  session = null;
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (err) {}
+  showLogin();
+});
 
 // ============================================================================
 // WATERMARK — name + date/time on every screen, faint, diagonal, updating
