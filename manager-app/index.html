@@ -31,6 +31,7 @@
   pre{white-space:pre-wrap;background:#f3e9c8;padding:12px;border-radius:8px}
   button.approve{background:#1a7a2e} button.decline{background:#b00020}
   button.smallbtn{width:auto;padding:.5em 1em;margin:.25em .25em .25em 0}
+  .sig-canvas{width:100%;height:180px;background:#fffdf7;border:1px solid #c9a86a;border-radius:8px;touch-action:none;display:block}
   .card.pending{border:2px solid #b58900;background:#fffdf0}
   .card.approved{border-color:#1a7a2e} .card.declined{opacity:.8}
   .emp-row{border:1px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
@@ -38,6 +39,24 @@
   .emp-row input,.emp-row select{margin:.3em 0}
   .revoke{background:#b00020} .restore{background:#1a7a2e}
   details{margin:.4em 0} details summary{cursor:pointer;font-weight:600}
+  /* Work schedule calendar (Krystal, 2026-11-08): month view to set shifts. */
+  .cal-nav{display:flex;align-items:center;gap:8px;margin:.5em 0}
+  .cal-nav button{width:auto;flex:0 0 auto;padding:.5em 1em}
+  .cal-nav h3{flex:1;text-align:center;margin:0;font-family:"Cormorant Garamond",serif;color:#7a5c14;font-size:1.05rem}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal-dow{text-align:center;font-weight:700;font-size:.8rem;color:#5a5346;padding:.2em 0}
+  .cal-day{min-height:52px;border:1px solid #c9a86a;border-radius:8px;background:#fffdf7;padding:.25em .2em;text-align:center;cursor:pointer;font-size:.85rem;color:#221f1a}
+  .cal-day .cal-num{font-weight:700;display:block}
+  .cal-day .cal-shift{font-size:.62rem;line-height:1.25;color:#7a5c14;display:block}
+  .cal-day.offday{background:#efe8d6;color:#8a8172}
+  .cal-day.shift{background:#f7e9b8;border-color:#b58900}
+  .cal-day.today{outline:2px solid #b58900;outline-offset:1px}
+  .cal-day.blank{border:none;background:transparent;cursor:default}
+  .cal-detail{border:1px solid #1a7a2e;border-radius:10px;padding:10px;margin:10px 0;background:#f0f8f0}
+  .cal-detail h3{margin:.2em 0;font-family:"Cormorant Garamond",serif;color:#7a5c14}
+  .cal-detail button{width:auto;padding:.4em 1em}
+  .cal-pick{display:block;width:100%;text-align:left;background:#f3e9c8;border:1px solid #c9a86a;border-radius:8px;padding:.7em;margin:.3em 0;color:#221f1a}
+  .cal-pick.on{background:#1d1d23;color:#f5d76e;border-color:#d4af37}
   #loginOverlay{position:fixed;inset:0;background:linear-gradient(rgba(247,241,227,.72),rgba(247,241,227,.72)),url('../cream-velvet-roses.jpg') center/cover fixed;z-index:9999;padding:24px;overflow:auto}
   #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #b58900;border-radius:16px;padding:24px;background:rgba(255,253,247,.97);box-shadow:0 0 0 4px rgba(212,175,55,.25),0 6px 24px rgba(122,92,20,.3)}
   #loginOverlay h1{border-bottom:0;text-align:center;font-size:1.8rem;margin-bottom:.1em}
@@ -160,16 +179,33 @@
   <p id="empStatus" class="small"></p>
 </div>
 
+<div class="card" id="signatureCard">
+  <h2>Your signature (Krystal only)</h2>
+  <p class="small">Draw your signature once here. It will appear on the agreements new hires sign, so the copy they see already has your signature on it.</p>
+  <canvas id="sigCanvas" class="sig-canvas" width="600" height="180"></canvas>
+  <p class="small">Draw with your finger or mouse. Tap Clear to start again.</p>
+  <button id="sigClearBtn" class="secondary" style="width:auto;padding:.4em 1em">Clear</button>
+  <button id="sigSaveBtn" style="width:auto;padding:.4em 1em">Save my signature</button>
+  <p id="sigStatus" class="small"></p>
+  <p id="sigSavedNote" class="small"></p>
+  <div id="sigSavedPreview"></div>
+</div>
+
 <div class="card" id="scheduleCard">
   <h2>Work schedules — set shifts (Krystal only)</h2>
   <p class="small">Set each employee's weekly shifts here. Her app only reminds her for the shifts she works: Morning is 9am–12pm, Afternoon is 1pm–4pm, Both is 9am–4pm. Shifts run Tuesday–Friday only.</p>
   <label for="schedEmp">Employee</label>
   <select id="schedEmp"></select>
-  <div id="schedDays"></div>
+  <div class="cal-nav">
+    <button id="schedCalPrev" class="secondary" type="button" onclick="schedCalMove(-1)">‹</button>
+    <h3 id="schedCalTitle"></h3>
+    <button id="schedCalNext" class="secondary" type="button" onclick="schedCalMove(1)">›</button>
+  </div>
+  <div class="cal-grid" id="schedCalGrid"></div>
+  <div id="schedCalDetail" class="cal-detail" style="display:none"></div>
+  <p class="small" id="schedCalEmpty" style="display:none">No shifts set yet — set them by tapping a day.</p>
   <button id="schedSaveBtn" class="secondary">Save schedule</button>
   <p id="schedStatus" class="small"></p>
-  <h3 style="font-size:1rem">Current schedules</h3>
-  <div id="schedList"></div>
 </div>
 
 <div class="card">
@@ -476,14 +512,14 @@ const DEFAULT_GUIDE = {
         {
           "id": "k-stove",
           "name": "Stove / cooktop",
-          "supply": "Bar Keepers Friend Soft Cleanser, Dawn Powerwash, glass razor",
+          "supply": "Bar Keepers Friend Soft Cleanser, Dawn Powerwash, glass razor, Degreaser",
           "goodFor": [
             "Grease",
             "Cooking splatters",
             "Build-up",
             "Everyday cooking dirt"
           ],
-          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, wipe with a cloth, rinse the cloth and wipe again, then dry. For build-up, use the glass razor as Krystal shows you. Wear gloves.",
+          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, wipe with a cloth, rinse the cloth and wipe again, then dry. For build-up, use the glass razor as Krystal shows you. Wear gloves. Always polish after BKF — use Windex or vinegar.",
           "notes": "Use caution with the glass razor — use it properly, as Krystal shows you.",
           "tags": "stove cooktop hob grease razor"
         },
@@ -521,14 +557,14 @@ const DEFAULT_GUIDE = {
             "Dull stainless steel",
             "Stains in the sink"
           ],
-          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, then wipe and dry. Follow the notes on the bottle.",
+          "how": "Use Bar Keepers Friend Soft Cleanser or Dawn Powerwash as Krystal shows you, then wipe and dry. Follow the notes on the bottle. Always polish after BKF — use Windex or vinegar.",
           "notes": "Confirmed by Krystal — Bar Keepers Friend and Dawn Powerwash are both good for sinks and stainless steel.",
           "tags": "sink stainless water marks limescale"
         },
         {
           "id": "k-counters",
           "name": "Counters / worktops",
-          "supply": "Multi-purpose cleaner, Vim",
+          "supply": "Multi-purpose cleaner, Vim, Dawn Powerwash",
           "goodFor": [
             "Food marks",
             "Sticky spots",
@@ -541,7 +577,7 @@ const DEFAULT_GUIDE = {
         {
           "id": "k-microwave",
           "name": "Microwave",
-          "supply": "Paper towel",
+          "supply": "Multi-purpose cleaner",
           "goodFor": [
             "Food splatters inside",
             "Sticky marks"
@@ -553,15 +589,54 @@ const DEFAULT_GUIDE = {
         {
           "id": "k-cabinets",
           "name": "Wood cabinets",
-          "supply": "Wood polish",
+          "supply": "Vim, Multi-purpose cleaner, Dawn Powerwash",
           "goodFor": [
             "Dust",
             "Fingerprints",
             "Grease marks"
           ],
-          "how": "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.",
-          "notes": "Use wood polish on wood cabinets occasionally.",
+          "how": "Clean with Vim, Multi-purpose cleaner or Dawn Powerwash on a cloth, then wipe with a clean damp cloth and dry. Use wood polish with a paper towel on wood cabinets only if looking dull — not every time. Use on furniture only if they request it — never on raw wood.",
+          "notes": "Wood polish with a paper towel on wood cabinets only if looking dull — not every time. On furniture only if they request it — never on raw wood.",
           "tags": "wood cabinets polish"
+        },
+        {
+          "id": "k-backsplash",
+          "name": "Backsplash",
+          "supply": "Multi-purpose cleaner, Vim, Dawn Powerwash",
+          "goodFor": [
+            "Food marks",
+            "Sticky spots",
+            "Everyday dirt"
+          ],
+          "how": "Clean the same way as the counters.",
+          "notes": "",
+          "tags": "backsplash counters"
+        },
+        {
+          "id": "k-appliances",
+          "name": "Counter appliances",
+          "supply": "Multi-purpose cleaner",
+          "goodFor": [
+            "Dust",
+            "Fingerprints",
+            "Everyday dirt"
+          ],
+          "how": "Wipe with multi-purpose cleaner on a cloth, then wipe with a clean damp cloth and dry.",
+          "notes": "",
+          "tags": "appliances counter"
+        },
+        {
+          "id": "k-stonesink",
+          "name": "Stone / black sinks",
+          "supply": "Vim, Bar Keepers Friend Soft Cleanser",
+          "goodFor": [
+            "Water marks",
+            "Stains",
+            "Drains"
+          ],
+          "how": "Clean with Vim, then use Bar Keepers Friend on drains with the grout brush.",
+          "notes": "",
+          "tags": "stone black sink drains grout brush"
         }
       ]
     },
@@ -572,13 +647,13 @@ const DEFAULT_GUIDE = {
         {
           "id": "b-toilet",
           "name": "Toilet",
-          "supply": "Vim, disinfectant",
+          "supply": "Vim, disinfectant, paper towel",
           "goodFor": [
             "Stains",
-            "Limescale — to confirm",
+            "Limescale",
             "Everyday dirt"
           ],
-          "how": "Clean the inside of the toilet with Vim. Clean the toilet and around it with disinfectant. Wear gloves. Rinse / flush and wipe dry where needed.",
+          "how": "Clean the inside of the toilet with Vim. Clean the toilet and around it with disinfectant. Wear gloves. Rinse / flush and wipe dry where needed. Use Bar Keepers Friend in the bowl if needed.",
           "notes": "Vim is for the inside of the toilet. Disinfectant is for the toilet and around it. Never mix cleaning products.",
           "tags": "toilet stains limescale"
         },
@@ -592,20 +667,20 @@ const DEFAULT_GUIDE = {
             "Mould marks — to confirm",
             "Build-up between tiles"
           ],
-          "how": "Use Vim for showers and tubs. If there is really dark build-up, use Bar Keepers Friend to get rid of it. Dawn Powerwash can be used instead of Vim — they are interchangeable, go back and forth. Degreaser works really well with a grout brush on shower floors if there is build-up between the tiles.",
+          "how": "Use Vim for showers and tubs. If there is really dark build-up, use Bar Keepers Friend to get rid of it. Dawn Powerwash can be used instead of Vim — they are interchangeable, go back and forth. Degreaser works really well with a grout brush on shower floors if there is build-up between the tiles. Always polish after BKF — use Windex or vinegar.",
           "notes": "Vim and Dawn Powerwash are interchangeable for showers and tubs. Bar Keepers Friend is for really dark build-up. Degreaser with a grout brush gets build-up out from between the tiles on shower floors.",
           "tags": "shower bath soap scum water marks grout brush degreaser"
         },
         {
           "id": "b-taps",
           "name": "Bathroom sink & taps",
-          "supply": "Vim, Dawn Powerwash, Bar Keepers Friend Soft Cleanser",
+          "supply": "Vim, Dawn Powerwash, Scrub Daddies / sponges, Bar Keepers Friend Soft Cleanser",
           "goodFor": [
             "Water spots",
-            "Limescale — to confirm",
+            "Limescale",
             "Toothpaste marks"
           ],
-          "how": "Clean with Vim or Dawn Powerwash, then wipe and dry so no water spots are left. If there is really nasty build-up, use Bar Keepers Friend.",
+          "how": "Clean with Vim or Dawn Powerwash, then wipe and dry so no water spots are left. If there is really nasty build-up, use Bar Keepers Friend. Always polish after BKF — use Windex or vinegar.",
           "notes": "Confirmed by Krystal.",
           "tags": "sink taps limescale water spots"
         },
@@ -766,6 +841,19 @@ const DEFAULT_GUIDE = {
           "how": "Wipe with cleaning solution on a cloth, then wipe with a clean damp cloth and dry.",
           "notes": "TO CONFIRM WITH KRYSTAL.",
           "tags": "washing machine"
+        },
+        {
+          "id": "g-scuff",
+          "name": "Scuff marks",
+          "supply": "Vim",
+          "goodFor": [
+            "Scuff marks",
+            "Marks on cabinets",
+            "Marks on walls"
+          ],
+          "how": "Use Vim on scuff marks on cabinets and walls, as Krystal shows you.",
+          "notes": "",
+          "tags": "scuff marks cabinets walls"
         }
       ]
     }
@@ -821,7 +909,7 @@ const DEFAULT_GUIDE = {
       "goodFor": [
         "Washing cleaning cloths"
       ],
-      "how": "Use to wash cloths as Krystal shows you. Tap 'Cloths washed' in the app only when actually washed.",
+      "how": "Wash: hot, heavy duty, with laundry soap & Oxi-clean. Fresh scent optional. Dry: medium heat, no Bounce sheet, 1 hour. Tap 'Cloths washed' in the app only when actually washed.",
       "notes": "For cloths only — not a surface cleaner."
     },
     {
@@ -848,9 +936,13 @@ const DEFAULT_GUIDE = {
         "Tough build-up",
         "Really dark build-up in showers and tubs",
         "Water marks",
-        "Dull stainless steel"
+        "Dull stainless steel",
+        "Soap scum",
+        "Limescale",
+        "Rust",
+        "All sinks"
       ],
-      "how": "Use as Krystal shows you. Follow the notes on the bottle.",
+      "how": "Use as Krystal shows you. Follow the notes on the bottle. Always polish after BKF — use Windex or vinegar.",
       "notes": "Confirmed by Krystal — good for stainless steel, sinks, fridges, stoves and tough build-up."
     },
     {
@@ -897,7 +989,9 @@ const DEFAULT_GUIDE = {
         "Showers and tubs",
         "Inside of toilets",
         "Bathroom countertops and sinks",
-        "Kitchen counters"
+        "Kitchen counters",
+        "Cabinets",
+        "Scuff marks"
       ],
       "how": "Use as Krystal shows you.",
       "notes": "Interchangeable with Dawn Powerwash for showers and tubs."
@@ -940,7 +1034,7 @@ const DEFAULT_GUIDE = {
         "Wood cabinets",
         "Wood furniture"
       ],
-      "how": "Use as Krystal shows you.",
+      "how": "Use wood polish with a paper towel on wood cabinets. Use on furniture only if they request it — never on raw wood.",
       "notes": "Use on wood cabinets if they are looking dull — not every time."
     },
     {
@@ -949,7 +1043,7 @@ const DEFAULT_GUIDE = {
       "goodFor": [
         "Dusting"
       ],
-      "how": "Use to dust as Krystal shows you.",
+      "how": "Dust with a duster, or use a damp cloth with multi-purpose cleaner for dusting.",
       "notes": "Used for dusting."
     },
     {
@@ -960,7 +1054,8 @@ const DEFAULT_GUIDE = {
         "Build-up between tiles",
         "Grease"
       ],
-      "how": "Use with a grout brush on shower floors to get rid of build-up between the tiles."
+      "how": "Use with a grout brush on shower floors to get rid of build-up between the tiles.",
+      "notes": null
     }
   ]
 };
@@ -1279,6 +1374,7 @@ function applyMgrSession() {
   updateMgrBanner();
   updateMgrWatermark();
   if (mgrSession && mgrSession.role !== "review") pullMgrBackendData();
+  loadEmployerSignature();
 }
 $("loginBtn").onclick = function () {
   var code = $("loginCode").value;
@@ -1451,15 +1547,22 @@ function renderEmployees() {
     if (sel && emp.rate !== "" && emp.rate != null) sel.value = String(emp.rate);
   });
 }
-// Work schedules — one shift picker per weekday (Tue–Fri) for the picked
-// employee, plus a read-only list of every employee's current schedule.
+// Work schedules — month calendar (Krystal, 2026-11-08). Pick an employee,
+// tap a day to set Morning / Afternoon / Both / None for that weekday
+// (the Schedule is weekday-recurring), then Save. "All employees" shows
+// everyone's shifts on the month, view-only. Day is a weekday name
+// (Tuesday–Friday), Shift is "Morning" (9am–12pm), "Afternoon" (1pm–4pm)
+// or "Both" (9am–4pm).
 var SCHED_DAYS = ["Tuesday", "Wednesday", "Thursday", "Friday"];
-function schedShiftOptions() {
-  return "<option value=''>None</option>" +
-    "<option value='Morning'>Morning 9–12</option>" +
-    "<option value='Afternoon'>Afternoon 1–4</option>" +
-    "<option value='Both'>Both 9–4</option>";
-}
+var SCHED_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+var SCHED_WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+var SCHED_ALL = "__ALL__";
+var schedCalMonth = new Date().getMonth();
+var schedCalYear = new Date().getFullYear();
+var schedDraft = {};    // working copy {Day: Shift} for the picked employee
+var schedDraftEmp = ""; // which employee the draft belongs to
+var schedDraftDirty = false;
+var schedDetailDay = null; // {y, m, d, dayName} for the open detail, if any
 function schedFor(name) {
   var out = {};
   schedule.forEach(function (r) {
@@ -1467,48 +1570,146 @@ function schedFor(name) {
   });
   return out;
 }
+function schedShiftShort(shift) {
+  if (shift === "Morning") return "Morning 9–12";
+  if (shift === "Afternoon") return "Afternoon 1–4";
+  if (shift === "Both") return "Morning 9–12<br>Afternoon 1–4";
+  return "";
+}
+function schedFirstName(full) {
+  return String(full || "").split(" ")[0];
+}
+function schedIsWorkDay(date) {
+  var day = date.getDay();
+  return day >= 2 && day <= 5; // Tue–Fri
+}
+function schedCalMove(dir) {
+  schedCalMonth += dir;
+  if (schedCalMonth < 0) { schedCalMonth = 11; schedCalYear--; }
+  if (schedCalMonth > 11) { schedCalMonth = 0; schedCalYear++; }
+  var det = $("schedCalDetail");
+  if (det) { det.style.display = "none"; det.innerHTML = ""; }
+  schedDetailDay = null;
+  renderSchedCal();
+}
+function schedPickShift(dayName, shift) {
+  if (shift) schedDraft[dayName] = shift;
+  else delete schedDraft[dayName];
+  schedDraftDirty = true;
+  renderSchedCal();
+  if (schedDetailDay) showSchedCalDay(schedDetailDay.y, schedDetailDay.m, schedDetailDay.d);
+  $("schedStatus").innerHTML = "Change made — tap Save schedule to keep it.";
+}
+function showSchedCalDay(y, m, d) {
+  var date = new Date(y, m, d);
+  var dayName = SCHED_WEEKDAYS[date.getDay()];
+  var full = date.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  var det = $("schedCalDetail");
+  schedDetailDay = { y: y, m: m, d: d, dayName: dayName };
+  var html = "<h3>" + full + "</h3>";
+  var mode = $("schedEmp").value;
+  if (!schedIsWorkDay(date)) {
+    html += "<p>No shifts on Saturdays, Sundays or Mondays — work is Tuesday–Friday only.</p>";
+  } else if (mode === SCHED_ALL) {
+    var rows = [];
+    schedule.forEach(function (r) {
+      if (r.Day === dayName) rows.push(schedFirstName(r.Employee) + " — " + (r.Shift === "Both" ? "Both 9–4" : r.Shift === "Morning" ? "Morning 9–12" : "Afternoon 1–4"));
+    });
+    html += rows.length ? "<p>" + rows.map(esc).join("<br>") + "</p>" : "<p>No shifts.</p>";
+    html += "<p class=\"small\">Pick one employee above to change shifts.</p>";
+  } else {
+    var cur = schedDraft[dayName] || "";
+    html += "<p class=\"small\">Sets every " + dayName + ".</p>";
+    html += "<p>Current: <strong>" + (cur ? esc(cur) + " (" + (cur === "Morning" ? "9am–12pm" : cur === "Afternoon" ? "1pm–4pm" : "9am–4pm") + ")" : "No shift") + "</strong></p>";
+    [["Morning", "Morning — 9am–12pm"], ["Afternoon", "Afternoon — 1pm–4pm"], ["Both", "Both — 9am–4pm"], ["", "None — no shift"]].forEach(function (opt) {
+      html += "<button class=\"cal-pick" + ((cur || "") === opt[0] ? " on" : "") + "\" type=\"button\" onclick=\"schedPickShift('" + dayName + "','" + opt[0] + "')\">" + opt[1] + "</button>";
+    });
+  }
+  html += "<button class=\"secondary\" type=\"button\" onclick=\"document.getElementById('schedCalDetail').style.display='none';document.getElementById('schedCalDetail').innerHTML=''\">Close</button>";
+  det.innerHTML = html; det.style.display = "block";
+}
+function renderSchedCal() {
+  var grid = $("schedCalGrid"); if (!grid) return;
+  $("schedCalTitle").textContent = SCHED_MONTHS[schedCalMonth] + " " + schedCalYear;
+  var mode = $("schedEmp").value;
+  var empty = $("schedCalEmpty");
+  if (empty) {
+    var showEmpty = mode === SCHED_ALL ? !schedule.length : !Object.keys(schedDraft).length;
+    empty.style.display = showEmpty ? "block" : "none";
+    empty.textContent = mode === SCHED_ALL ? "No shifts set yet." : "No shifts set yet — set them by tapping a day.";
+  }
+  var first = new Date(schedCalYear, schedCalMonth, 1);
+  var daysInMonth = new Date(schedCalYear, schedCalMonth + 1, 0).getDate();
+  var now = new Date();
+  var html = "";
+  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(function (d) {
+    html += "<div class=\"cal-dow\">" + d + "</div>";
+  });
+  var i;
+  for (i = 0; i < first.getDay(); i++) html += "<div class=\"cal-day blank\"></div>";
+  for (i = 1; i <= daysInMonth; i++) {
+    var date = new Date(schedCalYear, schedCalMonth, i);
+    var dayName = SCHED_WEEKDAYS[date.getDay()];
+    var work = schedIsWorkDay(date);
+    var isToday = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+    var cls = "cal-day";
+    if (!work) cls += " offday";
+    if (isToday) cls += " today";
+    var label = "";
+    if (mode === SCHED_ALL) {
+      var parts = [];
+      schedule.forEach(function (r) {
+        if (r.Day === dayName) parts.push(schedFirstName(r.Employee) + " — " + (r.Shift === "Both" ? "Both 9–4" : r.Shift === "Morning" ? "Morning 9–12" : "Afternoon 1–4"));
+      });
+      if (parts.length) { cls += " shift"; label = parts.map(esc).join("<br>"); }
+    } else {
+      var sh = schedDraft[dayName] || "";
+      if (sh) { cls += " shift"; label = schedShiftShort(sh); }
+    }
+    html += "<div class=\"" + cls + "\" onclick=\"showSchedCalDay(" + schedCalYear + "," + schedCalMonth + "," + i + ")\"><span class=\"cal-num\">" + i + "</span>" +
+      (label ? "<span class=\"cal-shift\">" + label + "</span>" : "") + "</div>";
+  }
+  grid.innerHTML = html;
+  var saveBtn = $("schedSaveBtn");
+  if (saveBtn) saveBtn.style.display = mode === SCHED_ALL ? "none" : "";
+}
 function renderScheduleMgr() {
   var sel = $("schedEmp"); if (!sel) return;
   var actives = employees.filter(function (e) { return e.active && String(e.role || "Employee").toLowerCase() !== "manager"; });
   var cur = sel.value;
-  sel.innerHTML = actives.length
-    ? actives.map(function (e) { return "<option value='" + esc(e.name) + "'>" + esc(e.name) + "</option>"; }).join("")
-    : "<option value=''>No active employees yet</option>";
-  if (actives.some(function (e) { return e.name === cur; })) sel.value = cur;
+  sel.innerHTML = "<option value='" + SCHED_ALL + "'>All employees</option>" +
+    (actives.length
+      ? actives.map(function (e) { return "<option value='" + esc(e.name) + "'>" + esc(e.name) + "</option>"; }).join("")
+      : "<option value=''>No active employees yet</option>");
+  if (cur === SCHED_ALL || actives.some(function (e) { return e.name === cur; })) sel.value = cur;
+  else sel.value = SCHED_ALL;
   var name = sel.value;
-  var mine = name ? schedFor(name) : {};
-  $("schedDays").innerHTML = SCHED_DAYS.map(function (day) {
-    return "<label for='schedDay-" + day + "'>" + day + "</label>" +
-      "<select id='schedDay-" + day + "'>" + schedShiftOptions() + "</select>";
-  }).join("");
-  SCHED_DAYS.forEach(function (day) {
-    var s = $("schedDay-" + day);
-    if (s) s.value = mine[day] || "";
-  });
-  var list = actives.map(function (e) {
-    var days = SCHED_DAYS.map(function (day) {
-      var sh = schedFor(e.name)[day];
-      return sh ? day + ": " + sh : null;
-    }).filter(Boolean);
-    return "<div class='card'><strong>" + esc(e.name) + "</strong><br>" +
-      (days.length ? esc(days.join(" · ")) : "No shifts set") + "</div>";
-  }).join("");
-  $("schedList").innerHTML = list || "<p class='small'>No active employees yet.</p>";
+  if (name !== schedDraftEmp) {
+    // Switching employees drops any unsaved change for the last one.
+    schedDraft = name === SCHED_ALL ? {} : Object.assign({}, schedFor(name));
+    schedDraftEmp = name;
+    schedDraftDirty = false;
+    var det = $("schedCalDetail");
+    if (det) { det.style.display = "none"; det.innerHTML = ""; }
+    schedDetailDay = null;
+  }
+  renderSchedCal();
 }
 $("schedEmp").addEventListener("change", renderScheduleMgr);
 $("schedSaveBtn").onclick = function () {
   var name = $("schedEmp").value;
-  if (!name) { alert("Pick an employee first."); return; }
+  if (!name || name === SCHED_ALL) { alert("Pick one employee first."); return; }
   var picked = [];
   SCHED_DAYS.forEach(function (day) {
-    var v = $("schedDay-" + day).value;
-    if (v) picked.push({ day: day, shift: v });
+    if (schedDraft[day]) picked.push({ day: day, shift: schedDraft[day] });
   });
   // Local save first: replace this employee's rows, keep everyone else's.
   schedule = schedule.filter(function (r) { return String(r.Employee).toLowerCase() !== name.toLowerCase(); });
   picked.forEach(function (p) { schedule.push({ Employee: name, Day: p.day, Shift: p.shift }); });
   saveSchedule();
   mgrBackendPost({ action: "scheduleSave", employee: name, schedule: picked });
+  schedDraftDirty = false;
+  schedDraft = Object.assign({}, schedFor(name));
   $("schedStatus").innerHTML = '<span class="ok">Schedule saved for ' + esc(name) + ' — ' +
     (picked.length ? esc(picked.map(function (p) { return p.day + " " + p.shift; }).join(", ")) : "no shifts (days cleared)") + '.</span>';
   renderScheduleMgr();
@@ -1709,6 +1910,59 @@ $("rateSaveBtn").onclick = () => {
   $("rateEmpOther").value = "";
   mgrBackendPost({ action: "ratesSave", employee: n, rate: employeeRates[n] });
   saveAll();
+};
+
+// ============================================================================
+// YOUR SIGNATURE — Krystal draws her signature once here; it is saved to
+// the backend and appears on the agreements new hires sign, so their copy
+// already has her signature on it. Uses the same mgrBackendPost pattern
+// as every other manager save (fire-and-forget, local confirmation shown).
+// ============================================================================
+var sigCanvas = null, sigCtx = null, sigDrawing = false, sigHasInk = false, sigLast = null;
+function sigPos(e) {
+  var r = sigCanvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * (sigCanvas.width / r.width),
+           y: (e.clientY - r.top) * (sigCanvas.height / r.height) };
+}
+function sigStart(e) { e.preventDefault(); sigDrawing = true; sigHasInk = true; sigLast = sigPos(e); }
+function sigMove(e) {
+  if (!sigDrawing) return; e.preventDefault();
+  var p = sigPos(e);
+  sigCtx.beginPath(); sigCtx.moveTo(sigLast.x, sigLast.y); sigCtx.lineTo(p.x, p.y); sigCtx.stroke();
+  sigLast = p;
+}
+function sigEnd() { sigDrawing = false; sigLast = null; }
+function showSigSaved(dataUrl) {
+  $("sigSavedNote").innerHTML = '<span class="ok">A signature is already saved.</span> Draw a new one above and tap Save to replace it.';
+  $("sigSavedPreview").innerHTML = '<img src="' + dataUrl + '" alt="Your saved signature" style="max-width:220px;max-height:70px;background:#fffdf7;border:1px solid #c9a86a;border-radius:8px;padding:4px">';
+}
+function loadEmployerSignature() {
+  if (!BACKEND_ENABLED) return;
+  mgrBackendJsonp("getEmployerSignature", {}).then(function (d) {
+    if (d && d.ok && d.signature) showSigSaved(d.signature);
+  }).catch(function () {});
+}
+if ($("sigCanvas")) {
+  sigCanvas = $("sigCanvas");
+  sigCtx = sigCanvas.getContext("2d");
+  sigCtx.lineWidth = 2.5; sigCtx.lineCap = "round"; sigCtx.lineJoin = "round"; sigCtx.strokeStyle = "#221f1a";
+  sigCanvas.addEventListener("pointerdown", sigStart);
+  sigCanvas.addEventListener("pointermove", sigMove);
+  sigCanvas.addEventListener("pointerup", sigEnd);
+  sigCanvas.addEventListener("pointerleave", sigEnd);
+  sigCanvas.addEventListener("pointercancel", sigEnd);
+}
+$("sigClearBtn").onclick = function () {
+  if (sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  sigHasInk = false;
+  $("sigStatus").textContent = "";
+};
+$("sigSaveBtn").onclick = function () {
+  if (!sigHasInk) { $("sigStatus").textContent = "Draw your signature first, then tap Save."; return; }
+  var dataUrl = sigCanvas.toDataURL("image/png");
+  mgrBackendPost({ action: "saveEmployerSignature", signature: dataUrl });
+  $("sigStatus").innerHTML = '<span class="ok">Your signature is saved — it will appear on the agreements new hires sign.</span>';
+  showSigSaved(dataUrl);
 };
 
 if ($("weekPick")) $("weekPick").value = mondayOf(localDate());
