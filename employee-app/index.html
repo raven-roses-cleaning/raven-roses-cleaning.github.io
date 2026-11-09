@@ -51,9 +51,9 @@
   /* Monthly Focus — gold ribbon banner (Krystal, 2026-11-08): a decorative
      gold ribbon, not a plain box. Gold band, dark text, large folded ribbon
      tails with swallowtail notches that tuck behind the band. */
-  #monthlyFocusBanner{background:linear-gradient(180deg,#f7dd85 0%,#f5d76e 45%,#e9c95c 100%);border:2px solid #b58900;border-radius:4px;color:#221f1a;box-shadow:0 4px 14px rgba(122,92,20,.45),inset 0 1px 0 rgba(255,255,255,.65);position:relative;z-index:1;margin-left:24px;margin-right:24px}
-  #monthlyFocusBanner h2{color:#3a2f10;margin-top:.2em}
-  #monthlyFocusBanner .small{color:#4a3f1a}
+  #monthlyFocusBanner{background:linear-gradient(180deg,#f7dd85 0%,#f5d76e 45%,#e9c95c 100%);border:2px solid #b58900;border-radius:4px;color:#221f1a;box-shadow:0 4px 14px rgba(122,92,20,.45),inset 0 1px 0 rgba(255,255,255,.65);position:relative;z-index:1;margin-left:24px;margin-right:24px;padding:.35em 1em}
+  #monthlyFocusBanner h2{color:#3a2f10;margin:.05em 0;font-size:1.15rem}
+  #monthlyFocusBanner .small{color:#4a3f1a;margin:.05em 0}
   #monthlyFocusBanner .monthly-task{background:rgba(255,253,247,.72);border-color:#b58900}
   #monthlyFocusBanner::before,#monthlyFocusBanner::after{content:"";position:absolute;top:8px;bottom:8px;width:30px;z-index:-1;background:linear-gradient(180deg,#c89b1e 0%,#a87f00 100%)}
   #monthlyFocusBanner::before{left:-24px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,30% 50%)}
@@ -163,6 +163,7 @@
 <div id="privacyNote">Private information — for work purposes only. Do not share, copy, screenshot, or photograph this information.</div>
 <div id="backendBanner"></div>
 <div class="card" id="monthlyFocusBanner"></div>
+<div id="monthlyFocusTasks"></div>
 <div class="card" id="fridayVacuumCard" style="display:none"></div>
 <button id="signOutBtn" class="secondary" style="width:auto;padding:.4em 1em">Sign out</button>
 <div id="sectionNav" style="position:sticky;top:0;z-index:200;background:#111;color:#fff;padding:10px 12px;border-radius:0 0 10px 10px;margin:12px 0">
@@ -208,8 +209,8 @@
 <div class="card" id="adjustCard">
   <h2>⏱ Adjust time — request a correction</h2>
   <p class="small">Forgot to clock in, forgot to clock out, or clocked in at the wrong time? Fill this in. <strong>Nothing changes until Krystal approves it.</strong></p>
-  <label for="adjJob">Job / client (first name only)</label>
-  <input id="adjJob" placeholder="e.g. Maria">
+  <label for="adjJob">Job / client — pick from your route</label>
+  <select id="adjJob"></select>
   <label for="adjDate">Date</label>
   <input id="adjDate" type="date">
   <div class="row">
@@ -317,7 +318,7 @@
   <h2>End of job — no typing required</h2>
   <p>🔔 When you get home at the end of the day, refill supplies for tomorrow.</p>
   <button id="refilledBtn" class="tap">Supplies refilled</button>
-  <p><strong>Running low / needed</strong> — find the picture, tap <b>Refill</b> if you need it. Tap again to undo. No typing needed.</p>
+  <p><strong>Running low / needed</strong> — find the picture, tap <b>Refill</b> or <b>Replace</b> if you need it. Tap again to undo. No typing needed.</p>
   <p><label for="kitCat"><strong>Show:</strong></label>
   <select id="kitCat">
     <option value="cleaners" selected>Cleaners</option>
@@ -335,7 +336,7 @@
   <button id="sendBtn">Send to Krystal</button>
   <p id="sendStatus" class="small"></p>
   <hr>
-  <p class="small"><strong>Free colouring book</strong> — a free gift to share with your clients.</p>
+  <p class="small"><strong>Free colouring book</strong> — a free gift for you, to share with friends if you want.</p>
   <button id="colouringQrBtn" class="secondary">🎨 Free colouring book — QR to share</button>
 </div>
 
@@ -399,8 +400,8 @@ const KIT = [
   {cat:"cleaners", name:"Wood polish", pic:"", best_use:"", photo:"kit-photos/wood-polish-liquid-gold.png", supplyId:"s-woodpolish", isCleaner:true},
   // 2. DOG TREATS (Krystal's notebook) — Refill only.
   {cat:"dog", name:"Dog treats", pic:"", best_use:"", photo:"kit-photos/dog-treats-naturbites.png"},
-  // 3. TOOLS (Krystal's notebook order) — Refill only. Crocs + water bottle
-  // are "Employee responsible": no Refill button, "You provide this" note.
+  // 3. TOOLS (Krystal's notebook order) — Replace. Crocs + water bottle
+  // are "Employee responsible": no Refill/Replace button, "You provide this" note.
   {cat:"tools", name:"Pumice stone", pic:"", best_use:"", photo:"kit-photos/pumice-stone.png"},
   {cat:"tools", name:"Dusters", pic:"", best_use:"", photo:"kit-photos/dusters-head.png", supplyId:"s-dusters"},
   {cat:"tools", name:"Gloves", pic:"", best_use:"", photo:"kit-photos/media-generation-nitrile-glove-generic-0-a9558842-b2e1-4c36-86ac-065286334550.png", supplyId:"s-gloves"},
@@ -414,14 +415,15 @@ const KIT = [
   {cat:"tools", name:"Paper towel", pic:"", best_use:"", photo:"kit-photos/paper-towel-roll.png", supplyId:"s-papertowel"},
   {cat:"tools", name:"Crocs", pic:"", best_use:"", photo:"kit-photos/crocs.png", noRefill:true, note:"You provide this"},
   {cat:"tools", name:"Water bottle", pic:"", best_use:"", photo:"kit-photos/water-bottle.png", noRefill:true, note:"You provide this"},
-  // 4. LAUNDRY (Krystal's notebook order) — Refill only. "Instructions to
-  // clean cloths" is info, not a supply: tile only, no Refill button.
+  // 4. LAUNDRY (Krystal's notebook order) — soap + Oxi-clean are refilled;
+  // the laundry bins are replaced. "Instructions to
+  // clean cloths" is info, not a supply: tile only, no Refill/Replace button.
   {cat:"laundry", name:"Laundry soap (for cloths)", pic:"", best_use:"", photo:"kit-photos/laundry-soap-tide.png", supplyId:"s-soap"},
   {cat:"laundry", name:"Clean laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-clean.png"},
   {cat:"laundry", name:"Dirty laundry bin", pic:"", best_use:"", photo:"kit-photos/laundry-bin-dirty.png"},
   {cat:"laundry", name:"Oxi-clean", pic:"", best_use:"", photo:"kit-photos/laundry-oxi-kirkland.png"},
   {cat:"laundry", name:"Instructions to clean cloths", pic:"", best_use:"", photo:"", noRefill:true},
-  // 5. SUPPLY LIST (Krystal's notebook order) — Refill only.
+  // 5. SUPPLY LIST (Krystal's notebook order) — Replace.
   {cat:"supply", name:"Mop handle", pic:"", best_use:"", photo:"kit-photos/mop-handle-red.png"},
   {cat:"supply", name:"Vacuum", pic:"", best_use:"", photo:"kit-photos/bissell-powerforce-helix-turbo-pet-3332-stock.png"},
   {cat:"supply", name:"Apron", pic:"", best_use:"", photo:"kit-photos/apron-rose.png"},
@@ -484,6 +486,14 @@ const $ = id => document.getElementById(id);
 function localDateStr(){ const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
 $("workdate").value = localDateStr();
 
+// Krystal, 2026-11-08: cleaners get refilled; tools and supplies get
+// replaced. Laundry soap + Oxi-clean are refilled; the laundry bins are
+// replaced. Dog treats are refilled.
+function kitAction(item){
+  var replace = item.cat === "tools" || item.cat === "supply" ||
+    (item.cat === "laundry" && (item.name === "Clean laundry bin" || item.name === "Dirty laundry bin"));
+  return replace ? {label:"Replace", need:"✓ Need replacing"} : {label:"Refill", need:"✓ Need refill"};
+}
 KIT.forEach(item => {
   const card = document.createElement("div");
   card.className = "piccard" + (item.discontinued ? " discontinued" : "");
@@ -503,7 +513,7 @@ KIT.forEach(item => {
   }
   // No-button tiles (Krystal's notebook): employee-provided items (Crocs,
   // water bottle) and info-only items (Instructions to clean cloths). No
-  // Refill button, no low-set entry, nothing in the clock-out payload.
+  // Refill/Replace button, no low-set entry, nothing in the clock-out payload.
   // Crocs / water bottle carry a "You provide this" note.
   if (item.noRefill) {
     if (item.note) {
@@ -515,10 +525,12 @@ KIT.forEach(item => {
     $("lowList").appendChild(card);
     return;
   }
-  b.textContent = "Refill";
+  var act = kitAction(item);
+  b.textContent = act.label;
+  b.dataset.action = act.label;
   b.onclick = () => {
-    if (low.has(item.name)) { low.delete(item.name); card.classList.remove("need"); b.classList.remove("needbtn"); b.textContent = "Refill"; }
-    else { low.add(item.name); card.classList.add("need"); b.classList.add("needbtn"); b.textContent = "✓ Need refill"; stocked = false; $("stockedBtn").classList.remove("on"); }
+    if (low.has(item.name)) { low.delete(item.name); card.classList.remove("need"); b.classList.remove("needbtn"); b.textContent = act.label; }
+    else { low.add(item.name); card.classList.add("need"); b.classList.add("needbtn"); b.textContent = act.need; stocked = false; $("stockedBtn").classList.remove("on"); }
   };
   card.appendChild(b);
   // Second button: what this supply is used for — cleaners ONLY (Krystal:
@@ -535,7 +547,7 @@ KIT.forEach(item => {
   $("lowList").appendChild(card);
 });
 $("refilledBtn").onclick = e => { refilled = !refilled; e.target.classList.toggle("on", refilled); };
-$("stockedBtn").onclick = e => { stocked = !stocked; e.target.classList.toggle("on", stocked); if (stocked) { low.clear(); document.querySelectorAll("#lowList .piccard").forEach(x=>{x.classList.remove("need"); const bb=x.querySelector("button"); if(bb){bb.classList.remove("needbtn"); bb.textContent="Refill";}}); } };
+$("stockedBtn").onclick = e => { stocked = !stocked; e.target.classList.toggle("on", stocked); if (stocked) { low.clear(); document.querySelectorAll("#lowList .piccard").forEach(x=>{x.classList.remove("need"); const bb=x.querySelector("button"); if(bb){bb.classList.remove("needbtn"); bb.textContent=bb.dataset.action || "Refill";}}); } };
 // Refill category picker (Krystal: no huge scroll list — pick a section
 // first). Cards are only hidden/shown, never re-built, so anything flagged
 // in one group stays flagged when you switch groups, and the flagged items
@@ -567,7 +579,10 @@ window.requestAdjust = function(idx){
   const e = entries[idx];
   if (!e) return;
   adjustingEntryIdx = idx;
-  $("adjJob").value = e.job; $("adjDate").value = e.date;
+  const adjSel = $("adjJob");
+  adjSel.value = e.job;
+  if (adjSel.value !== e.job && e.job) { var adjOpt = document.createElement("option"); adjOpt.value = e.job; adjOpt.textContent = e.job; adjSel.appendChild(adjOpt); adjSel.value = e.job; }
+  $("adjDate").value = e.date;
   const localHM = t => { const d = new Date(t); return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); };
   $("adjIn").value = localHM(e.in);
   $("adjOut").value = e.out ? localHM(e.out) : "";
@@ -731,6 +746,13 @@ function populateJobSelects(){
   const curH = houseSel.value;
   houseSel.innerHTML = "<option value=''>Pick a job…</option>" + jobs.map(j => "<option value='" + j + "'>" + j + "</option>").join("");
   if (curH) houseSel.value = curH;
+  const adjSel = $("adjJob");
+  const curA = adjSel.value;
+  const extraJobs = [...new Set([...jobs, ...Object.keys(houseInstructions)])].filter(j => j && !CLIENTS.some(c => c[0] === j));
+  adjSel.innerHTML = "<option value=''>Pick a job…</option>" +
+    CLIENTS.map(c => "<option value='" + esc(c[0]) + "'>" + esc(c[0]) + "</option>").join("") +
+    extraJobs.map(j => "<option value='" + esc(j) + "'>" + esc(j) + "</option>").join("");
+  if (curA) adjSel.value = curA;
 }
 function renderMileage(){
   const date = $("mileDate").value;
@@ -917,21 +939,25 @@ $("toSubmitBtn").onclick = () => {
 };
 
 function saveMonthly(){ localStorage.setItem(MONTHLYKEY, JSON.stringify(monthlyFocus)); localStorage.setItem(MONTHLYDONEKEY, JSON.stringify(monthlyDone)); renderMonthlyFocusBanner(); }
-// Monthly Focus banner — read-only. This month's tasks, title + detail,
-// shown at the top of the app so they cannot be missed. No house picker,
+// Monthly Focus — read-only. The gold ribbon holds ONLY the title line
+// (Krystal, 2026-11-08: a nice simple ribbon banner across the top, not a
+// big box). The task titles sit BELOW the ribbon, title only — the detail
+// (EXAMPLE text) is not shown; the title explains itself. No house picker,
 // no ticking off per house: the tasks are a TO-DO in every house, and the
 // employee just remembers each house (Krystal, 2026-11-08).
 function renderMonthlyFocusBanner(){
   var el = $("monthlyFocusBanner"); if (!el) return;
+  var box = $("monthlyFocusTasks"); if (!box) return;
   var tasks = (monthlyFocus.tasks || []);
   var head = "<h2>🗓️ This Month&rsquo;s Focus — do in EVERY house this month</h2>" +
     "<p class='small'><strong>" + esc(monthlyFocus.month || "") + "</strong>" + (monthlyFocus.note ? " — " + esc(monthlyFocus.note) : "") + "</p>";
+  el.innerHTML = head;
   if (!tasks.length) {
-    el.innerHTML = head + "<p class='small'>No tasks set for this month yet — Krystal sets them in her manager app.</p>";
+    box.innerHTML = "<p class='small'>No tasks set for this month yet — Krystal sets them in her manager app.</p>";
     return;
   }
-  el.innerHTML = head + tasks.map(function (t) {
-    return "<div class='monthly-task'><h3>" + esc(t.title) + "</h3><p>" + esc(t.detail) + "</p>" +
+  box.innerHTML = tasks.map(function (t) {
+    return "<div class='monthly-task'><h3>" + esc(t.title) + "</h3>" +
       "<p class='small'>Applies to: <strong>every house</strong></p></div>";
   }).join("");
 }
