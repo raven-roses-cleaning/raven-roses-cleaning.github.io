@@ -104,16 +104,15 @@
 <option>House instructions — edit (Krystal only)</option>
 <option>This Month’s Focus — set the monthly tasks (Krystal only)</option>
 <option>What to use — Supplies Guide — edit (Krystal only)</option>
-<option>Export / import</option>
+<option>Export &amp; day summary</option>
 </select>
 </div>
 
 
 <div class="card">
-  <h2>How entries get here — for now</h2>
-  <p class="small">There is no shared server yet. This weekend we will work on that.<br>
-  <strong>Testing on one phone:</strong> open the employee app and the manager app in the same browser on the same phone — they share the same saved entries, so you will see her entries here straight away.<br>
-  <strong>Different phones (manual bridge, until the backend is connected):</strong> the employee taps “Export for Krystal (JSON)” in her app, sends you that file, and you tap “Import employee file” below. Once the backend is deployed and the BACKEND_URL is pasted into both apps, entries, approvals, house instructions, monthly focus and the guide sync automatically — no export / import needed. Approvals you make here will not go back to her phone automatically until then — tell her the result for now.</p>
+  <h2>How entries get here</h2>
+  <p class="small">Entries, approvals, house instructions, monthly focus and the guide sync automatically between the employee app and this manager app through the shared backend — no export / import needed.<br>
+  <strong>Testing on one phone:</strong> open the employee app and the manager app in the same browser on the same phone — they share the same saved entries, so you will see her entries here straight away.</p>
   <label for="viewDate">Date to view</label>
   <input id="viewDate" type="date">
   <label for="empFilter">Employee</label>
@@ -159,6 +158,18 @@
   <p class="small">This is a first-time code only. Tell it to them in person — when they first sign in, the app asks them to create their own 4-digit code.</p>
   <button id="empAddBtn" class="secondary">Add employee</button>
   <p id="empStatus" class="small"></p>
+</div>
+
+<div class="card" id="scheduleCard">
+  <h2>Work schedules — set shifts (Krystal only)</h2>
+  <p class="small">Set each employee's weekly shifts here. Her app only reminds her for the shifts she works: Morning is 9am–12pm, Afternoon is 1pm–4pm, Both is 9am–4pm. Shifts run Tuesday–Friday only.</p>
+  <label for="schedEmp">Employee</label>
+  <select id="schedEmp"></select>
+  <div id="schedDays"></div>
+  <button id="schedSaveBtn" class="secondary">Save schedule</button>
+  <p id="schedStatus" class="small"></p>
+  <h3 style="font-size:1rem">Current schedules</h3>
+  <div id="schedList"></div>
 </div>
 
 <div class="card">
@@ -261,7 +272,7 @@
 <h2>This Month&rsquo;s Focus — set the monthly tasks (Krystal only)</h2>
 <div class="card">
   <p class="small"><strong>TO-DO in every house for a whole month, then it rotates</strong> &mdash; not a check or inspection. Set 1&ndash;2 tasks for the month (sometimes more, depending on the task and the season). They last the whole month so every house gets done properly, then next month you set the next task(s) here and it rotates. The employee sees these in her app under &ldquo;This Month&rsquo;s Focus&rdquo; and ticks each one off per house.</p>
-  <p class="small"><strong>How she gets the update:</strong> this list is saved in the app&rsquo;s shared data. On one phone / same browser it shows in her app straight away. On different phones it travels with the JSON export / import until the shared backend is connected — then it syncs automatically when you save here, with no separate message needed. The monthly tasks are also included in the day JSON export below.</p>
+  <p class="small"><strong>How she gets the update:</strong> this list is saved in the app&rsquo;s shared data. It syncs automatically to her app when you save here, with no separate message needed.</p>
   <label for="mfMonth">Month these tasks apply to</label>
   <input id="mfMonth" placeholder="e.g. November 2026">
   <label for="mfNote">Note to the employee (optional)</label>
@@ -284,7 +295,7 @@
 <h2>What to use — Supplies Guide — edit (Krystal only)</h2>
 <div class="card" id="guideMgrCard">
   <p class="small"><strong>The employee sees this in her app as &ldquo;What to use — Supplies Guide&rdquo;, by the cleaning supplies.</strong> It is <strong>completely separate</strong> from House instructions above — house instructions say what to <em>do</em> in a specific house / room; this guide says what <em>supply to use</em> for an item / dirt, and how. Each item is clickable in her app: tap it and it shows a list of what it is good for, how to use it, and the notes — including the notes from the bottle / lid, so she does not have to go find the bottle to read it. She can open a room and search inside that room, or use the search bar at the top of the guide to search anything.</p>
-  <p class="small"><strong>How she gets the update:</strong> this guide is saved in the app&rsquo;s shared data. On one phone / same browser it shows in her app straight away. On different phones it travels with the JSON export / import until the shared backend is connected — then it syncs automatically when you save here. The guide is also included in the day JSON export below.</p>
+  <p class="small"><strong>How she gets the update:</strong> this guide is saved in the app&rsquo;s shared data. It syncs automatically to her app when you save here.</p>
   <p class="small">Starter examples are loaded the first time only, clearly marked EXAMPLE &mdash; replace them with your real supplies, uses and label notes. Bar Keepers Friend is listed only if you confirm it is in the standard kit.</p>
   <label for="guideRoomSel">Room to add an item to</label>
   <select id="guideRoomSel"></select>
@@ -323,16 +334,12 @@
   <p id="guideSaveStatus" class="small"></p>
 </div>
 
-<h2>Export / import</h2>
+<h2>Export &amp; day summary</h2>
 <button id="copyBtn">Copy day summary as text</button>
 <button id="csvBtn" class="secondary">Download day CSV</button>
 <button id="jsonBtn" class="secondary">Export day as JSON (for records)</button>
-<label for="importFile">Import employee file (JSON from her app)</label>
-<input id="importFile" type="file" accept=".json,application/json">
-<p id="importStatus" class="small"></p>
 <pre id="summary"></pre>
 <button id="clearBtn" class="secondary">Clear test entries on this device</button>
-<p class="small">Weekend build status (Nov 8, 2026): shared backend is BUILT (Google Sheet “Raven Employee System” + Apps Script in the backend folder — deploy it and paste the /exec URL into both apps to connect it); employee codes + manager code with revoke are BUILT; screenshot / copy warnings + watermark + blurred codes are BUILT (true OS-screenshot blocking still needs a native wrapper — see “Still for Krystal” in the weekend checklist); notifications are backend emails on clock-out, adjustment, time-off and mileage submission; decline reasons are saved fields; weekly view + mileage submissions view are BUILT. Still to do: phone test everything; SIN vault (NOT built — do not type a SIN anywhere); payroll automatic import (draft payroll still uses manual JSON import); final kit list + real supply photos.</p>
 
 </div>
 <script>
@@ -449,7 +456,7 @@ $("mfSaveBtn").onclick = () => {
   saveAll(); renderMonthlyFocusMgr();
   mgrBackendPost({ action: "focusSave", month: monthlyFocus.month, note: monthlyFocus.note,
     tasks: monthlyFocus.tasks, rotation: monthlyFocus.rotation });
-  $("mfStatus").innerHTML = '<span class="ok">Monthly Focus saved for ' + monthlyFocus.month + ' — ' + monthlyFocus.tasks.length + ' task(s). The employee sees these in her app; they sync automatically once the shared backend is connected (see the banner at the top), and travel with the JSON export / import until then.</span>';
+  $("mfStatus").innerHTML = '<span class="ok">Monthly Focus saved for ' + monthlyFocus.month + ' — ' + monthlyFocus.tasks.length + ' task(s). The employee sees these in her app; they sync automatically (see the banner at the top).</span>';
 };
 
 const GUIDEKEY = "ravenSuppliesGuideV1";
@@ -1033,7 +1040,7 @@ $("guideAddSupBtn").onclick = () => {
   saveGuide(); renderGuideMgr();
   $("guideStatus").innerHTML = '<span class="ok">Supply saved: ' + esc(name) + '.</span>';
 };
-$("guideSaveBtn").onclick = () => { saveGuide(); saveAll(); renderGuideMgr(); mgrBackendPost({ action: "guideSave", guide: guide }); $("guideSaveStatus").innerHTML = '<span class="ok">Supplies Guide saved — the employee sees it in her app; it syncs automatically once the shared backend is connected (see the banner at the top), and travels with the JSON export / import until then.</span>'; };
+$("guideSaveBtn").onclick = () => { saveGuide(); saveAll(); renderGuideMgr(); mgrBackendPost({ action: "guideSave", guide: guide }); $("guideSaveStatus").innerHTML = '<span class="ok">Supplies Guide saved — the employee sees it in her app; it syncs automatically (see the banner at the top).</span>'; };
 
 function renderTimeOffMgr(){
   const el = $("timeOffMgr"); if (!el) return;
@@ -1093,6 +1100,14 @@ let employees = JSON.parse(localStorage.getItem(EMPKEY) || "null") || [
   { name: "Krystal McGee", role: "Manager", rate: "", active: true, code: "", tempCode: false }
 ];
 function saveEmployees() { localStorage.setItem(EMPKEY, JSON.stringify(employees)); }
+
+// Work schedules — {Employee, Day, Shift} rows. Krystal sets them here;
+// the Sheet is the source of truth, the employee app only ever sees its
+// own employee's rows. Day is a weekday name (Tuesday–Friday), Shift is
+// "Morning" (9am–12pm), "Afternoon" (1pm–4pm) or "Both" (9am–4pm).
+const SCHEDKEY = "ravenScheduleV1";
+let schedule = JSON.parse(localStorage.getItem(SCHEDKEY) || "[]");
+function saveSchedule() { localStorage.setItem(SCHEDKEY, JSON.stringify(schedule)); }
 
 function mgrBackendJsonp(action, params) {
   return new Promise(function (resolve) {
@@ -1186,6 +1201,15 @@ function pullMgrBackendData() {
         reason: r.Reason || r.reason || "", status: r.Status || r.status || "PENDING",
         declineReason: r.DeclineReason || r.declineReason || "", created: Date.now() };
     }), function (r) { return [r.name, r.date, r.type].join("|"); });
+    if (d.schedule) {
+      // The Sheet is the source of truth for schedules (the manager is the
+      // only writer, and a save replaces that employee's rows outright), so
+      // the backend wins here — a merge would resurrect days Krystal removed.
+      schedule = d.schedule.map(function (r) {
+        return { Employee: r.Employee || r.employee || "", Day: r.Day || r.day || "", Shift: r.Shift || r.shift || "" };
+      }).filter(function (r) { return r.Employee && r.Day && r.Shift; });
+      saveSchedule();
+    }
     if (d.mileage) mileage = mgrMergeByKey(mileage, d.mileage.map(function (r) {
       return { date: r.Date || r.date, start: r.Start || r.start, end: r.End || r.end,
         km: Number(r.Km || r.km), type: "between", name: r.Employee || r.name };
@@ -1427,6 +1451,68 @@ function renderEmployees() {
     if (sel && emp.rate !== "" && emp.rate != null) sel.value = String(emp.rate);
   });
 }
+// Work schedules — one shift picker per weekday (Tue–Fri) for the picked
+// employee, plus a read-only list of every employee's current schedule.
+var SCHED_DAYS = ["Tuesday", "Wednesday", "Thursday", "Friday"];
+function schedShiftOptions() {
+  return "<option value=''>None</option>" +
+    "<option value='Morning'>Morning 9–12</option>" +
+    "<option value='Afternoon'>Afternoon 1–4</option>" +
+    "<option value='Both'>Both 9–4</option>";
+}
+function schedFor(name) {
+  var out = {};
+  schedule.forEach(function (r) {
+    if (String(r.Employee).toLowerCase() === String(name).toLowerCase()) out[r.Day] = r.Shift;
+  });
+  return out;
+}
+function renderScheduleMgr() {
+  var sel = $("schedEmp"); if (!sel) return;
+  var actives = employees.filter(function (e) { return e.active && String(e.role || "Employee").toLowerCase() !== "manager"; });
+  var cur = sel.value;
+  sel.innerHTML = actives.length
+    ? actives.map(function (e) { return "<option value='" + esc(e.name) + "'>" + esc(e.name) + "</option>"; }).join("")
+    : "<option value=''>No active employees yet</option>";
+  if (actives.some(function (e) { return e.name === cur; })) sel.value = cur;
+  var name = sel.value;
+  var mine = name ? schedFor(name) : {};
+  $("schedDays").innerHTML = SCHED_DAYS.map(function (day) {
+    return "<label for='schedDay-" + day + "'>" + day + "</label>" +
+      "<select id='schedDay-" + day + "'>" + schedShiftOptions() + "</select>";
+  }).join("");
+  SCHED_DAYS.forEach(function (day) {
+    var s = $("schedDay-" + day);
+    if (s) s.value = mine[day] || "";
+  });
+  var list = actives.map(function (e) {
+    var days = SCHED_DAYS.map(function (day) {
+      var sh = schedFor(e.name)[day];
+      return sh ? day + ": " + sh : null;
+    }).filter(Boolean);
+    return "<div class='card'><strong>" + esc(e.name) + "</strong><br>" +
+      (days.length ? esc(days.join(" · ")) : "No shifts set") + "</div>";
+  }).join("");
+  $("schedList").innerHTML = list || "<p class='small'>No active employees yet.</p>";
+}
+$("schedEmp").addEventListener("change", renderScheduleMgr);
+$("schedSaveBtn").onclick = function () {
+  var name = $("schedEmp").value;
+  if (!name) { alert("Pick an employee first."); return; }
+  var picked = [];
+  SCHED_DAYS.forEach(function (day) {
+    var v = $("schedDay-" + day).value;
+    if (v) picked.push({ day: day, shift: v });
+  });
+  // Local save first: replace this employee's rows, keep everyone else's.
+  schedule = schedule.filter(function (r) { return String(r.Employee).toLowerCase() !== name.toLowerCase(); });
+  picked.forEach(function (p) { schedule.push({ Employee: name, Day: p.day, Shift: p.shift }); });
+  saveSchedule();
+  mgrBackendPost({ action: "scheduleSave", employee: name, schedule: picked });
+  $("schedStatus").innerHTML = '<span class="ok">Schedule saved for ' + esc(name) + ' — ' +
+    (picked.length ? esc(picked.map(function (p) { return p.day + " " + p.shift; }).join(", ")) : "no shifts (days cleared)") + '.</span>';
+  renderScheduleMgr();
+};
 // Random first-time code: 4 digits, 1000–9999, never 0000 or 1234.
 // Any code Krystal sets is temporary — the employee replaces it with
 // their own 4-digit code the first time they sign in.
@@ -1532,6 +1618,7 @@ function render(){
   renderGuideMgr();
   renderOnboard();
   renderEmployees();
+  renderScheduleMgr();
   renderWeek();
   renderMileageSubs();
   populateRateEmp();
@@ -1577,31 +1664,6 @@ $("jsonBtn").onclick = () => {
   const data = { entries: filtered(), adjustments: dayAdjustments(), mileage: mileage.filter(m => m.date === $("viewDate").value), houseInstructions: houseInstructions, employeeRates: employeeRates, craRate: craRate, monthlyFocus: monthlyFocus, monthlyDone: monthlyDone, suppliesGuide: guide, exported: new Date().toISOString() };
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"})); a.download = "raven-manager-" + $("viewDate").value + ".json"; a.click();
 };
-$("importFile").addEventListener("change", async (ev) => {
-  const f = ev.target.files[0]; if (!f) return;
-  try {
-    const data = JSON.parse(await f.text());
-    const inEntries = data.entries || (Array.isArray(data) ? data : []);
-    const inAdj = data.adjustments || [];
-    const key = e => [e.name, e.job, e.date, e.in].join("|");
-    const have = new Set(entries.map(key));
-    let addedE = 0, addedA = 0;
-    inEntries.forEach(e => { if (!have.has(key(e))) { entries.push(e); have.add(key(e)); addedE++; } });
-    inAdj.forEach(r => { const rk = [r.name, r.job, r.date, r.reqIn, r.reason].join("|"); if (!adjustments.some(x => [x.name, x.job, x.date, x.reqIn, x.reason].join("|") === rk)) { adjustments.push(r); addedA++; } });
-    const inMiles = data.mileage || [];
-    inMiles.forEach(m => { const mk = [m.name, m.date, m.start, m.end, m.km].join("|"); if (!mileage.some(x => [x.name, x.date, x.start, x.end, x.km].join("|") === mk)) { mileage.push(m); } });
-    if (data.houseInstructions) { Object.assign(houseInstructions, data.houseInstructions); }
-    if (data.suppliesGuide) { guide = data.suppliesGuide; localStorage.setItem(GUIDEKEY, JSON.stringify(guide)); }
-    if (data.monthlyFocus) { monthlyFocus = data.monthlyFocus; localStorage.setItem(MONTHLYKEY, JSON.stringify(monthlyFocus)); }
-    if (data.monthlyDone) { data.monthlyDone.forEach(d => { if (!monthlyDone.some(x => x.taskId === d.taskId && x.job === d.job && x.month === d.month)) monthlyDone.push(d); }); localStorage.setItem(MONTHLYDONEKEY, JSON.stringify(monthlyDone)); }
-    if (data.employeeRates) { Object.assign(employeeRates, data.employeeRates); }
-    if (data.timeOff) { data.timeOff.forEach(r => { if (!timeOff.some(x => x.name === r.name && x.date === r.date && x.type === r.type)) timeOff.push(r); }); }
-    if (data.craRate && !isNaN(parseFloat(data.craRate))) { craRate = parseFloat(data.craRate); localStorage.setItem(CRAKEY, String(craRate)); }
-    saveAll();
-    $("importStatus").innerHTML = '<span class="ok">Imported: ' + addedE + ' new entries, ' + addedA + ' new adjustment requests, plus any mileage / house instructions in the file. Duplicates skipped.</span>';
-  } catch(e) { $("importStatus").textContent = "Could not read that file — it needs to be a JSON export from the employee app."; }
-  ev.target.value = "";
-});
 $("clearBtn").onclick = () => { if (confirm("Clear all test entries and adjustments on this device?")) { entries = []; adjustments = []; mileage = []; saveAll(); } };
 
 window.loadHouse = function(n){
