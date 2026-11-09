@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Your Paperwork — Please Read &amp; Sign | Raven &amp; Roses Cleaning Co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f7f1e3; color: #1d1d23; font-family: "EB Garamond", Georgia, serif; font-size: 19px; line-height: 1.55; }
+  h1, h2, h3, .brand, .slogan { font-family: "Pirata One", "EB Garamond", serif; font-weight: 400; }
+  /* ---- Header ---- */
+  .topbar { background: #111; color: #f5d76e; text-align: center; padding: 26px 16px 20px; border-bottom: 4px solid #c9a227; }
+  .brand { font-size: 34px; letter-spacing: 1px; line-height: 1.1; }
+  .slogan { font-size: 20px; color: #e8c96a; margin-top: 6px; }
+  .pagetitle { font-size: 27px; color: #fff; margin-top: 14px; line-height: 1.2; }
+  /* ---- Layout ---- */
+  .wrap { max-width: 680px; margin: 0 auto; padding: 20px 16px 60px; }
+  .card { background: #fffdf6; border: 1px solid #d8cba8; border-radius: 14px; padding: 20px 18px; margin: 18px 0; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .doc { background: #fffdf6; border: 1px solid #d8cba8; border-radius: 14px; padding: 22px 18px; margin: 18px 0; }
+  .doc h2 { font-size: 26px; color: #7a5c14; margin: 22px 0 8px; line-height: 1.25; }
+  .doc h2:first-child { margin-top: 0; }
+  .doc h3 { font-size: 22px; color: #7a5c14; margin: 18px 0 6px; }
+  .doc p { margin: 10px 0; }
+  .doc ul { margin: 8px 0 12px; padding-left: 24px; }
+  .doc li { margin: 7px 0; }
+  .doctitle { text-align: center; border-bottom: 2px solid #c9a227; padding-bottom: 14px; margin-bottom: 6px; }
+  .doctitle .brand { font-size: 28px; color: #1d1d23; }
+  .doctitle .slogan { font-size: 18px; color: #7a5c14; }
+  .doctitle h2 { font-size: 25px; color: #1d1d23; margin: 10px 0 2px; }
+  .doctitle .sub { font-size: 18px; color: #555; }
+  .contact { text-align: center; font-size: 16px; color: #555; margin: 10px 0 4px; }
+  .callout { border: 2px solid #c9a227; background: #fdf6dd; border-radius: 10px; padding: 14px 16px; margin: 16px 0; }
+  .callout strong { display: block; font-size: 20px; color: #7a5c14; margin-bottom: 4px; }
+  .callout p { margin: 4px 0; }
+  table.pay { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 19px; }
+  table.pay th, table.pay td { border: 1px solid #c9a227; padding: 10px 12px; text-align: left; }
+  table.pay th { background: #111; color: #f5d76e; font-family: "Pirata One", serif; font-weight: 400; font-size: 20px; }
+  table.pay td { background: #fffdf6; }
+  .divider { text-align: center; margin: 30px 0 10px; color: #c9a227; font-size: 22px; letter-spacing: 6px; }
+  .divider span { display: block; font-size: 15px; letter-spacing: 1px; color: #8a7a4a; margin-top: 4px; }
+  /* ---- Name field ---- */
+  label.big { display: block; font-family: "Pirata One", serif; font-size: 24px; color: #7a5c14; margin-bottom: 8px; }
+  input[type="text"] { width: 100%; font-family: "EB Garamond", Georgia, serif; font-size: 20px; padding: 14px 16px; border: 2px solid #c9a227; border-radius: 10px; background: #fff; color: #1d1d23; }
+  input[type="text"]:focus { outline: 3px solid #f5d76e; border-color: #7a5c14; }
+  input[type="tel"], textarea { width: 100%; font-family: "EB Garamond", Georgia, serif; font-size: 20px; padding: 14px 16px; border: 2px solid #c9a227; border-radius: 10px; background: #fff; color: #1d1d23; }
+  input[type="tel"]:focus, textarea:focus { outline: 3px solid #f5d76e; border-color: #7a5c14; }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.4; }
+  label.small { display: block; font-size: 19px; font-weight: 600; color: #5c4a12; margin: 14px 0 6px; }
+  .sigblock { margin-top: 20px; }
+  .sigblock img { display: block; max-width: 240px; height: auto; margin: 6px 0 2px; }
+  .sigblock .sigrole { font-size: 17px; color: #8a7a4a; margin: 0 0 2px; }
+  .hint { font-size: 16px; color: #666; margin-top: 8px; }
+  .intro { font-size: 20px; }
+  /* ---- Signature ---- */
+  .sigbox { border: 2px solid #c9a227; border-radius: 10px; background: #fff; overflow: hidden; }
+  #sigCanvas { display: block; width: 100%; height: 180px; touch-action: none; cursor: crosshair; }
+  .siglabel { text-align: center; font-size: 16px; color: #888; padding: 6px 0 10px; background: #fff; }
+  .sigmeta { font-size: 19px; margin: 14px 0 4px; }
+  .sigmeta strong { color: #7a5c14; }
+  .btn { display: block; width: 100%; border: none; border-radius: 12px; font-family: "Pirata One", serif; font-size: 24px; padding: 16px 20px; margin: 14px 0; cursor: pointer; }
+  .btn-gold { background: #111; color: #f5d76e; }
+  .btn-gold:disabled { background: #555; color: #ccc; cursor: default; }
+  .btn-plain { background: transparent; color: #7a5c14; border: 2px solid #c9a227; font-size: 20px; padding: 10px 20px; }
+  .btn-plain { width: auto; display: inline-block; margin: 10px 0 0; }
+  .msg { border-radius: 10px; padding: 14px 16px; margin: 14px 0; font-size: 19px; display: none; }
+  .msg.err { display: block; background: #fdecea; border: 2px solid #c0392b; color: #7b1f16; }
+  .msg.warn { display: block; background: #fdf6dd; border: 2px solid #c9a227; color: #5c4a12; }
+  /* ---- Confirmation ---- */
+  #done { display: none; text-align: center; padding: 40px 18px; }
+  #done .tick { font-size: 64px; color: #7a5c14; }
+  #done h2 { font-size: 30px; color: #7a5c14; margin: 10px 0; }
+  #done p { font-size: 21px; }
+  .footer { text-align: center; font-size: 15px; color: #8a7a4a; margin-top: 30px; }
+</style>
+</head>
+<body>
+
+<div id="main">
+  <div class="topbar">
+    <div class="brand">Raven &amp; Roses Cleaning Co.</div>
+    <div class="slogan">Smart Cleaning. Beautiful Results.</div>
+    <div class="pagetitle">Your Paperwork — Please Read &amp; Sign</div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="card">
+      <label class="big" for="empName">Your full name</label>
+      <input type="text" id="empName" autocomplete="name" placeholder="Type your full name">
+      <div class="hint">Please type your full name first, then read the documents below and sign at the end.</div>
+    </div>
+
+    <div class="card" id="aboutYou">
+      <h2 style="font-family:'Pirata One',serif;font-weight:400;font-size:26px;color:#7a5c14;margin:0 0 10px;">About you</h2>
+      <label class="big" for="empAddress">Your home address (for tax and your paystub)</label>
+      <textarea id="empAddress" rows="3" placeholder="Street address&#10;City, Province&#10;Postal code"></textarea>
+      <div class="hint">We need your home address for tax (your T4) and so it can go on your paystub.</div>
+
+      <label class="big" for="ecName" style="margin-top:20px;">Emergency contact — someone we can call if something happens while you're working</label>
+      <label class="small" for="ecName">Name</label>
+      <input type="text" id="ecName" autocomplete="off" placeholder="Their full name">
+      <label class="small" for="ecPhone">Phone</label>
+      <input type="tel" id="ecPhone" autocomplete="tel" placeholder="Their phone number">
+      <label class="small" for="ecRel">Relationship</label>
+      <input type="text" id="ecRel" autocomplete="off" placeholder="e.g. Mother, Partner, Friend">
+    </div>
+
+    <div class="card">
+      <p class="intro">Please read both documents below, then sign at the end. It only takes a few minutes. If anything is unclear, ask Krystal before you sign.</p>
+    </div>
+
+    <!-- ================= DOCUMENT 1 ================= -->
+    <div class="doc" id="doc1">
+      <div class="doctitle">
+        <div class="brand">Raven &amp; Roses Cleaning Co.</div>
+        <div class="slogan">Smart Cleaning. Beautiful Results.</div>
+        <h2>EMPLOYEE INFORMATION PACKAGE</h2>
+        <div class="sub">Job Description Package</div>
+      </div>
+      <p class="contact">Krystal McGee — Owner &nbsp;•&nbsp; RavenRosesCleaning@gmail.com &nbsp;•&nbsp; 778.268.4183 &nbsp;•&nbsp; https://raven-roses-cleaning.github.io/</p>
+
+      <h2>What This Package Is</h2>
+      <p>This is your full job description package. It sets out the job, your hours and pay, how mileage and breaks work, the supplies provided to you, and everything you are responsible for in this role.</p>
+      <p>Please read it all carefully before you sign at the end. By signing, you confirm you have read this package, you understand it, and you agree to do the job as described here. That way there is no confusion later about what the job includes.</p>
+
+      <h2>Welcome to the Team!</h2>
+      <p>Welcome, we are excited you are joining our team of wonderful cleaners! We promote having fun and maintaining a great life / work balance. We want all our team members to feel included and valued.</p>
+
+      <h2>About the Role</h2>
+      <p>You are a Cleaning Technician with Raven &amp; Roses Cleaning Co. You clean clients' homes to the Raven &amp; Roses standard, mostly working solo in people's homes, following the schedule, route and checklist given for each clean.</p>
+      <ul>
+        <li>Working solo: in people's homes, without check-ins during the job. You need to be comfortable working alone and trusted in a client's home.</li>
+        <li>Cats and dogs: in homes with pets. You need to be comfortable around cats and dogs.</li>
+        <li>Your own vehicle: to travel between clients' homes during your shift. See the Mileage section below for what travel is paid.</li>
+        <li>Energetic: and capable of constant movement while working. Cleaning is physical, active work for the whole shift.</li>
+      </ul>
+
+      <h2>Your Responsibilities — The Job Description</h2>
+      <p>By accepting this job, you agree to all of the following. These are part of the job, not optional extras:</p>
+      <ul>
+        <li>Clean every home to the Raven &amp; Roses standard, every time — the same quality whether it is your first clean of the day or your last.</li>
+        <li>Follow the route and schedule given to you for each day. Go to the clients you are scheduled for, in the order and at the times given.</li>
+        <li>Follow the checklist for each clean.</li>
+        <li>Be reliable and on time. Arrival at each residence on time is expected. Your time for a clean starts when you arrive at the client's home.</li>
+        <li>Follow directions as given, and work independently without needing check-ins during the job.</li>
+        <li>Be hardworking, presentable and positive in attitude — in clients' homes and in any contact with clients.</li>
+        <li>Manage your time well during each clean so the full checklist is finished in the time booked.</li>
+        <li>Sign in and out on our own Raven time-card app for every job, and accurately track your mileage and your hours. See Our Apps and Mileage below.</li>
+        <li>Refill your supplies daily and look after them as described in the Supplies section below.</li>
+        <li>Protect client confidentiality at all times — see Trust, Confidentiality &amp; Record Check below.</li>
+        <li>Tell Krystal promptly about any problem in a home — damage, something broken, a concern about a pet, or anything a client asks you to change.</li>
+      </ul>
+
+      <h2>If You Are Sick or Cannot Make a Shift</h2>
+      <p>If you are sick, or for any reason you cannot make a shift you are scheduled for, you must do all of the following:</p>
+      <ul>
+        <li>Inform the client, and make arrangements with the client — for example, agree a new time or day with them.</li>
+        <li>Inform Krystal as well, so she knows what has happened and what was arranged.</li>
+        <li>If you cannot make arrangements with the client, inform Krystal immediately so she can make other arrangements in time. Do not leave it.</li>
+      </ul>
+      <div class="callout">
+        <strong>Do not just not show up.</strong>
+        <p>A no-show — not turning up for a scheduled clean without informing the client and Krystal as above — is not acceptable in this job.</p>
+      </div>
+
+      <h2>Things You Are NOT Expected To Do</h2>
+      <p>The following services are not provided by Raven &amp; Roses Cleaning Co. and are not part of your job. If a client asks for any of these, do not do them — let Krystal know so she can respond to the client.</p>
+      <ul>
+        <li>Dishes</li>
+        <li>Laundry</li>
+        <li>Carpet Cleaning (recommendation can be provided)</li>
+        <li>Cleaning Flat screen TVs</li>
+        <li>Exterior Windows (recommendation can be provided)</li>
+        <li>Garbage removal — no garbage removal except small garbages in bathrooms</li>
+        <li>Fireplaces</li>
+        <li>Animal waste</li>
+        <li>Hazard cleans</li>
+        <li>Cast Iron</li>
+      </ul>
+      <p>In addition:</p>
+      <ul>
+        <li>While cleaning, items will not be put away by Raven &amp; Roses Cleaners unless otherwise agreed upon.</li>
+        <li>Raven &amp; Roses Cleaners will not move furniture.</li>
+      </ul>
+
+      <h2>Hours &amp; Shifts</h2>
+      <ul>
+        <li>Days: Part-time, Tuesday to Friday. No weekends are required.</li>
+        <li>Hours: 9am–12pm, or 9am–3pm / 9am–4pm — up to 24 hours per week.</li>
+        <li>Start of shift: Your time starts for the day when you arrive at the client's home for your cleaning shift.</li>
+        <li>Extra shifts: Opportunities to pick up extra shifts, such as move-out cleans on weekends, are available from time to time, but they are never a requirement.</li>
+      </ul>
+
+      <h2>Break Between Shifts — If It Is Wanted</h2>
+      <p>This break only applies if you work both a morning shift and an afternoon shift on the same day, and only if the break is wanted that day.</p>
+      <ul>
+        <li>When: There is a break between 12pm–1pm, between the morning and afternoon shifts.</li>
+        <li>Pay: The break is unpaid. You are not on the clock during it, and it is not paid time.</li>
+        <li>Your time: You are free to do as you choose during the break.</li>
+        <li>Back on time: You must arrive at your next job on time, ready to start, when the afternoon shift begins.</li>
+      </ul>
+      <p>If you work only a morning shift, or only an afternoon shift, on a day, this break does not apply to that day.</p>
+
+      <h2>Pay, Reviews, Vacation &amp; Payday</h2>
+      <table class="pay">
+        <tr><th></th><th>Rate</th></tr>
+        <tr><td>Training</td><td>$20 / hour</td></tr>
+        <tr><td>Starting pay</td><td>$23 / hour + $1 / hour supply refill</td></tr>
+      </table>
+      <ul>
+        <li>Pay reviews: Pay is reviewed for increases based on performance. Reviews take place after the 3-month probation period and at least once annually after that. No increase amount is stated in this package — any increase is based on performance.</li>
+        <li>Vacation: Vacation pay is 4% on every cheque.</li>
+        <li>Payday: Payday is bi-weekly on Fridays. Pay is sent by e-transfer on the morning of payday.</li>
+        <li>Tips: Tips from clients are yours to keep.</li>
+      </ul>
+
+      <h2>Mileage — Explained</h2>
+      <p>Mileage is paid monthly, at the reasonable allowance rate set by the Canada Revenue Agency (CRA). It is paid for travel between clients only. Please read this carefully, because not all driving in your day is paid mileage:</p>
+      <h3>Mileage IS paid for</h3>
+      <ul>
+        <li>Driving from one client's home to the next client's home on the same day — that is, travel between clients during your shift.</li>
+      </ul>
+      <h3>Mileage is NOT paid for</h3>
+      <ul>
+        <li>Driving from your own home to your first client of the day. That trip is not paid mileage.</li>
+        <li>Driving from your last client of the day back to your own home. That trip is not paid mileage.</li>
+        <li>Any personal driving, or driving during your unpaid break between shifts.</li>
+      </ul>
+      <div class="callout">
+        <strong>Example:</strong>
+        <p>You drive from home to Client A (not paid), clean, then drive to Client B (paid — between clients), clean, then drive home (not paid). Only the Client A to Client B distance is claimed as mileage for that day.</p>
+      </div>
+      <ul>
+        <li>Tracking: Record your between-clients mileage accurately for every day you work, and submit it as directed so it can be paid monthly. Only claim mileage that is actually between clients.</li>
+        <li>Submitting: Mileage must be submitted on the last day of the month.</li>
+        <li>Paid out: Mileage is paid out on the fifth (5th) of every month.</li>
+        <li>Hours: Accurately track your hours as well, using the time-card app for every job.</li>
+      </ul>
+
+      <h2>Supplies — All Provided For You</h2>
+      <p>All supplies are provided by Raven &amp; Roses Cleaning Co. Krystal provides the supplies and delivers them herself.</p>
+      <div class="callout">
+        <strong>You never buy supplies.</strong>
+        <p>Do not buy cleaning supplies, cloths or other work supplies for this job, and do not expect to be reimbursed for supplies you buy yourself — everything you need is provided.</p>
+      </div>
+      <ul>
+        <li>Refill daily: Refill your supplies every day, for that day's jobs, from the stock Krystal provides and delivers. Refilling is part of your daily work, before / between jobs as needed.</li>
+        <li>The $1 / hour: The $1 / hour supply refill amount in your pay is pay for doing this daily refilling task. It is not a reimbursement for supplies you bought — you do not buy supplies.</li>
+        <li>Running low: Tap / record in the app, or otherwise note as directed, anything that is running low, so Krystal can restock it in time. Do not wait until you have run out completely.</li>
+        <li>Keep them in order: Keep your supplies in good order — bottles, cloths and kit kept clean, complete and ready for the next job.</li>
+        <li>Cloths: When cloths are actually washed, wash them with the soap provided for that purpose. Do not use your own products in place of the supplies provided.</li>
+      </ul>
+
+      <h2>Leaving — Returning Your Supplies</h2>
+      <p>All cleaning supplies, tools and equipment provided by Raven &amp; Roses Cleaning Co. remain company property. They are provided for your work at no cost to you. You must return all items on your last day of work (or by the return date we agree), and we will check them against the issue checklist you signed when they were given to you.</p>
+      <p>Final pay will be paid in full as required by law upon leaving our company, in accordance with BC regulations.</p>
+      <p>If any company property is not returned, we will contact you to arrange its return. If it cannot be returned, we may ask you to reimburse the replacement cost separately. Any such request will be dealt with apart from your pay.</p>
+
+      <h2>Our Apps — Time Card &amp; Safety</h2>
+      <p>We use our own Raven &amp; Roses apps. You will sign in and out at each residence, for each job, on our own time-card app, for safety and for time tracking. Use it for every clean, and record your supplies taps and mileage / hours as directed in this package.</p>
+      <p>There is no GPS tracking.</p>
+
+      <h2>Uniform &amp; Appearance</h2>
+      <ul>
+        <li>An apron will be provided.</li>
+        <li>Crocs: Provide your own Crocs for footwear, and clean them at the end of each shift.</li>
+        <li>No ripped jeans.</li>
+        <li>No short shorts.</li>
+        <li>No profanities on clothing.</li>
+        <li>Hair tied up.</li>
+        <li>No overly loose-fitting clothing — it can knock items over while you clean.</li>
+      </ul>
+
+      <h2>Trust, Confidentiality &amp; Record Check</h2>
+      <p>You work alone in people's homes, with their keys, codes and personal things around you. Trust is a core part of this job.</p>
+      <ul>
+        <li>Confidentiality Agreement: You must sign the Confidentiality &amp; Non-Disclosure Agreement.</li>
+        <li>Criminal Record Check: You must provide a clean Criminal Record Check, completed after training and before working solo in clients' homes.</li>
+        <li>Protect client information: Protect all client information, including client addresses, home codes, keys, and any personal or private information you see or learn while working. Do not share it with anyone.</li>
+        <li>On leaving: On leaving Raven &amp; Roses, return or delete all client notes, keys, codes, photos and lists in your possession, as set out in the Confidentiality Agreement.</li>
+      </ul>
+
+      <h2>What We Offer</h2>
+      <ul>
+        <li>Paid training — all training is paid.</li>
+        <li>Opportunities to advance — for team members who grow with us.</li>
+        <li>Emphasis on safety and wellbeing — in every home and on every shift.</li>
+        <li>Keep your tips — tips from clients are yours.</li>
+        <li>Bonus when possible — when the business is able to offer one.</li>
+        <li>Supportive work environment — a workplace where you are supported in the job.</li>
+        <li>Supplies for your own home: — you may use the supplies provided to clean your own home only, not other people's houses.</li>
+      </ul>
+
+      <h2>Acknowledgement</h2>
+      <p>By signing below, I confirm that:</p>
+      <ul>
+        <li>I have received and read this full Employee Information Package — Job Description Package;</li>
+        <li>I understand the job, my responsibilities, my hours, pay, mileage, break, supplies and uniform as described in it; and</li>
+        <li>I agree to do the job as described in this package.</li>
+      </ul>
+      <p>If anything in this package is unclear, ask Krystal before signing — do not sign until you understand it.</p>
+      <p>This digital copy will be printed. Your digital signature on this copy is considered a legal signature for the printed paper document.</p>
+    </div>
+
+    <div class="divider">✦ &nbsp;✦ &nbsp;✦<span>SECOND DOCUMENT</span></div>
+
+    <!-- ================= DOCUMENT 2 ================= -->
+    <div class="doc" id="doc2">
+      <div class="doctitle">
+        <div class="brand">Raven &amp; Roses Cleaning Co.</div>
+        <div class="slogan">Smart Cleaning. Beautiful Results.</div>
+        <h2>EMPLOYEE CONFIDENTIALITY AND NON-DISCLOSURE AGREEMENT</h2>
+      </div>
+      <p class="contact">Krystal McGee — Owner &nbsp;•&nbsp; RavenRosesCleaning@gmail.com &nbsp;•&nbsp; 778.268.4183<br>https://raven-roses-cleaning.github.io/</p>
+
+      <p><strong>Prepared for:</strong> <span class="fillName">______________________</span></p>
+      <p><strong>Prepared by:</strong> Krystal McGee, Raven &amp; Roses Cleaning Co.</p>
+      <p><strong>Effective Date:</strong> <span class="fillDate">______________________</span></p>
+
+      <h2>The Parties</h2>
+      <p>This Employee Confidentiality and Non-Disclosure Agreement (the &ldquo;Agreement&rdquo;) is made between</p>
+      <p><span class="fillName">______________________</span> (the &ldquo;Employee&rdquo;), whose principal address is <span class="fillAddress">______________________</span>,</p>
+      <p>and Krystal McGee of Raven &amp; Roses Cleaning Co., Nanaimo, BC (the &ldquo;Company&rdquo;).</p>
+      <p>Place of work is clients&rsquo; homes in Nanaimo, BC, as scheduled.</p>
+
+      <h2>Ownership &amp; Rights</h2>
+      <p>The Company hereby represents and warrants that all information and data, whether technical or non-technical, concerning any matters relating to the Employee&rsquo;s services for the Company, the Company&rsquo;s business operations, clients, products, services, plans, and processes shall be deemed as confidential information (the &ldquo;Confidential Information&rdquo;) solely owned by the Company.</p>
+      <p>The Employee agrees to protect Confidential Information and not disclose to others any received Confidential Information from the Company about its Clients, including addresses, home codes, keys, personal / private information learned while working, any other confidential information that may not be mentioned here.</p>
+
+      <h2>Term &amp; Termination</h2>
+      <p>This Agreement shall commence on the Effective Date and shall continue past the termination of employment.</p>
+      <p>A breach of this Agreement may lead to discipline, up to and including termination, and the Company may seek its legal remedies.</p>
+      <p>On leaving the Company, the Employee must return any keys and delete all client notes, codes, and lists in their possession. Access to the employee app will be removed on leaving. Nothing from the app or a job is to be kept saved on their phone, and any photos taken for cleaning purposes must be deleted on leaving. All supplies provided by the Company must be returned on leaving.</p>
+
+      <h2>Confidentiality</h2>
+      <p>Any notes, reports, or documents regarding the services provided shall not be disclosed to any third party in any manner whatsoever.</p>
+      <p>Client information in the app: You may open the app to check information you need for a job. Do not copy, photograph, screenshot, or share any client information from the app. On leaving, you must return everything, and your access to the app will be removed.</p>
+
+      <h2>Photos &amp; Marketing</h2>
+      <p>With the Company&rsquo;s permission, you may take before-and-after photos for cleaning purposes only, so the Company can market your work within Raven &amp; Roses Cleaning Co. — for example, to clients who specifically request you. The Company will do that marketing for you; do not use these photos to market yourself outside the Company. Any photo taken in a client&rsquo;s home during company time is the sole and exclusive legal property of Raven &amp; Roses Cleaning Co., and all right, title and interest in and to any such photo shall vest solely and exclusively in the Company. Such photos are not yours to keep, share, or use elsewhere. On leaving, any such photos must be deleted, as set out under Term &amp; Termination.</p>
+
+      <h2>General Provisions</h2>
+      <p>This Agreement shall be construed in accordance with the laws of British Columbia, Canada.</p>
+
+      <h2>Signature</h2>
+      <p>IN WITNESS WHEREOF, each of the Parties has executed this Employee Confidentiality and Non-Disclosure Agreement as of the day and year set forth above.</p>
+      <p>This digital copy will be printed. Your digital signature on this copy is considered a legal signature for the printed paper document.</p>
+      <div class="sigblock" id="employerSigBlock">
+        <p class="sigrole">Employer</p>
+        <img id="employerSigImg" alt="Krystal McGee's signature" style="display:none;">
+        <p><strong>Krystal McGee, Owner</strong><br><span class="fillDate">______________________</span></p>
+      </div>
+    </div>
+
+    <!-- ================= SIGNATURE ================= -->
+    <div class="card" id="signCard">
+      <h2 style="font-family:'Pirata One',serif;font-weight:400;font-size:26px;color:#7a5c14;margin:0 0 10px;">Sign Here</h2>
+      <p>By signing below, I confirm I have read both documents above, I understand them, and I agree to them.</p>
+      <p>Draw your signature in the box with your finger or mouse:</p>
+      <div class="sigbox">
+        <canvas id="sigCanvas"></canvas>
+        <div class="siglabel">Sign inside the box</div>
+      </div>
+      <button class="btn btn-plain" type="button" id="clearSig">Clear — sign again</button>
+      <p class="sigmeta">Signed by: <strong id="printName">—</strong></p>
+      <p class="sigmeta">Date: <strong id="printDate">—</strong></p>
+      <div class="msg warn" id="warnMsg"></div>
+      <div class="msg err" id="errMsg"></div>
+      <button class="btn btn-gold" type="button" id="sendBtn">Sign &amp; Send to Krystal</button>
+      <p class="hint" style="text-align:center;">One tap sends your signed paperwork straight to Krystal. No account or code needed.</p>
+    </div>
+
+    <p class="footer">Raven &amp; Roses Cleaning Co. &nbsp;•&nbsp; RavenRosesCleaning@gmail.com &nbsp;•&nbsp; 778.268.4183</p>
+  </div>
+</div>
+
+<div id="done">
+  <div class="tick">✓</div>
+  <h2>Thank you!</h2>
+  <p>Your signed paperwork has been sent to Krystal.</p>
+  <p>Signed by <strong id="doneName"></strong><br>on <strong id="doneDate"></strong></p>
+  <p>Krystal will be in touch soon.</p>
+</div>
+
+<script>
+var BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec";
+var DOC_NAMES = ["Employee Information Package", "Confidentiality Agreement"];
+
+// ---- Name + date ----
+var nameInput = document.getElementById("empName");
+var printName = document.getElementById("printName");
+var printDate = document.getElementById("printDate");
+var today = new Date();
+function isoDate(d) {
+  var m = d.getMonth() + 1, day = d.getDate();
+  return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+}
+function friendlyDate(d) {
+  return d.toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+}
+var DATE_ISO = isoDate(today);
+var DATE_FRIENDLY = friendlyDate(today);
+printDate.textContent = DATE_FRIENDLY;
+document.querySelectorAll(".fillDate").forEach(function (el) { el.textContent = DATE_FRIENDLY; });
+function syncName() {
+  var v = nameInput.value.trim();
+  printName.textContent = v || "—";
+  document.querySelectorAll(".fillName").forEach(function (el) { el.textContent = v || "______________________"; });
+}
+nameInput.addEventListener("input", syncName);
+// Pre-fill from ?name= if present
+try {
+  var q = new URLSearchParams(window.location.search).get("name");
+  if (q) nameInput.value = q;
+} catch (e) {}
+syncName();
+
+// ---- Home address + emergency contact ("About you") ----
+var addressInput = document.getElementById("empAddress");
+var ecNameInput = document.getElementById("ecName");
+var ecPhoneInput = document.getElementById("ecPhone");
+var ecRelInput = document.getElementById("ecRel");
+function syncAddress() {
+  var v = addressInput.value.trim();
+  var oneLine = v.split("\n").map(function (s) { return s.trim(); }).filter(Boolean).join(", ");
+  document.querySelectorAll(".fillAddress").forEach(function (el) { el.textContent = oneLine || "______________________"; });
+}
+addressInput.addEventListener("input", syncAddress);
+syncAddress();
+
+// ---- Reads use JSONP (doGet + callback=), the same pattern the employee
+// app uses: Apps Script web apps send no CORS headers, so a normal fetch
+// cannot read the reply. This only reads Krystal's stored signature.
+function backendJsonp(action, params) {
+  return new Promise(function (resolve) {
+    var cb = "ravenCb" + Date.now() + Math.floor(Math.random() * 10000);
+    var q = Object.keys(params || {}).map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
+    var url = BACKEND_URL + "?action=" + encodeURIComponent(action) + "&callback=" + cb + (q ? "&" + q : "");
+    var s = document.createElement("script");
+    var done = false;
+    window[cb] = function (data) {
+      if (done) return; done = true;
+      delete window[cb]; s.remove();
+      resolve(data || { ok: false, error: "Empty reply from backend" });
+    };
+    s.onerror = function () {
+      if (done) return; done = true;
+      delete window[cb]; s.remove();
+      resolve({ ok: false, error: "Could not reach the backend" });
+    };
+    s.src = url;
+    document.body.appendChild(s);
+    setTimeout(function () {
+      if (!done) { done = true; try { delete window[cb]; } catch (e) {} s.remove(); resolve({ ok: false, error: "Backend timed out" }); }
+    }, 20000);
+  });
+}
+
+// ---- Employer's signature, already on the agreement ----
+// Krystal's signature is saved in the backend (Settings). If one is saved,
+// show it in the employer signature block; if not, the printed name and
+// date are already there and the page carries on without it.
+function loadEmployerSignature() {
+  backendJsonp("getEmployerSignature", {}).then(function (d) {
+    if (d && d.ok && d.signature) {
+      var img = document.getElementById("employerSigImg");
+      img.onerror = function () { img.style.display = "none"; };
+      img.src = d.signature;
+      img.style.display = "block";
+    }
+  });
+}
+loadEmployerSignature();
+
+// ---- Signature canvas ----
+var canvas = document.getElementById("sigCanvas");
+var ctx = canvas.getContext("2d");
+var drawing = false, hasDrawn = false;
+function sizeCanvas() {
+  var r = canvas.getBoundingClientRect();
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.round(r.width * dpr));
+  canvas.height = Math.round(180 * dpr);
+  ctx.scale(dpr, dpr);
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#1d1d23";
+}
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hasDrawn = false;
+}
+sizeCanvas();
+window.addEventListener("resize", function () { sizeCanvas(); clearCanvas(); });
+function pos(e) {
+  var r = canvas.getBoundingClientRect();
+  var t = e.touches ? e.touches[0] : e;
+  return { x: t.clientX - r.left, y: t.clientY - r.top };
+}
+function startDraw(e) {
+  e.preventDefault();
+  drawing = true;
+  var p = pos(e);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+}
+function moveDraw(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  var p = pos(e);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+  hasDrawn = true;
+}
+function endDraw(e) {
+  if (drawing) { e.preventDefault(); drawing = false; }
+}
+canvas.addEventListener("mousedown", startDraw);
+canvas.addEventListener("mousemove", moveDraw);
+canvas.addEventListener("mouseup", endDraw);
+canvas.addEventListener("mouseleave", endDraw);
+canvas.addEventListener("touchstart", startDraw, { passive: false });
+canvas.addEventListener("touchmove", moveDraw, { passive: false });
+canvas.addEventListener("touchend", endDraw, { passive: false });
+canvas.addEventListener("touchcancel", endDraw, { passive: false });
+document.getElementById("clearSig").addEventListener("click", function () {
+  clearCanvas();
+  hideMsg("warnMsg"); hideMsg("errMsg");
+});
+
+// ---- Messages ----
+function showMsg(id, text) {
+  var el = document.getElementById(id);
+  el.textContent = text;
+  el.style.display = "block";
+}
+function hideMsg(id) {
+  var el = document.getElementById(id);
+  el.textContent = "";
+  el.style.display = "none";
+}
+
+// ---- Send ----
+var sendBtn = document.getElementById("sendBtn");
+var sending = false;
+sendBtn.addEventListener("click", function () {
+  if (sending) return;
+  hideMsg("warnMsg"); hideMsg("errMsg");
+  var name = nameInput.value.trim();
+  var address = addressInput.value.trim();
+  var ecName = ecNameInput.value.trim();
+  var ecPhone = ecPhoneInput.value.trim();
+  var ecRel = ecRelInput.value.trim();
+  var missing = [];
+  var firstMissing = null;
+  if (!name) { missing.push("your full name"); firstMissing = firstMissing || nameInput; }
+  if (!address) { missing.push("your home address"); firstMissing = firstMissing || addressInput; }
+  if (!ecName) { missing.push("your emergency contact's name"); firstMissing = firstMissing || ecNameInput; }
+  if (!ecPhone) { missing.push("your emergency contact's phone number"); firstMissing = firstMissing || ecPhoneInput; }
+  if (!ecRel) { missing.push("your emergency contact's relationship to you"); firstMissing = firstMissing || ecRelInput; }
+  if (missing.length) {
+    showMsg("warnMsg", "Please fill in: " + missing.join(", ") + ".");
+    if (firstMissing) firstMissing.focus();
+    return;
+  }
+  if (!hasDrawn) {
+    showMsg("warnMsg", "Please sign in the box first — draw your signature with your finger or mouse.");
+    return;
+  }
+  sending = true;
+  sendBtn.disabled = true;
+  sendBtn.textContent = "Sending…";
+  var signature = canvas.toDataURL("image/png");
+  var payload = {
+    action: "signPackage",
+    name: name,
+    signature: signature,
+    date: DATE_ISO,
+    documents: DOC_NAMES,
+    address: address,
+    emergencyContact: { name: ecName, phone: ecPhone, relationship: ecRel }
+  };
+  fetch(BACKEND_URL, {
+    method: "POST", mode: "no-cors",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(payload)
+  }).then(function () {
+    // no-cors: the reply cannot be read, so a resolved request is a send.
+    document.getElementById("main").style.display = "none";
+    document.getElementById("doneName").textContent = name;
+    document.getElementById("doneDate").textContent = DATE_FRIENDLY;
+    document.getElementById("done").style.display = "block";
+    window.scrollTo(0, 0);
+  }).catch(function () {
+    sending = false;
+    sendBtn.disabled = false;
+    sendBtn.textContent = "Sign & Send to Krystal";
+    showMsg("errMsg", "Couldn't send — check your connection and tap Send again.");
+  });
+});
+</script>
+</body>
+</html>
