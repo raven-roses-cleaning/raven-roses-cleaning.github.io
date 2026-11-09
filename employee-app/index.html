@@ -140,7 +140,6 @@
 <option>Clock in / out</option>
 <option>⏱ Adjust time — request a correction</option>
 <option>⚠️ Job issue note</option>
-<option>✅ Home Completion List — tick off before you clock out</option>
 <option>🗓️ Time off / sick day request</option>
 <option>🚗 Mileage tracker</option>
 <option>🏠 House instructions</option>
@@ -203,13 +202,6 @@
   <textarea id="issueNote" rows="3" placeholder="e.g. Vacuum stopped working, could not vacuum living room"></textarea>
 </div>
 
-<div class="card" id="checklistCard">
-  <h2>✅ Home Completion List — tick off before you clock out</h2>
-  <p class="small"><strong>Leave your filled out card at every residence.</strong> Tick each item as you finish it, for the job you picked above. Dusting is all horizontal surfaces. This list is the Raven &amp; Roses Home Completion List — the same one on the paper card.</p>
-  <p id="checklistProgress" class="small"></p>
-  <div id="checklistList"></div>
-  <p class="small">If you clock out without ticking everything off, the app will remind you once — no penalty. Krystal sees the ticked list with the job.</p>
-</div>
 
 <div class="card" id="timeOffCard">
   <h2>🗓️ Time off / sick day request</h2>
@@ -510,7 +502,7 @@ function renderPending(){
 
 function fmt(t){ return new Date(t).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
 function hours(a,b){ return ((b-a)/3600000); }
-function save(){ localStorage.setItem(KEY, JSON.stringify(entries)); render(); populateJobSelects(); renderMileage(); renderHouses(); renderMonthlyFocus(); renderChecklist(); }
+function save(){ localStorage.setItem(KEY, JSON.stringify(entries)); render(); populateJobSelects(); renderMileage(); renderHouses(); renderMonthlyFocus(); }
 
 $("inBtn").onclick = () => {
   const name = $("emp").value.trim(), job = currentJobName();
@@ -522,21 +514,12 @@ $("inBtn").onclick = () => {
   $("status").innerHTML = "Clocked in at <b>" + fmt(current.in) + "</b> for " + job + ".";
   $("inBtn").disabled = true; $("outBtn").disabled = false;
   backendPost({ action: "clockin", date: current.date, job: job, in: current.in, training: current.training });
-  renderChecklist();
 };
 $("outBtn").onclick = () => {
   if (!current) return;
   current.out = Date.now();
   current.refilled = refilled; current.low = [...low]; current.stocked = stocked; current.cloth = cloth; current.issue = $("issueNote").value.trim(); $("issueNote").value = "";
   current.hours = Math.round(hours(current.in, current.out) * 100) / 100;
-  // Home Completion List: one gentle reminder if it is not fully ticked
-  // off for this job — no penalty, clock-out still goes through.
-  const ticks = checklistFor();
-  current.checklistDone = ticks.length + "/" + CHECKLIST_TOTAL;
-  current.checklistItems = ticks.join(",");
-  if (ticks.length < CHECKLIST_TOTAL) {
-    alert("Gentle reminder: the Home Completion List is not fully ticked off for this job (" + ticks.length + " of " + CHECKLIST_TOTAL + "). You can still clock out — no penalty — but please finish the list if you can.");
-  }
   entries.push(current);
   const doneEntry = current;
   $("status").innerHTML = "Clocked out at <b>" + fmt(current.out) + "</b> — " + current.hours.toFixed(2) + " hours.";
@@ -544,9 +527,7 @@ $("outBtn").onclick = () => {
   save();
   backendPost({ action: "clockout", date: doneEntry.date, job: doneEntry.job, in: doneEntry.in, out: doneEntry.out,
     hours: doneEntry.hours, training: doneEntry.training, issue: doneEntry.issue, refilled: doneEntry.refilled,
-    low: doneEntry.low, stocked: doneEntry.stocked, cloth: doneEntry.cloth,
-    checklistDone: doneEntry.checklistDone, checklistItems: doneEntry.checklistItems });
-  renderChecklist();
+    low: doneEntry.low, stocked: doneEntry.stocked, cloth: doneEntry.cloth });
 };
 $("sendBtn").onclick = () => {
   const msg = navigator.onLine
@@ -1592,8 +1573,6 @@ function normEntry(r) {
     low: r.LowItems ? String(r.LowItems).split(";").map(function (x) { return x.trim(); }).filter(Boolean) : (r.low || []),
     stocked: r.Stocked === "Yes" || r.stocked === true,
     cloth: r.Cloths === "Yes" || r.cloth === true,
-    checklistDone: r.ChecklistDone || r.checklistDone || "",
-    checklistItems: r.ChecklistItems || r.checklistItems || "",
     adjustmentApproved: r.AdjustmentApproved === "Yes" || r.adjustmentApproved === true,
     adjustmentReason: r.adjustmentReason || ""
   };
@@ -1866,71 +1845,6 @@ function populateClockInJobs() {
 }
 
 // ============================================================================
-// HOME COMPLETION LIST — the paper card, as a tap checklist.
-// Items are copied exactly from raven-home-completion-list.docx
-// ("Leave your filled out card at every residence").
-// Ticks are saved per job + date, travel with the entry to the manager
-// app, and sync to the backend when it is connected.
-// ============================================================================
-const CHECKLIST = {
-  note: "DUSTING IS ALL HORIZONTAL SURFACES.",
-  sections: [
-    { title: "Entrances", items: ["Fix shoes", "Wipe door handles"] },
-    { title: "Living room", items: ["Fold blankets", "Fix pillows", "Vacuum couch if pet hair"] },
-    { title: "Kitchen", items: ["Fold and hang towels", "Organize cloths/soaps around sink", "Fold cloths", "Clean inside microwave"] },
-    { title: "Bedroom", items: ["Make bed if unmade"] },
-    { title: "Bathroom", items: ["Fold toilet paper", "Fold/hang towels", "Clean soap dish", "Organize counter top", "Empty garbage", "Dry all showers/tubs"] }
-  ]
-};
-const CHECKLIST_TOTAL = CHECKLIST.sections.reduce(function (s, sec) { return s + sec.items.length; }, 0);
-const CHECKKEY = "ravenChecklistV1";
-let checklistTicks = JSON.parse(localStorage.getItem(CHECKKEY) || "{}");
-function checklistKey() { return $("workdate").value + "|" + currentJobName(); }
-function checklistFor() { return checklistTicks[checklistKey()] || []; }
-function saveChecklistLocal() { localStorage.setItem(CHECKKEY, JSON.stringify(checklistTicks)); }
-function checklistSummary() {
-  var done = checklistFor().length;
-  return done + "/" + CHECKLIST_TOTAL;
-}
-function renderChecklist() {
-  var list = $("checklistList"); if (!list) return;
-  var job = currentJobName();
-  if (!job) {
-    $("checklistProgress").textContent = "Pick a job above first — the tick-off is saved for that job, today.";
-    list.innerHTML = "";
-    return;
-  }
-  var done = checklistFor();
-  $("checklistProgress").innerHTML = "For <strong>" + esc(job) + "</strong>, " + $("workdate").value +
-    " — <strong>" + done.length + " of " + CHECKLIST_TOTAL + " ticked off</strong>. " + CHECKLIST.note;
-  var html = "";
-  CHECKLIST.sections.forEach(function (sec, si) {
-    html += "<h3 style='font-size:1rem'>" + esc(sec.title) + "</h3>";
-    sec.items.forEach(function (item, ii) {
-      var id = si + "-" + ii;
-      var on = done.indexOf(id) >= 0;
-      html += "<button class='check-item" + (on ? " on" : "") + "' onclick='toggleChecklistItem(\"" + id + "\")'><span class='tick'>" + (on ? "✓" : "○") + "</span>" + esc(item) + "</button>";
-    });
-  });
-  list.innerHTML = html;
-}
-window.toggleChecklistItem = function (id) {
-  var job = currentJobName();
-  if (!job) { alert("Pick a job above first — the tick-off is saved for that job, today."); return; }
-  var key = checklistKey();
-  var done = checklistTicks[key] || (checklistTicks[key] = []);
-  var i = done.indexOf(id);
-  if (i >= 0) done.splice(i, 1); else done.push(id);
-  saveChecklistLocal();
-  renderChecklist();
-  // Sync the current tick state to the backend (attaches to the open entry).
-  backendPost({ action: "checklist", date: $("workdate").value, job: job,
-    checklistDone: checklistSummary(), checklistItems: done.join(",") });
-};
-$("job").addEventListener("change", renderChecklist);
-$("workdate").addEventListener("change", renderChecklist);
-
-// ============================================================================
 // HOUSE CODES — blurred by default, tap to reveal at the door, re-blur
 // after 30 seconds or when another house is picked. The address stays
 // visible and copyable in the mileage list so it can be opened in a map.
@@ -1964,7 +1878,7 @@ function renderHouseCodes(codes) {
 function render(){
   const d = dayEntries();
   $("entries").innerHTML = d.length ? "<table><tr><th>Job</th><th>In–Out</th><th>Hours</th><th>Supplies</th><th></th></tr>" +
-    d.map(e => { const gi = entries.indexOf(e); return "<tr><td>" + e.job + (e.training ? " <span class='small'>(training)</span>" : "") + (e.adjustmentApproved ? " <span class='small'>(time adjusted, approved)</span>" : "") + (e.issue ? "<br><span class='small'>Issue: " + e.issue + "</span>" : "") + (e.checklistDone ? "<br><span class='small'>Checklist: " + e.checklistDone + "</span>" : "") + "</td><td>" + fmt(e.in) + "–" + (e.out?fmt(e.out):"") + "</td><td>" + (e.hours||0).toFixed(2) + "</td><td>" + (e.refilled?"refilled":"—") + (e.low&&e.low.length?" · low: "+e.low.join(", "):"") + "</td><td><button class='tap' onclick='requestAdjust(" + gi + ")'>Adjust</button></td></tr>"; }).join("") + "</table>"
+    d.map(e => { const gi = entries.indexOf(e); return "<tr><td>" + e.job + (e.training ? " <span class='small'>(training)</span>" : "") + (e.adjustmentApproved ? " <span class='small'>(time adjusted, approved)</span>" : "") + (e.issue ? "<br><span class='small'>Issue: " + e.issue + "</span>" : "") + "</td><td>" + fmt(e.in) + "–" + (e.out?fmt(e.out):"") + "</td><td>" + (e.hours||0).toFixed(2) + "</td><td>" + (e.refilled?"refilled":"—") + (e.low&&e.low.length?" · low: "+e.low.join(", "):"") + "</td><td><button class='tap' onclick='requestAdjust(" + gi + ")'>Adjust</button></td></tr>"; }).join("") + "</table>"
     : "<p class='small'>No entries yet for this date. Clock in above to try it, or use “Adjust time” above if you forgot to clock in entirely.</p>";
 }
 initLoginGate();
@@ -1978,7 +1892,6 @@ $("emp").addEventListener("input", renderMileageSubmissions);
 renderHouses();
 renderMonthlyFocus();
 renderGuide();
-renderChecklist();
 </script>
 </body>
 </html>
