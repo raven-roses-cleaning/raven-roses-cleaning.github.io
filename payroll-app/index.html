@@ -725,8 +725,13 @@ function calculate(){
   const empCpp = r2(cpp + cpp2);
   const empEi = r2(ei * 1.4);
   const remitTotal = r2(incomeTax + cpp + cpp2 + ei + empCpp + empEi);
+  // Home address for the paystub (from the Employees tab via buildData).
+  // Blank when no address is stored — paystubText leaves the line out.
+  var empRec = employees.find(function (x) { return samePerson(x.Name, currentEmployee()); });
+  var empAddress = empRec ? String(empRec.address || empRec.Address || "").trim() : "";
   lastCalc = {
     emp: currentEmployee() || "(name not entered)",
+    address: empAddress,
     ppStart: $("ppStart").value, ppEnd: $("ppEnd").value, payDate: $("payDate").value,
     freq: periods, hours, rate, ot15, ot20, statPay: statPayIn, sickHours, refillHours, vacPct, hoursPay: r2(hoursPay), refillPay: r2(refillPay), vacPay: r2(vacPay),
     gross, cpp, cpp2, ei, fed, bc, incomeTax, otherDed, mileKm, craRate: isNaN(craRate) ? null : craRate, milePay,
@@ -757,6 +762,7 @@ function paystubText(c) {
   return [
     "Raven & Roses Cleaning Co. — PAYSTUB (DRAFT — verify against CRA PDOC before paying)",
     "Employee: " + c.emp,
+    (c.address ? "Address: " + c.address : ""),
     "Pay period: " + (c.ppStart || "?") + " to " + (c.ppEnd || "?") + "  |  Pay date: " + (c.payDate || "?"),
     "",
     "Hours: " + c.hours.toFixed(2) + " regular × $" + c.rate.toFixed(2) + (c.ot15 ? " + " + c.ot15.toFixed(2) + " hrs overtime at 1.5×" : "") + (c.ot20 ? " + " + c.ot20.toFixed(2) + " hrs overtime at 2×" : "") + (c.sickHours ? " + " + c.sickHours.toFixed(2) + " hrs paid sick" : "") + (c.statPay ? " + stat holiday pay " + money(c.statPay) : "") + " = " + money(c.hoursPay),
