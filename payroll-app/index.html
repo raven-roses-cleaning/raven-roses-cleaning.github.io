@@ -255,6 +255,17 @@
  NOT included here: BC Employer Health Tax (check if BC remuneration exceeds $500,000 — most small employers are below it), WorkSafeBC premiums (separate, by classification), and GST/HST (not a payroll deduction).
 </pre>
 
+<div id="dueModal">
+  <div class="modal-card">
+    <h3 id="dueModalTitle"></h3>
+    <div id="dueModalBody"></div>
+    <div id="dueModalDoneWrap" style="display:none;margin-top:10px">
+      <button id="dueModalDoneBtn" class="sendbtn">Mark as done</button>
+    </div>
+    <button id="dueModalCloseBtn" class="secondary" style="margin-top:10px">Close</button>
+  </div>
+</div>
+
 <script>
 // ============================================================================
 // Raven & Roses — Payroll (Krystal only)
@@ -1119,49 +1130,69 @@ let dueDone = JSON.parse(localStorage.getItem(DUE_DONE_KEY) || "{}");
 function saveDueDone(){ localStorage.setItem(DUE_DONE_KEY, JSON.stringify(dueDone)); }
 const DUE_GUIDES = {
   payday: { title: "Payday — how to run a pay run", steps: [
-    "Go to section 1, “This pay run”, on this page.",
-    "Pick the employee, then check the pay period dates are right (they default to the 14 days ending this Friday).",
-    "Tap “Pull this employee + period into the pay run” to fill the hours and mileage from the time-card backend.",
-    "Check the hours, the rate and the vacation pay, then tap “Calculate” and look the numbers over.",
-    "Tap “Save this pay run”, then send the paystub from “Email paystubs for this pay period”.",
-    "Pay the employee by e-transfer on the morning of payday (Friday). That is the payday — the app does not send the money for you."
+    "Open this payroll app and sign in with your manager code.",
+    "Go to section 1, “This pay run”.",
+    "Pick the employee from the dropdown. Check the pay period dates — they default to the 14 days ending this Friday.",
+    "Tap “Pull this employee + period into the pay run” — this fills the hours and kilometres from the time-card backend.",
+    "Check the hours, the hourly rate, the vacation pay (4%) and any sick hours. If the employee did training hours this period, run those as a separate pay run at $20/hr — the app warns you about this.",
+    "Tap “Calculate” and read the numbers over: gross, CPP, EI, tax, net.",
+    "Tap “Save this pay run”.",
+    "Go to “Email paystubs for this pay period” and send the paystub.",
+    "Pay the employee by e-transfer on the morning of payday (Friday). The app does not send the money — you do that from your bank."
   ]},
   remit: { title: "CRA remittance — how to pay it", steps: [
     "Go to “Monthly CRA remittance report” on this page and pick the month you are paying for.",
-    "The report shows the total to remit. Pay that total to CRA — either in CRA My Business Account, or at your bank as “CRA Payroll (PD7A)”, using your 15-digit payroll (RP) account number.",
-    "It is due on the 15th of the month after the pay month (regular / new remitter — confirm your remitter type with CRA).",
-    "After you pay, come back here, enter the date paid, the amount and the confirmation number, and tap “Mark this month as remitted”. That stops the app warning you about it twice."
+    "The report shows the total to remit — that is the income tax, employee CPP, employer CPP, and EI all added together.",
+    "Pay that total to CRA one of two ways. (a) Sign in to CRA My Business Account at canada.ca, go to payroll, and pay there. (b) At your bank — add a bill payee called “CRA Payroll” (or “Receiver General — Payroll”), use your 15-digit payroll (RP) account number as the account number, and pay the total.",
+    "It is due on the 15th of the month after the pay month (regular / new remitter — confirm your remitter type with CRA, because bigger remitters pay on a faster schedule).",
+    "After you pay, come back here, enter the date paid, the amount, and the confirmation number from CRA or your bank, and tap “Mark this month as remitted”. That stops the app warning you about it twice."
   ]},
   bn: { title: "Business number — where to find it", steps: [
-    "Your business number is the 9-digit number CRA gave your business. Find it on any CRA letter or notice, or in CRA My Business Account.",
+    "Your business number is the 9-digit number CRA gave your business.",
+    "Find it on any CRA letter or notice, or sign in to CRA My Business Account at canada.ca — it shows at the top of your account.",
     "If you have a GST/HST number, the first 9 digits of it are the same business number.",
     "Enter it in “Monthly CRA remittance report”, in the “CRA business number” box, then tap “Save business number + RP account”.",
     "If you cannot find it anywhere, call CRA business enquiries at 1-800-959-5525 and they will confirm it."
   ]},
   rp: { title: "Payroll (RP) account — how to get one", steps: [
     "Your old payroll account was closed, so it must be reopened or a new one opened before you can remit anything to CRA.",
-    "Go to CRA My Business Account and open a payroll (RP) account, or call CRA business enquiries at 1-800-959-5525 and ask them to reopen it.",
-    "The payroll account number is 15 digits: your 9-digit business number, then “RP”, then a 4-digit reference number.",
+    "Sign in to CRA My Business Account at canada.ca, go to your payroll account, and ask to open a payroll (RP) program account — or call CRA business enquiries at 1-800-959-5525 and ask them to reopen it.",
+    "The payroll account number is 15 digits: your 9-digit business number, then “RP”, then a 4-digit reference number (for example 123456789RP0001).",
     "Enter it in “Monthly CRA remittance report”, in the “Payroll (RP) account number” box, then tap “Save business number + RP account”.",
     "Do not try to remit to CRA until this is in place — the payment needs that number."
   ]},
   crate: { title: "CRA mileage rate — where to find it", steps: [
-    "The CRA automobile allowance rate is the per-kilometre amount you pay an employee for driving between clients. Check the current rate on the CRA website (search “CRA automobile allowance rates”) or ask White Rapids Books.",
-    "Enter the rate in section 1, “This pay run”, in the “CRA mileage rate ($/km)” box. It is saved when you save a pay run.",
+    "The CRA rate for 2026 in BC is $0.73 per kilometre for the first 5,000 business kilometres each employee drives in the year, and $0.67 per kilometre after that.",
+    "Check it yourself on the CRA website: go to canada.ca, search “automobile allowance rates”, and open the CRA page — it lists the current year’s rates. The rate changes most years, so check it again each January.",
+    "Enter the rate in section 1, “This pay run”, in the “CRA mileage rate ($/km)” box. Use $0.73 for now, unless an employee has already passed 5,000 km this year — then the extra kilometres are $0.67.",
     "Mileage is paid to the employee and is not part of the CRA remittance — the app keeps it separate for you."
   ]},
   verify: { title: "First pay run check — how to verify it", steps: [
-    "Before you pay anyone from this app, check the first pay run against CRA’s Payroll Deductions Online Calculator (PDOC) — search “CRA PDOC” and enter the same pay period, gross pay and TD1 amounts, then compare the tax, CPP and EI it gives you with what this app calculated.",
+    "Run one pay run in this app first, but do not pay the employee yet.",
+    "Go to the CRA Payroll Deductions Online Calculator (PDOC): go to canada.ca and search “PDOC”, then open the calculator.",
+    "Enter the same details you used in the app — the pay period, the gross pay, how often you pay (bi-weekly), the province (BC), and the TD1 claim amounts.",
+    "Compare what PDOC gives you with what this app calculated: income tax, CPP, and EI should match. If they do not match, do not pay from this app until it is fixed.",
     "Then ask White Rapids Books to look the run over and confirm it before you pay.",
-    "If anything does not match, do not pay from this app until it is fixed.",
     "When the check is done and confirmed, tap “Mark as done” below and this item leaves the list."
   ], markDone: "verify" },
-  td1: { title: "TD1 forms — how to collect them", steps: [
-    "Before an employee’s first paycheque, give them a federal TD1 form and a BC TD1 form to fill in and sign. The forms are on the CRA website (search “CRA TD1”).",
-    "Enter the total claim amount from each signed form in section 3, “TD1 claims”, on this page — the federal amount and the BC amount. The basic amounts are already filled in as the default.",
+  td1: { title: "TD1 forms — how to get them and fill them in", steps: [
+    "You need two forms for each employee: the federal TD1 (“Personal Tax Credits Return”) and the BC TD1BC (“British Columbia Personal Tax Credits Return”).",
+    "Get them from the CRA website: go to canada.ca, search “TD1”, and open the CRA forms page — both forms are there as fillable PDFs you can print. Search “TD1BC” for the BC one.",
+    "Give each form to the employee to fill in and sign before their first paycheque. The basic personal amount is already filled in on the form — they only change it if they claim more (for example tuition or disability).",
+    "Enter the total claim amount from each signed form in section 3, “TD1 claims”, on this page — the federal amount in the federal box, the BC amount in the BC box.",
     "Keep the signed paper TD1 forms in the locked box in your office, with the other employee paperwork. Do not put a SIN in this app.",
     "When every employee’s signed TD1s are on file, tap “Mark as done” below."
-  ], markDone: "td1" }
+  ], markDone: "td1" },
+  t4: { title: "T4 slips — what to give the bookkeeper, and how to do it yourself", steps: [
+    "There are two ways to get T4s done. Either way, the numbers come from this app’s “Year-end totals — for T4” section.",
+    "IF WHITE RAPIDS BOOKS DOES IT: give them (1) the year-end totals from this app for each employee — gross, CPP, CPP2, EI, income tax; (2) each employee’s SIN, full name, and home address; (3) your business number and your payroll (RP) account number. They prepare the T4 slips and the T4 Summary and file them with CRA for you. They (or you) give each employee their copy of their T4.",
+    "IF YOU DO IT YOURSELF: use CRA Web Forms — it is free, it handles up to 100 slips, and it makes the T4 Summary for you. Go to canada.ca and search “Web Forms” (under “File information returns electronically”).",
+    "Sign in with CRA My Business Account. If you do not have that, you can sign in with your 15-digit payroll (RP) account number and a web access code — get one from that same CRA page, or by calling 1-800-959-5525.",
+    "Create one T4 slip for each employee. For each one you need the employee’s SIN, full name, and home address, plus the numbers from this app’s “Year-end totals — for T4” section: gross pay goes in Box 14, CPP in Box 16, EI in Box 18, income tax in Box 22.",
+    "Web Forms adds everything up and makes the T4 Summary. Check the totals against this app, then submit.",
+    "Print each employee’s T4 slip from Web Forms and give it to them.",
+    "Deadline: the last day of February after the tax year. For 2026, February 28, 2027 is a Sunday, so the deadline is Monday, March 1, 2027 — both filing with CRA and giving each employee their copy."
+  ] }
 };
 let dueModalKey = "";
 function showDueGuide(key){
@@ -1214,6 +1245,8 @@ function renderWhatsDue(){
   if (!dueDone.td1) {
     items.push({ key: "td1", dot: "amber", title: "TD1 forms — signed forms still to collect", sub: "A signed federal TD1 and BC TD1 for each employee, kept in the locked office box." });
   }
+  // 8. T4 slips (year-end — due March 1, 2027 for the 2026 tax year).
+  items.push({ key: "t4", dot: "amber", title: "T4 slips — due March 1, 2027 (for 2026)", sub: "What to give White Rapids Books, and how to file them yourself on CRA Web Forms." });
   el.innerHTML = items.map(function (it) {
     return "<div class='dueitem'><span class='dot " + it.dot + "'></span><div class='txt'><b>" + esc(it.title) + "</b><br><span class='small'>" + esc(it.sub) + "</span><br><button class='secondary' onclick='showDueGuide(\"" + it.key + "\")'>How to do this</button></div></div>";
   }).join("") + (items.length === 0 ? "<p class='small'>Nothing outstanding.</p>" : "");
@@ -1239,15 +1272,5 @@ $("whatsDueRefreshBtn").onclick = renderWhatsDue;
   initLoginGate();
 })();
 </script>
-<div id="dueModal">
-  <div class="modal-card">
-    <h3 id="dueModalTitle"></h3>
-    <div id="dueModalBody"></div>
-    <div id="dueModalDoneWrap" style="display:none;margin-top:10px">
-      <button id="dueModalDoneBtn" class="sendbtn">Mark as done</button>
-    </div>
-    <button id="dueModalCloseBtn" class="secondary" style="margin-top:10px">Close</button>
-  </div>
-</div>
 </body>
 </html>
