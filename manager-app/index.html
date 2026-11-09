@@ -151,6 +151,8 @@
   signed contract / information package: you give each employee their
   own paper copy AND their own digital copy (PDF) at signing, separately
   — never app-only. They always keep that, whatever happens to app access.</p>
+  <label for="empPick">Employee</label>
+  <select id="empPick"></select>
   <div id="employeeList"></div>
   <h3 style="font-size:1rem">Add a new employee</h3>
   <p class="small">Only add someone once they are hired. Do not add interviewees.</p>
@@ -193,17 +195,29 @@
 
 <div class="card" id="scheduleCard">
   <h2>Work schedules — set shifts (Krystal only)</h2>
-  <p class="small">Set each employee's weekly shifts here. Her app only reminds her for the shifts she works: Morning is 9am–12pm, Afternoon is 1pm–4pm, Both is 9am–4pm. Shifts run Tuesday–Friday only.</p>
+  <p class="small">Set each shift one at a time: pick the employee, the client, the date, the actual start and end times, and what kind of clean it is. One shift per row — no preset weekly pattern.</p>
   <label for="schedEmp">Employee</label>
   <select id="schedEmp"></select>
-  <div class="cal-nav">
-    <button id="schedCalPrev" class="secondary" type="button" onclick="schedCalMove(-1)">‹</button>
-    <h3 id="schedCalTitle"></h3>
-    <button id="schedCalNext" class="secondary" type="button" onclick="schedCalMove(1)">›</button>
-  </div>
-  <div class="cal-grid" id="schedCalGrid"></div>
-  <div id="schedCalDetail" class="cal-detail" style="display:none"></div>
-  <p class="small" id="schedCalEmpty" style="display:none">No shifts set yet — set them by tapping a day.</p>
+  <label for="schedClient">Client</label>
+  <select id="schedClient"></select>
+  <label for="schedClientOther">Or type a client name (if they are not in the list yet)</label>
+  <input id="schedClientOther" placeholder="e.g. Alex">
+  <label for="schedDate">Date</label>
+  <input id="schedDate" type="date">
+  <label for="schedStart">Start time</label>
+  <input id="schedStart" type="time" value="09:00">
+  <label for="schedEnd">End time</label>
+  <input id="schedEnd" type="time" value="12:00">
+  <label for="schedType">Kind of clean</label>
+  <select id="schedType">
+    <option value="Training">Training</option>
+    <option value="Regular" selected>Regular</option>
+    <option value="Deep clean">Deep clean</option>
+    <option value="Move-in">Move-in</option>
+    <option value="Move-out">Move-out</option>
+  </select>
+  <button id="schedAddBtn" type="button">Add this shift</button>
+  <div id="schedList"></div>
   <button id="schedSaveBtn" class="secondary">Save schedule</button>
   <p id="schedStatus" class="small"></p>
 </div>
@@ -1299,10 +1313,11 @@ function pullMgrBackendData() {
     if (d.schedule) {
       // The Sheet is the source of truth for schedules (the manager is the
       // only writer, and a save replaces that employee's rows outright), so
-      // the backend wins here — a merge would resurrect days Krystal removed.
+      // the backend wins here — a merge would resurrect shifts Krystal removed.
+      // Per-shift format (2026-11-09): Employee, Date, Client, Start, End, Type.
       schedule = d.schedule.map(function (r) {
-        return { Employee: r.Employee || r.employee || "", Day: r.Day || r.day || "", Shift: r.Shift || r.shift || "" };
-      }).filter(function (r) { return r.Employee && r.Day && r.Shift; });
+        return { Employee: r.Employee || r.employee || "", Date: r.Date || r.date || "", Client: r.Client || r.client || "", Start: r.Start || r.start || "", End: r.End || r.end || "", Type: r.Type || r.type || "" };
+      }).filter(function (r) { return r.Employee && r.Date && r.Client; });
       saveSchedule();
     }
     if (d.mileage) mileage = mgrMergeByKey(mileage, d.mileage.map(function (r) {
@@ -1525,193 +1540,152 @@ function renderMileageSubs() {
 // EMPLOYEES — codes, rates, revoke/restore. Writes go to the backend
 // Employees tab (and the local fallback when the backend is not connected).
 // ============================================================================
+var empPickName = "";
 function renderEmployees() {
   var el = $("employeeList"); if (!el) return;
+  // Employees only — managers (Krystal) are never listed here. Pick one
+  // employee from the dropdown to see and change her code, rate and access.
+  var list = [];
+  employees.forEach(function (emp, i) {
+    if (String(emp.role || "Employee").toLowerCase() !== "manager") list.push({ emp: emp, idx: i });
+  });
+  var pick = $("empPick");
+  if (pick) {
+    var cur = pick.value || empPickName;
+    pick.innerHTML = list.length
+      ? list.map(function (x) { return "<option value='" + esc(x.emp.name) + "'>" + esc(x.emp.name) + "</option>"; }).join("")
+      : "<option value=''>No employees yet</option>";
+    if (list.some(function (x) { return x.emp.name === cur; })) pick.value = cur;
+    else if (list.length) pick.value = list[0].emp.name;
+    empPickName = pick.value;
+  }
   var rateOptions = [20, 23, 24, 24.5, 25, 25.5, 26].map(function (r) {
     return "<option value='" + r + "'>" + (r === 20 ? "Training — $20/hr" : r === 23 ? "Starting — $23/hr" : r === 24 ? "After probation — $24/hr" : r === 26 ? "Cap — $26/hr" : "$" + r + "/hr") + "</option>";
   }).join("");
-  el.innerHTML = employees.map(function (emp, i) {
-    var rateLabel = (emp.rate === "" || emp.rate == null) ? "Rate not set" : "$" + Number(emp.rate).toFixed(2) + "/hr";
-    var tempNote = emp.tempCode ? "<br><span class='warn'>Temporary code — they have not set their own code yet.</span>" : "";
-    return "<div class='emp-row" + (emp.active ? "" : " revoked") + "'><strong>" + esc(emp.name) + "</strong> — " + esc(emp.role || "Employee") +
-      " · " + rateLabel + " · <b>" + (emp.active ? "Active" : "REVOKED") + "</b>" + tempNote +
-      "<br><label>Personal code</label><input type='password' id='empCode-" + i + "' autocomplete='off' placeholder='" + (emp.code ? "Code set — type a new one to change it" : "Blank — no code set yet") + "'>" +
-      "<button class='smallbtn secondary' onclick='empSaveCode(" + i + ")'>Save code</button>" +
-      "<button class='smallbtn secondary' onclick='empGenCode(" + i + ")'>Generate random code</button>" +
-      "<br><label>Hourly rate ($)</label><select id='empRate-" + i + "'>" + rateOptions + "</select>" +
-      "<button class='smallbtn secondary' onclick='empSaveRate(" + i + ")'>Save rate</button>" +
-      "<br><button class='smallbtn " + (emp.active ? "revoke" : "restore") + "' onclick='empToggleActive(" + i + ")'>" + (emp.active ? "Revoke access" : "Restore access") + "</button></div>";
-  }).join("") || "<p class='small'>No employees yet.</p>";
-  employees.forEach(function (emp, i) {
-    var sel = $("empRate-" + i);
-    if (sel && emp.rate !== "" && emp.rate != null) sel.value = String(emp.rate);
-  });
+  var picked = list.filter(function (x) { return x.emp.name === empPickName; })[0];
+  if (!picked) { el.innerHTML = list.length ? "" : "<p class='small'>No employees yet.</p>"; return; }
+  var emp = picked.emp, i = picked.idx;
+  var rateLabel = (emp.rate === "" || emp.rate == null) ? "Rate not set" : "$" + Number(emp.rate).toFixed(2) + "/hr";
+  var tempNote = emp.tempCode ? "<br><span class='warn'>Temporary code — they have not set their own code yet.</span>" : "";
+  el.innerHTML = "<div class='emp-row" + (emp.active ? "" : " revoked") + "'><strong>" + esc(emp.name) + "</strong> — " + esc(emp.role || "Employee") +
+    " · " + rateLabel + " · <b>" + (emp.active ? "Active" : "REVOKED") + "</b>" + tempNote +
+    "<br><label>Personal code</label><input type='password' id='empCode-" + i + "' autocomplete='off' placeholder='" + (emp.code ? "Code set — type a new one to change it" : "Blank — no code set yet") + "'>" +
+    "<button class='smallbtn secondary' onclick='empSaveCode(" + i + ")'>Save code</button>" +
+    "<button class='smallbtn secondary' onclick='empGenCode(" + i + ")'>Generate random code</button>" +
+    "<br><label>Hourly rate ($)</label><select id='empRate-" + i + "'>" + rateOptions + "</select>" +
+    "<button class='smallbtn secondary' onclick='empSaveRate(" + i + ")'>Save rate</button>" +
+    "<br><button class='smallbtn " + (emp.active ? "revoke" : "restore") + "' onclick='empToggleActive(" + i + ")'>" + (emp.active ? "Revoke access" : "Restore access") + "</button></div>";
+  var sel = $("empRate-" + i);
+  if (sel && emp.rate !== "" && emp.rate != null) sel.value = String(emp.rate);
 }
-// Work schedules — month calendar (Krystal, 2026-11-08). Pick an employee,
-// tap a day to set Morning / Afternoon / Both / None for that weekday
-// (the Schedule is weekday-recurring), then Save. "All employees" shows
-// everyone's shifts on the month, view-only. Day is a weekday name
-// (Tuesday–Friday), Shift is "Morning" (9am–12pm), "Afternoon" (1pm–4pm)
-// or "Both" (9am–4pm).
-var SCHED_DAYS = ["Tuesday", "Wednesday", "Thursday", "Friday"];
-var SCHED_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-var SCHED_WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-var SCHED_ALL = "__ALL__";
-var schedCalMonth = new Date().getMonth();
-var schedCalYear = new Date().getFullYear();
-var schedDraft = {};    // working copy {Day: Shift} for the picked employee
+$("empPick").addEventListener("change", function () { empPickName = $("empPick").value; renderEmployees(); });
+// Work schedules — per-shift assignments (Krystal, 2026-11-09). One shift at a
+// time: pick the employee, the client, the date, the actual start and end
+// times, and the kind of clean (Training / Regular / Deep clean / Move-in /
+// Move-out). No preset weekly pattern. A shift is one row in the Sheet:
+// Employee, Date, Client, Start, End, Type.
+var schedDraft = [];    // working copy of shifts for the picked employee
 var schedDraftEmp = ""; // which employee the draft belongs to
-var schedDraftDirty = false;
-var schedDetailDay = null; // {y, m, d, dayName} for the open detail, if any
 function schedFor(name) {
-  var out = {};
-  schedule.forEach(function (r) {
-    if (String(r.Employee).toLowerCase() === String(name).toLowerCase()) out[r.Day] = r.Shift;
+  return schedule.filter(function (r) {
+    return String(r.Employee || "").toLowerCase() === String(name || "").toLowerCase();
   });
-  return out;
 }
-function schedShiftShort(shift) {
-  if (shift === "Morning") return "Morning 9–12";
-  if (shift === "Afternoon") return "Afternoon 1–4";
-  if (shift === "Both") return "Morning 9–12<br>Afternoon 1–4";
-  return "";
+function schedClientNames() {
+  var names = Object.keys(houseInstructions || {});
+  names.sort(function (a, b) { return a.localeCompare(b); });
+  return names;
 }
-function schedFirstName(full) {
-  return String(full || "").split(" ")[0];
+function schedFmtTime(t) {
+  // "13:00" -> "1:00pm"
+  if (!t) return "";
+  var parts = String(t).split(":");
+  var h = parseInt(parts[0], 10), m = parts[1] || "00";
+  var ap = h >= 12 ? "pm" : "am";
+  var hh = h % 12; if (hh === 0) hh = 12;
+  return hh + ":" + m + ap;
 }
-function schedIsWorkDay(date) {
-  var day = date.getDay();
-  return day >= 2 && day <= 5; // Tue–Fri
+function schedFmtDate(d) {
+  // "2026-11-12" -> "Thu Nov 12, 2026"
+  if (!d) return "";
+  var parts = String(d).split("-");
+  var dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  if (isNaN(dt.getTime())) return d;
+  return dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 }
-function schedCalMove(dir) {
-  schedCalMonth += dir;
-  if (schedCalMonth < 0) { schedCalMonth = 11; schedCalYear--; }
-  if (schedCalMonth > 11) { schedCalMonth = 0; schedCalYear++; }
-  var det = $("schedCalDetail");
-  if (det) { det.style.display = "none"; det.innerHTML = ""; }
-  schedDetailDay = null;
-  renderSchedCal();
+function renderSchedList() {
+  var list = $("schedList"); if (!list) return;
+  var name = $("schedEmp").value;
+  if (!name) { list.innerHTML = ""; return; }
+  var rows = schedDraft.slice().sort(function (a, b) { return String(a.Date).localeCompare(String(b.Date)) || String(a.Start).localeCompare(String(b.Start)); });
+  if (!rows.length) { list.innerHTML = "<p class='small'>No shifts set yet for " + esc(name) + " — add one above.</p>"; return; }
+  list.innerHTML = rows.map(function (s, i) {
+    return "<div class='card'><strong>" + esc(schedFmtDate(s.Date)) + "</strong> — " + esc(s.Client) + "<br>" +
+      esc(schedFmtTime(s.Start)) + " – " + esc(schedFmtTime(s.End)) + " · " + esc(s.Type || "") +
+      "<br><button class='smallbtn secondary' type='button' onclick='schedRemoveShift(" + i + ")'>Remove</button></div>";
+  }).join("");
 }
-function schedPickShift(dayName, shift) {
-  if (shift) schedDraft[dayName] = shift;
-  else delete schedDraft[dayName];
-  schedDraftDirty = true;
-  renderSchedCal();
-  if (schedDetailDay) showSchedCalDay(schedDetailDay.y, schedDetailDay.m, schedDetailDay.d);
-  $("schedStatus").innerHTML = "Change made — tap Save schedule to keep it.";
-}
-function showSchedCalDay(y, m, d) {
-  var date = new Date(y, m, d);
-  var dayName = SCHED_WEEKDAYS[date.getDay()];
-  var full = date.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  var det = $("schedCalDetail");
-  schedDetailDay = { y: y, m: m, d: d, dayName: dayName };
-  var html = "<h3>" + full + "</h3>";
-  var mode = $("schedEmp").value;
-  if (!schedIsWorkDay(date)) {
-    html += "<p>No shifts on Saturdays, Sundays or Mondays — work is Tuesday–Friday only.</p>";
-  } else if (mode === SCHED_ALL) {
-    var rows = [];
-    schedule.forEach(function (r) {
-      if (r.Day === dayName) rows.push(schedFirstName(r.Employee) + " — " + (r.Shift === "Both" ? "Both 9–4" : r.Shift === "Morning" ? "Morning 9–12" : "Afternoon 1–4"));
-    });
-    html += rows.length ? "<p>" + rows.map(esc).join("<br>") + "</p>" : "<p>No shifts.</p>";
-    html += "<p class=\"small\">Pick one employee above to change shifts.</p>";
-  } else {
-    var cur = schedDraft[dayName] || "";
-    html += "<p class=\"small\">Sets every " + dayName + ".</p>";
-    html += "<p>Current: <strong>" + (cur ? esc(cur) + " (" + (cur === "Morning" ? "9am–12pm" : cur === "Afternoon" ? "1pm–4pm" : "9am–4pm") + ")" : "No shift") + "</strong></p>";
-    [["Morning", "Morning — 9am–12pm"], ["Afternoon", "Afternoon — 1pm–4pm"], ["Both", "Both — 9am–4pm"], ["", "None — no shift"]].forEach(function (opt) {
-      html += "<button class=\"cal-pick" + ((cur || "") === opt[0] ? " on" : "") + "\" type=\"button\" onclick=\"schedPickShift('" + dayName + "','" + opt[0] + "')\">" + opt[1] + "</button>";
-    });
-  }
-  html += "<button class=\"secondary\" type=\"button\" onclick=\"document.getElementById('schedCalDetail').style.display='none';document.getElementById('schedCalDetail').innerHTML=''\">Close</button>";
-  det.innerHTML = html; det.style.display = "block";
-}
-function renderSchedCal() {
-  var grid = $("schedCalGrid"); if (!grid) return;
-  $("schedCalTitle").textContent = SCHED_MONTHS[schedCalMonth] + " " + schedCalYear;
-  var mode = $("schedEmp").value;
-  var empty = $("schedCalEmpty");
-  if (empty) {
-    var showEmpty = mode === SCHED_ALL ? !schedule.length : !Object.keys(schedDraft).length;
-    empty.style.display = showEmpty ? "block" : "none";
-    empty.textContent = mode === SCHED_ALL ? "No shifts set yet." : "No shifts set yet — set them by tapping a day.";
-  }
-  var first = new Date(schedCalYear, schedCalMonth, 1);
-  var daysInMonth = new Date(schedCalYear, schedCalMonth + 1, 0).getDate();
-  var now = new Date();
-  var html = "";
-  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(function (d) {
-    html += "<div class=\"cal-dow\">" + d + "</div>";
-  });
-  var i;
-  for (i = 0; i < first.getDay(); i++) html += "<div class=\"cal-day blank\"></div>";
-  for (i = 1; i <= daysInMonth; i++) {
-    var date = new Date(schedCalYear, schedCalMonth, i);
-    var dayName = SCHED_WEEKDAYS[date.getDay()];
-    var work = schedIsWorkDay(date);
-    var isToday = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
-    var cls = "cal-day";
-    if (!work) cls += " offday";
-    if (isToday) cls += " today";
-    var label = "";
-    if (mode === SCHED_ALL) {
-      var parts = [];
-      schedule.forEach(function (r) {
-        if (r.Day === dayName) parts.push(schedFirstName(r.Employee) + " — " + (r.Shift === "Both" ? "Both 9–4" : r.Shift === "Morning" ? "Morning 9–12" : "Afternoon 1–4"));
-      });
-      if (parts.length) { cls += " shift"; label = parts.map(esc).join("<br>"); }
-    } else {
-      var sh = schedDraft[dayName] || "";
-      if (sh) { cls += " shift"; label = schedShiftShort(sh); }
-    }
-    html += "<div class=\"" + cls + "\" onclick=\"showSchedCalDay(" + schedCalYear + "," + schedCalMonth + "," + i + ")\"><span class=\"cal-num\">" + i + "</span>" +
-      (label ? "<span class=\"cal-shift\">" + label + "</span>" : "") + "</div>";
-  }
-  grid.innerHTML = html;
-  var saveBtn = $("schedSaveBtn");
-  if (saveBtn) saveBtn.style.display = mode === SCHED_ALL ? "none" : "";
+function schedRemoveShift(i) {
+  var rows = schedDraft.slice().sort(function (a, b) { return String(a.Date).localeCompare(String(b.Date)) || String(a.Start).localeCompare(String(b.Start)); });
+  var target = rows[i]; if (!target) return;
+  var idx = schedDraft.indexOf(target);
+  if (idx >= 0) schedDraft.splice(idx, 1);
+  renderSchedList();
+  $("schedStatus").innerHTML = "Shift removed — tap Save schedule to keep it.";
 }
 function renderScheduleMgr() {
   var sel = $("schedEmp"); if (!sel) return;
   var actives = employees.filter(function (e) { return e.active && String(e.role || "Employee").toLowerCase() !== "manager"; });
   var cur = sel.value;
-  sel.innerHTML = "<option value='" + SCHED_ALL + "'>All employees</option>" +
-    (actives.length
-      ? actives.map(function (e) { return "<option value='" + esc(e.name) + "'>" + esc(e.name) + "</option>"; }).join("")
-      : "<option value=''>No active employees yet</option>");
-  if (cur === SCHED_ALL || actives.some(function (e) { return e.name === cur; })) sel.value = cur;
-  else sel.value = SCHED_ALL;
+  sel.innerHTML = actives.length
+    ? actives.map(function (e) { return "<option value='" + esc(e.name) + "'>" + esc(e.name) + "</option>"; }).join("")
+    : "<option value=''>No active employees yet</option>";
+  if (actives.some(function (e) { return e.name === cur; })) sel.value = cur;
+  else if (actives.length) sel.value = actives[0].name;
   var name = sel.value;
   if (name !== schedDraftEmp) {
     // Switching employees drops any unsaved change for the last one.
-    schedDraft = name === SCHED_ALL ? {} : Object.assign({}, schedFor(name));
+    schedDraft = name ? schedFor(name).map(function (r) { return { Employee: r.Employee, Date: r.Date, Client: r.Client, Start: r.Start, End: r.End, Type: r.Type }; }) : [];
     schedDraftEmp = name;
-    schedDraftDirty = false;
-    var det = $("schedCalDetail");
-    if (det) { det.style.display = "none"; det.innerHTML = ""; }
-    schedDetailDay = null;
   }
-  renderSchedCal();
+  var csel = $("schedClient");
+  if (csel) {
+    var ccur = csel.value;
+    var cnames = schedClientNames();
+    csel.innerHTML = cnames.length
+      ? cnames.map(function (n) { return "<option value='" + esc(n) + "'>" + esc(n) + "</option>"; }).join("")
+      : "<option value=''>No clients yet — type one below</option>";
+    if (cnames.indexOf(ccur) >= 0) csel.value = ccur;
+  }
+  renderSchedList();
 }
 $("schedEmp").addEventListener("change", renderScheduleMgr);
+$("schedAddBtn").onclick = function () {
+  var name = $("schedEmp").value;
+  if (!name) { alert("Pick an employee first."); return; }
+  var client = ($("schedClientOther").value || "").trim() || $("schedClient").value;
+  var date = $("schedDate").value;
+  var start = $("schedStart").value;
+  var end = $("schedEnd").value;
+  var type = $("schedType").value;
+  if (!client) { alert("Pick a client (or type one)."); return; }
+  if (!date) { alert("Pick a date."); return; }
+  if (!start || !end) { alert("Pick a start and end time."); return; }
+  schedDraft.push({ Employee: name, Date: date, Client: client, Start: start, End: end, Type: type });
+  $("schedClientOther").value = "";
+  renderSchedList();
+  $("schedStatus").innerHTML = "Shift added — tap Save schedule to keep it.";
+};
 $("schedSaveBtn").onclick = function () {
   var name = $("schedEmp").value;
-  if (!name || name === SCHED_ALL) { alert("Pick one employee first."); return; }
-  var picked = [];
-  SCHED_DAYS.forEach(function (day) {
-    if (schedDraft[day]) picked.push({ day: day, shift: schedDraft[day] });
-  });
+  if (!name) { alert("Pick one employee first."); return; }
   // Local save first: replace this employee's rows, keep everyone else's.
-  schedule = schedule.filter(function (r) { return String(r.Employee).toLowerCase() !== name.toLowerCase(); });
-  picked.forEach(function (p) { schedule.push({ Employee: name, Day: p.day, Shift: p.shift }); });
+  schedule = schedule.filter(function (r) { return String(r.Employee || "").toLowerCase() !== name.toLowerCase(); });
+  schedDraft.forEach(function (s) { schedule.push({ Employee: name, Date: s.Date, Client: s.Client, Start: s.Start, End: s.End, Type: s.Type }); });
   saveSchedule();
-  mgrBackendPost({ action: "scheduleSave", employee: name, schedule: picked });
-  schedDraftDirty = false;
-  schedDraft = Object.assign({}, schedFor(name));
+  mgrBackendPost({ action: "scheduleSave", employee: name, schedule: schedDraft.map(function (s) { return { date: s.Date, client: s.Client, start: s.Start, end: s.End, type: s.Type }; }) });
   $("schedStatus").innerHTML = '<span class="ok">Schedule saved for ' + esc(name) + ' — ' +
-    (picked.length ? esc(picked.map(function (p) { return p.day + " " + p.shift; }).join(", ")) : "no shifts (days cleared)") + '.</span>';
+    (schedDraft.length ? esc(schedDraft.length) + ' shift' + (schedDraft.length === 1 ? '' : 's') + '.' : 'no shifts (all cleared).') + '</span>';
   renderScheduleMgr();
 };
 // Random first-time code: 4 digits, 1000–9999, never 0000 or 1234.
