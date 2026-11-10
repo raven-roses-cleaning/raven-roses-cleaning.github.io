@@ -281,9 +281,7 @@
 <section class="emp-section" data-section="house">
 <div class="card" id="houseCard">
   <h2>🏠 House instructions</h2>
-  <p class="small">Pick a job to see what gets done at that house, plus any special instructions. Krystal adds these for each house in her manager app — if nothing shows here yet, she has not added that house’s instructions yet.</p>
-  <label for="houseJob">Job / client (first name only)</label>
-  <select id="houseJob"></select>
+  <p class="small">Shows the instructions for the job you picked at the top. Krystal adds these for each house in her manager app — if nothing shows here yet, she has not added that house’s instructions yet.</p>
   <h3 style="font-size:1rem">🔒 Service note — for staff only</h3>
   <div id="houseService" class="service-note protect">Pick a job above to see its service note.</div>
   <p class="small">Internal note for staff only — do not show or read this to the client.</p>
@@ -1072,13 +1070,6 @@ function populateJobSelects(){
   const curE = endSel.value;
   endSel.innerHTML = clientOptions();
   if (curE) endSel.value = curE;
-  const houseSel = $("houseJob");
-  const curH = houseSel.value;
-  // House instructions are keyed by first name (Krystal saves them that way
-  // in the manager app), so list those first names here.
-  const houseKeys = Object.keys(houseInstructions || {});
-  houseSel.innerHTML = "<option value=''>Pick a job…</option>" + houseKeys.map(j => "<option value='" + esc(j) + "'>" + esc(j) + "</option>").join("");
-  if (curH) houseSel.value = curH;
   const adjSel = $("adjJob");
   const curA = adjSel.value;
   const extraJobs = [...new Set([...jobs, ...Object.keys(houseInstructions)])].filter(j => j && !CLIENTS.some(c => c[0] === j));
@@ -1274,30 +1265,11 @@ function firstNameOf(fullName){
   if (!fullName) return "";
   return fullName.split(" ")[0];
 }
-// When the employee picks their job at the top, show that house's
-// instructions automatically — no second pick needed.
-function syncHouseFromJob(){
-  var full = currentJobName();
-  var key = houseKeyForJob(full);
-  var sel = $("houseJob");
-  if (key){
-    var found = false;
-    for (var i = 0; i < sel.options.length; i++){ if (sel.options[i].value === key) { found = true; break; } }
-    if (!found){
-      var opt = document.createElement("option");
-      opt.value = key; opt.textContent = key;
-      sel.appendChild(opt);
-    }
-    sel.value = key;
-  } else {
-    sel.value = "";
-  }
-  renderHouses();
-}
 function renderHouses(){
-  // The house picked here wins; otherwise use the current job from the top
-  // picker so the instructions appear as soon as a client is picked.
-  const name = $("houseJob").value || houseKeyForJob(currentJobName());
+  // The house instructions follow the job picked at the top — no second
+  // pick here. houseKeyForJob maps the full job name to the first-name key
+  // Krystal saves instructions under in the manager app.
+  const name = houseKeyForJob(currentJobName());
   const displayName = name || firstNameOf(currentJobName());
   const svc = $("houseService");
   if (!displayName) { svc.className = "service-note"; svc.textContent = "Pick a job above to see its service note."; $("houseTasks").textContent = "Pick a job above to see its instructions."; $("houseSpecial").textContent = "—"; renderHouseCodes(""); return; }
@@ -1400,8 +1372,7 @@ $("mileAddBtn").onclick = () => {
   saveMileage();
   backendPost({ action: "mileage", date: date, start: start, end: end, km: km });
 };
-$("houseJob").addEventListener("change", renderHouses);
-$("job").addEventListener("change", syncHouseFromJob);
+$("job").addEventListener("change", renderHouses);
 $("mileDate").addEventListener("change", renderMileage);
 
 
