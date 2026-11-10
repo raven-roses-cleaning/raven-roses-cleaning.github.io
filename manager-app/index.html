@@ -317,18 +317,9 @@
 
 <section class="mgr-section" data-section="house">
 <h2>House instructions — edit (Krystal only)</h2>
-<p class="small">Add what gets done at each house, plus special instructions. The employee sees this read-only in their app, by first name only. Do not put anything here you would not want the cleaner for that house to see. The <strong>service note</strong> below is also shown to the cleaner for that house, at the top of their house instructions — it is an internal staff note, so keep it professional and do not show it to the client.</p>
+<p class="small">Add what gets done at each house, plus special instructions. The employee sees this read-only in their app, by first name only. Do not put anything here you would not want the cleaner for that house to see.</p>
 <label for="hiName">Client first name</label>
 <input id="hiName" placeholder="e.g. Maria">
-<label for="hiServiceTag">Service note — how is service at this house?</label>
-<select id="hiServiceTag">
-  <option value="">No service rating set yet</option>
-  <option value="good">Good service</option>
-  <option value="okay">Okay service</option>
-  <option value="not-so-good">Not so good service</option>
-</select>
-<label for="hiServiceNote">Service note — what should the cleaner know? (internal, staff only)</label>
-<textarea id="hiServiceNote" rows="3" placeholder="e.g. Good service — easy access, dog is friendly. / Not so good service — hard to get in, allow extra time. — write it as you want the cleaner to see it, professionally"></textarea>
 <label for="hiTasks">What gets done at this house</label>
 <textarea id="hiTasks" rows="5" placeholder="e.g. Kitchen, bathrooms, floors, dusting… — write it as you want them to see it"></textarea>
 <label for="hiSpecial">Special instructions</label>
@@ -1988,7 +1979,7 @@ function render(){
   $("mileageView").innerHTML = miles.length ? "<table><tr><th>Employee</th><th>Start → End</th><th>Km</th><th>Type</th></tr>" + miles.map(m => "<tr><td>" + m.name + "</td><td>" + m.start + " → " + m.end + "</td><td>" + m.km.toFixed(1) + "</td><td>" + (m.type === "between" ? "Between clients — payable" : m.type === "to_first" ? "To first — not payable" : "Home from last — not payable") + "</td></tr>").join("") + "</table>" : "<p class='small'>No mileage trips for this date yet.</p>";
   $("mileageTotals").innerHTML = "Payable today (between clients only): <b>" + payKm.toFixed(1) + " km</b> · All trips today: " + allKm.toFixed(1) + " km" + ((!isNaN(craRate) && craRate > 0) ? " · Mileage pay (est.): $" + (payKm * craRate).toFixed(2) : " · Mileage pay not shown — CRA rate not set above.") + ".";
   const hiNames = Object.keys(houseInstructions);
-  $("hiList").innerHTML = hiNames.length ? hiNames.map(n => "<div class='card'><strong>" + n + "</strong><br><em>Service note (staff only):</em> " + (houseInstructions[n].serviceTag ? esc({good:"Good service",okay:"Okay service","not-so-good":"Not so good service"}[houseInstructions[n].serviceTag] || "Service note") + (houseInstructions[n].serviceNote ? " — " + esc(houseInstructions[n].serviceNote) : " — no note written yet.") : (houseInstructions[n].serviceNote ? esc(houseInstructions[n].serviceNote) : "No service note set yet.")) + "<br><em>What gets done:</em> " + (houseInstructions[n].tasks || "—") + "<br><em>Special:</em> " + (houseInstructions[n].special || "—") + "<br><em>House codes:</em> " + (houseInstructions[n].codes ? "Saved — blurred in the employee app until tapped." : "None set yet.") + "<br><button class='smallbtn secondary' onclick='loadHouse(\"" + n + "\")'>Edit</button></div>").join("") : "<p class='small'>No house instructions saved yet. Add the first house above — this is the weekend job, house by house, not invented here.</p>";
+  $("hiList").innerHTML = hiNames.length ? hiNames.map(n => "<div class='card'><strong>" + n + "</strong><br><em>What gets done:</em> " + (houseInstructions[n].tasks || "—") + "<br><em>Special:</em> " + (houseInstructions[n].special || "—") + "<br><em>House codes:</em> " + (houseInstructions[n].codes ? "Saved — blurred in the employee app until tapped." : "None set yet.") + "<br><button class='smallbtn secondary' onclick='loadHouse(\"" + n + "\")'>Edit</button></div>").join("") : "<p class='small'>No house instructions saved yet. Add the first house above — this is the weekend job, house by house, not invented here.</p>";
   renderTimeOffMgr();
   renderMonthlyFocusMgr();
   renderGuideMgr();
@@ -2046,18 +2037,16 @@ window.loadHouse = function(n){
   $("hiName").value = n;
   $("hiTasks").value = houseInstructions[n] ? houseInstructions[n].tasks : "";
   $("hiSpecial").value = houseInstructions[n] ? houseInstructions[n].special : "";
-  $("hiServiceTag").value = houseInstructions[n] ? (houseInstructions[n].serviceTag || "") : "";
-  $("hiServiceNote").value = houseInstructions[n] ? (houseInstructions[n].serviceNote || "") : "";
   $("hiCodes").value = houseInstructions[n] ? (houseInstructions[n].codes || "") : "";
 };
 $("hiSaveBtn").onclick = () => {
   const n = $("hiName").value.trim();
   if (!n) { alert("Enter a client first name first."); return; }
-  houseInstructions[n] = { tasks: $("hiTasks").value.trim(), special: $("hiSpecial").value.trim(), serviceTag: $("hiServiceTag").value, serviceNote: $("hiServiceNote").value.trim(), codes: $("hiCodes").value.trim() };
+  houseInstructions[n] = { tasks: $("hiTasks").value.trim(), special: $("hiSpecial").value.trim(), codes: $("hiCodes").value.trim() };
   $("hiStatus").innerHTML = '<span class="ok">Saved instructions for ' + n + '.</span>';
   saveAll();
   mgrBackendPost({ action: "houseSave", client: n, tasks: houseInstructions[n].tasks, special: houseInstructions[n].special,
-    serviceTag: houseInstructions[n].serviceTag, serviceNote: houseInstructions[n].serviceNote, codes: houseInstructions[n].codes });
+    codes: houseInstructions[n].codes });
 };
 
 function populateRateEmp(){
