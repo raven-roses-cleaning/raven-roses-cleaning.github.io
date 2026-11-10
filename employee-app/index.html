@@ -983,7 +983,7 @@ $("csvBtn").onclick = () => {
 
 function saveMileage(){ localStorage.setItem(MILEKEY, JSON.stringify(mileage)); renderMileage(); }
 function saveHouses(){ localStorage.setItem(HOUSEKEY, JSON.stringify(houseInstructions)); renderHouses(); }
-// Client dropdowns: addresses ARE listed, like Connecteam — so she can read the address and enter it into Google herself (separately).
+// Client dropdowns: addresses ARE listed, like Connecteam — so they can read the address and enter it into Google themselves (separately).
 // App does NOT connect to Google Maps, no API, no GPS. Emails are NOT included — name + street address only, from the Raven client list.
 const CLIENTS = [
   ["Allison & Ross McKenzie", "1316 Langara DR Nanaimo"],
@@ -1127,8 +1127,6 @@ function itemLinkPhrases(){
     { phrase: "bedside tables", roomId: "bedroom", itemId: "be-bedside" },
     { phrase: "sofa", roomId: "living", itemId: "l-sofa" },
     { phrase: "upholstery", roomId: "living", itemId: "l-sofa" },
-    { phrase: "tv", roomId: "living", itemId: "l-tv" },
-    { phrase: "screen", roomId: "living", itemId: "l-tv" },
     { phrase: "washing machine", roomId: "general", itemId: "g-washer" },
     { phrase: "washer", roomId: "general", itemId: "g-washer" },
     { phrase: "table", roomId: "living", itemId: "l-table" }
@@ -1563,18 +1561,6 @@ const DEFAULT_GUIDE = {
           "how": "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.",
           "notes": "Use wood polish if the wood is looking dull — not every time. Do not use a wet cloth on wood unless Krystal says so.",
           "tags": "wood table dust fingerprints"
-        },
-        {
-          "id": "l-tv",
-          "name": "TV screen",
-          "supply": "Cloths / mop heads",
-          "goodFor": [
-            "Dust",
-            "Fingerprints"
-          ],
-          "how": "Wipe gently with a clean, dry, soft cloth only.",
-          "notes": "TO CONFIRM WITH KRYSTAL: do not spray cleaner directly on a screen unless Krystal says so.",
-          "tags": "tv screen dust"
         },
         {
           "id": "l-floors",
