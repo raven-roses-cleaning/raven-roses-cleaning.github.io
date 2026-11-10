@@ -80,14 +80,13 @@
 
 <p style="background:#fff3cd;border:2px solid #b58900;border-radius:8px;padding:12px;font-weight:700">DRAFT — Krystal only, NOT a filing tool yet. Do NOT use this to pay or remit until you check the first pay run against CRA’s Payroll Deductions Online Calculator (PDOC) / T4032 tables and White Rapids Books confirms it. This file does NOT submit anything to CRA, and does NOT store SINs — never enter a SIN here.</p>
 <h1><img src="/icon-payroll-192.png" alt="" style="height:40px;width:40px;vertical-align:middle;border-radius:8px;margin-right:6px"> Raven &amp; Roses — Payroll</h1>
-<p class="small">Hours and mileage come in from the time-card backend automatically — no re-typing, no JSON import — once the backend is connected. Employee apps show <strong>hours, mileage and supplies only — no pay</strong>. Pay is calculated here, and the employee gets a paystub by email from you.</p>
+<p class="small">Hours and mileage show up here on their own — no re-typing — once this app is connected to the shared Sheet. Employee apps show <strong>hours, mileage and supplies only — no pay</strong>. Pay is calculated here, and the employee gets a paystub by email from you.</p>
 <div id="backendBanner"></div>
 <button id="signOutBtn" class="secondary" style="width:auto;padding:.4em 1em">Sign out</button>
 <div id="sectionNav" style="position:sticky;top:0;z-index:200;background:#1d1d23;color:#f5d76e;padding:10px 12px;border-radius:0 0 10px 10px;margin:12px 0;border-bottom:2px solid #d4af37">
 <label for="sectionJump" style="color:#f5d76e;margin:0 0 .2em">Go to section:</label>
 <select id="sectionJump" onchange="jumpToSection(this)" style="margin-top:.3em">
 <option value="">— Pick a section —</option>
-<option>Top of the page</option>
 <option>What's due — at a glance</option>
 <option>0. Pay data — from the backend</option>
 <option>1. This pay run</option>
@@ -100,9 +99,13 @@
 <option>Saved pay runs + monthly remittance totals</option>
 <option>Monthly CRA remittance report</option>
 <option>Rates used — 2026, BC, outside Quebec</option>
+<option>Show all sections</option>
 </select>
 </div>
 
+<div id="sectionStartMsg" class="card"><p class="small">Pick a section above to begin. You will see just that section — or pick Show all sections to see everything.</p></div>
+
+<section class="pay-section" data-section="whats-due">
 <h2>What's due — at a glance</h2>
 <div class="card">
   <p class="small">Next payday, next CRA payment, and anything still missing — all in one place. Tap <strong>How to do this</strong> on any item for plain steps: where to go and what to do.</p>
@@ -110,14 +113,20 @@
   <button id="whatsDueRefreshBtn" class="secondary smallbtn">Refresh this list</button>
 </div>
 
+</section>
+
+<section class="pay-section" data-section="paydata">
 <h2>0. Pay data — from the backend</h2>
 <div class="card">
   <p id="backendStatus" class="small">Checking the backend…</p>
   <button id="pullBtn" class="secondary">Pull hours &amp; mileage from the backend</button>
   <p id="pullStatus" class="small"></p>
-  <p class="small">When the backend is connected, this pulls the time entries, mileage trips, employee rates and the CRA rate straight from the shared Sheet — then "Pull into this pay run" below fills the pay run for you. Until then, use "Import time-card JSON" under the pay run (the employee app's export file), exactly like the draft did.</p>
+  <p class="small">Once this app is connected, it brings in the time entries, mileage trips, employee rates and the CRA rate from the shared Sheet — then "Pull into this pay run" below fills the pay run for you. Until then, use "Import time-card JSON" under the pay run (the employee app's export file), exactly like the draft did.</p>
 </div>
 
+</section>
+
+<section class="pay-section" data-section="payrun">
 <h2>1. This pay run</h2>
 <div class="row">
   <div><label for="empName">Employee</label><select id="empName"></select></div>
@@ -156,6 +165,9 @@
 </div>
 <label for="otherDed">Other deductions this period ($, e.g. garnishment — 0 if none)</label><input id="otherDed" type="number" step="0.01" min="0" value="0">
 
+</section>
+
+<section class="pay-section" data-section="ytd">
 <h2>2. Year-to-date BEFORE this pay (for CPP / EI caps)</h2>
 <p class="small">These must be accurate, or the caps will be wrong. At the start of the year they are all $0. After each pay run, save it below and the year-to-date totals update. Tap "Fill from saved runs" to add up this employee's saved runs for the year so far.</p>
 <button id="ytdAutoBtn" class="secondary">Fill year-to-date from this employee's saved runs</button>
@@ -170,6 +182,9 @@
 </div>
 <label for="ytdTax">YTD income tax withheld before this run ($, for records only)</label><input id="ytdTax" type="number" step="0.01" min="0" value="0">
 
+</section>
+
+<section class="pay-section" data-section="td1">
 <h2>3. TD1 claims (employee’s signed TD1 forms — basic only by default)</h2>
 <p class="small">If the employee claims more than the basic amount on a TD1 (disability, tuition, etc.), enter the <strong>total</strong> claim amount from that TD1 form here, not just the extra. Collect a signed federal TD1 and a signed BC TD1 before the first paycheque. Do not enter a SIN in this file. These amounts are saved (backend Settings, or on this phone if the backend is not connected) so you do not have to re-enter them every run.</p>
 <div class="row">
@@ -184,17 +199,26 @@
 <input id="importFile" type="file" accept=".json" style="display:none">
 <p id="calcStatus" class="small"></p>
 
+</section>
+
+<section class="pay-section" data-section="paystub">
 <h2>Paystub — for the employee (copy / print / email)</h2>
 <pre id="paystub">Calculate a pay run above to see the paystub here.</pre>
 <button id="copyStubBtn" class="secondary">Copy paystub as text (for email)</button>
 <button id="printStubBtn" class="secondary" onclick="window.print()">Print paystub</button>
 
+</section>
+
+<section class="pay-section" data-section="remittance">
 <h2>Remittance — for Krystal / CRA (does NOT submit to CRA)</h2>
 <pre id="remit">Calculate a pay run above to see the remittance breakdown here.</pre>
 <p class="small">To actually remit: pay via CRA My Business Account or your bank as “CRA Payroll (PD7A)” using your 15-digit payroll (RP) account number. Regular / new remitters are normally due the <strong>15th of the following month</strong> — confirm your remitter type with CRA, because accelerated schedules apply at higher withholding levels. Your old payroll account was closed — it must be reopened / a new RP account opened before the first pay. This app does not pay CRA for you.</p>
 
 <button id="saveRunBtn">Save this pay run (updates year-to-date list below)</button>
 
+</section>
+
+<section class="pay-section" data-section="email">
 <h2>Email paystubs for this pay period</h2>
 <div class="card">
   <p class="small">One tap, once per payday. Each employee gets <strong>only their own paystub</strong>, by email — nothing about any other employee is in any email. This uses the <strong>saved pay runs</strong> for the pay period in section 1 above (<span id="emailPeriodLabel">—</span>), so calculate and save each employee's run first. If an employee has no email on file, they are skipped and shown plainly — the rest still go out.</p>
@@ -205,15 +229,24 @@
   <p class="small">How it sends: with the backend connected, the backend emails each paystub from the app with one tap, and records every send in the Sheet (PaystubSends tab) so you can see what went out and do not send the same period twice by accident. Without the backend, each employee gets a "Send by email" button instead — it opens a pre-filled email in your email app, and you tap "Mark as sent" after you send it. No SIN is in any paystub or email, ever.</p>
 </div>
 
+</section>
+
+<section class="pay-section" data-section="t4">
 <h2>Year-end totals — for T4 (Krystal / bookkeeper, NOT a filed T4)</h2>
 <p class="small">Totals from saved runs, grouped by employee and year. This is a totals sheet for White Rapids Books / CRA filing — it is NOT itself a T4 slip or a CRA XML filing. Bookkeeper maps these totals to the correct T4 boxes (gross, CPP, CPP2, EI, income tax). Do not send a T4 from this app alone.</p>
 <div id="t4totals"></div>
 
+</section>
+
+<section class="pay-section" data-section="savedruns">
 <h2>Saved pay runs + monthly remittance totals</h2>
 <div id="runs"></div>
 <button id="exportRunsBtn" class="secondary">Export saved runs as CSV</button>
 <button id="clearRunsBtn" class="secondary">Clear saved runs on this device</button>
 
+</section>
+
+<section class="pay-section" data-section="crareport">
 <h2>Monthly CRA remittance report</h2>
 <div class="card">
   <p class="small">One report per month, for the month you actually pay CRA. The totals come from the saved pay runs above — the same numbers, one source of truth — so this report always matches the runs for that month. It does <strong>not</strong> file anything to CRA: you pay it yourself, online or at the bank, using the report below.</p>
@@ -245,6 +278,9 @@
   <div id="remitList"></div>
 </div>
 
+</section>
+
+<section class="pay-section" data-section="rates">
 <h2>Rates used — 2026, BC, outside Quebec</h2>
 <pre> CPP: 5.95% on pensionable earnings, $3,500 basic exemption prorated per pay period, YMPE $74,600, max $4,230.45 each (employee + employer).
  CPP2: 4% on earnings $74,600–$85,000 (YAMPE), max $416 each.
@@ -254,6 +290,8 @@
  Method: income tax is annualised (this period’s gross × periods per year), run through the brackets, minus non-refundable credits (basic personal, Canada employment amount, base CPP and EI credits), then divided back by periods. That is the CRA table method in outline — it is NOT the full T4127 formula, and it does not include other TD1 credits, bonuses, taxable benefits, or province-of-employment changes. Verify against CRA PDOC before paying.
  NOT included here: BC Employer Health Tax (check if BC remuneration exceeds $500,000 — most small employers are below it), WorkSafeBC premiums (separate, by classification), and GST/HST (not a payroll deduction).
 </pre>
+
+</section>
 
 <div id="dueModal">
   <div class="modal-card">
@@ -280,22 +318,36 @@
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec"; // <-- PASTE THE BACKEND /exec URL HERE after deployment
 const BACKEND_ENABLED = BACKEND_URL !== "";
 // Section jump menu — Krystal: no long scrolling to find a section.
+// Picking a section shows ONLY that section; "Show all sections" shows
+// everything (the old long page). On load every section is hidden until
+// Krystal picks one (see the init block at the end of this script).
 function jumpToSection(sel){
   var label = sel.value;
   if(!label){ return; }
-  sel.value = "";
-  if(label === "Top of the page"){ window.scrollTo({top:0, behavior:"smooth"}); return; }
-  var norm = function(s){ return s.replace(/\s+/g, " ").trim(); };
-  var heads = document.querySelectorAll("h2");
-  for(var i=0;i<heads.length;i++){
-    if(norm(heads[i].textContent) === norm(label)){
-      heads[i].scrollIntoView({behavior:"smooth", block:"start"});
-      heads[i].style.outline = "3px solid #b58900";
-      heads[i].style.outlineOffset = "4px";
-      (function(h){ setTimeout(function(){ h.style.outline=""; h.style.outlineOffset=""; }, 2000); })(heads[i]);
-      return;
+  var norm = function(s){ return s.replace(/\u2019/g, "'").replace(/\s+/g, " ").trim(); };
+  var want = norm(label);
+  var startMsg = $("sectionStartMsg");
+  var secs = document.querySelectorAll(".pay-section");
+  if(want === "Show all sections"){
+    for(var i=0;i<secs.length;i++){ secs[i].style.display = ""; }
+    if(startMsg) startMsg.style.display = "none";
+    window.scrollTo({top:0, behavior:"smooth"});
+    return;
+  }
+  var found = false;
+  for(var j=0;j<secs.length;j++){
+    var h = secs[j].querySelector("h2");
+    if(!h){ secs[j].style.display = "none"; continue; }
+    var hn = norm(h.textContent);
+    if(hn === want || hn.indexOf(want) === 0 || want.indexOf(hn) === 0){
+      secs[j].style.display = "";
+      found = true;
+    } else {
+      secs[j].style.display = "none";
     }
   }
+  if(startMsg) startMsg.style.display = "none";
+  if(found){ window.scrollTo({top:0, behavior:"smooth"}); }
 }
 
 const KEY = "ravenPayrollRunsV1";            // saved pay runs (same as the draft)
@@ -320,6 +372,14 @@ let remittances = JSON.parse(localStorage.getItem(REMITKEY) || "[]");
 let td1Saved = JSON.parse(localStorage.getItem(TD1KEY) || "null");
 let bnSaved = JSON.parse(localStorage.getItem(BNKEY) || "null");
 let craRateSaved = localStorage.getItem(CRAKEY) || "";
+// Normalise any dates already saved on this phone, so an ISO date stored by
+// an earlier backend sync still matches the pay period — a clocked entry on
+// the last day of a pay period must never go missing from the pay run.
+entries = (entries || []).map(function (e) { e.date = payNormDate(e.date); return e; });
+mileage = (mileage || []).map(function (m) { m.date = payNormDate(m.date); return m; });
+timeOff = (timeOff || []).map(function (r) { r.date = payNormDate(r.date); return r; });
+paystubSends = (paystubSends || []).map(function (s) { s.periodStart = payNormDate(s.periodStart); s.periodEnd = payNormDate(s.periodEnd); s.payDate = payNormDate(s.payDate); return s; });
+remittances = (remittances || []).map(function (r) { r.month = payNormMonth(r.month); r.dueDate = payNormDate(r.dueDate); r.paidDate = payNormDate(r.paidDate); return r; });
 let lastCalc = null;
 const $ = id => document.getElementById(id);
 const r2 = x => Math.round(x * 100) / 100;
@@ -406,9 +466,34 @@ function saveLocals() {
   localStorage.setItem(SENDKEY, JSON.stringify(paystubSends));
   localStorage.setItem(REMITKEY, JSON.stringify(remittances));
 }
+// DATE NORMALISATION — pay-critical. The Sheet stores Date as a real date,
+// so the backend returns ISO strings ("2026-11-15T00:00:00.000Z") for date
+// cells. Comparing an ISO string with a plain pay-period date drops the
+// entry on the period END date, because "2026-11-15T..." is lexicographically
+// GREATER than "2026-11-15". The Sheet timezone is Etc/GMT, so read the
+// date part straight from the ISO string — never through the browser's local
+// timezone, which would shift the day. Plain "YYYY-MM-DD" values pass through.
+function payNormDate(v){
+  if (v == null) return "";
+  var s = String(v).trim();
+  if (!s) return "";
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + "-" + m[2] + "-" + m[3];
+  return s;
+}
+// Remittance month is "YYYY-MM". If the Sheet parsed it as a date it comes
+// back as an ISO date — take the year-month part back out.
+function payNormMonth(v){
+  if (v == null) return "";
+  var s = String(v).trim();
+  if (!s) return "";
+  var m = s.match(/^(\d{4})-(\d{2})/);
+  if (m) return m[1] + "-" + m[2];
+  return s;
+}
 function normEntry(r) {
   return {
-    name: r.Employee || r.name, job: r.Job || r.job, date: r.Date || r.date,
+    name: r.Employee || r.name, job: r.Job || r.job, date: payNormDate(r.Date || r.date),
     in: r.ClockIn ? Number(r.ClockIn) : r.in, out: r.ClockOut ? Number(r.ClockOut) : (r.out || null),
     hours: r.Hours === "" || r.Hours == null ? (r.hours || 0) : Number(r.Hours),
     training: r.Training === "Yes" || r.training === true,
@@ -426,11 +511,11 @@ function pullBackendData() {
     if (!d || !d.ok) { $("backendStatus").innerHTML = "Could not pull from the backend: " + esc((d && d.error) || "no reply") + ". The manual JSON import below still works."; return; }
     if (d.entries) entries = mergeByKey(entries, d.entries.map(normEntry), function (e) { return [e.name, e.job, e.date, e.in].join("|"); });
     if (d.mileage) mileage = mergeByKey(mileage, d.mileage.map(function (r) {
-      return { date: r.Date || r.date, start: r.Start || r.start, end: r.End || r.end,
+      return { date: payNormDate(r.Date || r.date), start: r.Start || r.start, end: r.End || r.end,
         km: Number(r.Km || r.km), type: "between", name: r.Employee || r.name };
     }), function (m) { return [m.name, m.date, m.start, m.end, m.km].join("|"); });
     if (d.timeOff) timeOff = mergeByKey(timeOff, d.timeOff.map(function (r) {
-      return { name: r.Employee || r.name, date: r.Date || r.date, type: (r.Type || r.type || "timeoff"),
+      return { name: r.Employee || r.name, date: payNormDate(r.Date || r.date), type: (r.Type || r.type || "timeoff"),
         reason: r.Reason || r.reason || "", status: r.Status || r.status || "PENDING",
         declineReason: r.DeclineReason || r.declineReason || "", created: Date.now() };
     }), function (r) { return [r.name, r.date, r.type].join("|"); });
@@ -443,13 +528,13 @@ function pullBackendData() {
       localStorage.setItem(BNKEY, JSON.stringify(bnSaved));
     }
     if (d.paystubSends) paystubSends = mergeByKey(paystubSends, d.paystubSends.map(function (r) {
-      return { periodStart: r.PeriodStart || r.periodStart, periodEnd: r.PeriodEnd || r.periodEnd,
-        payDate: r.PayDate || r.payDate, employee: r.Employee || r.employee,
+      return { periodStart: payNormDate(r.PeriodStart || r.periodStart), periodEnd: payNormDate(r.PeriodEnd || r.periodEnd),
+        payDate: payNormDate(r.PayDate || r.payDate), employee: r.Employee || r.employee,
         email: r.Email || r.email, sentAt: r.SentAt || r.sentAt };
     }), function (s) { return [s.employee, s.periodStart, s.periodEnd].join("|"); });
     if (d.remittances) remittances = mergeByKey(remittances, d.remittances.map(function (r) {
-      return { month: r.Month || r.month, dueDate: r.DueDate || r.dueDate,
-        remitTotal: Number(r.RemitTotal || r.remitTotal || 0), paidDate: r.PaidDate || r.paidDate || "",
+      return { month: payNormMonth(r.Month || r.month), dueDate: payNormDate(r.DueDate || r.dueDate),
+        remitTotal: Number(r.RemitTotal || r.remitTotal || 0), paidDate: payNormDate(r.PaidDate || r.paidDate || ""),
         confirmation: r.Confirmation || r.confirmation || "",
         paidAmount: r.PaidAmount === "" || r.PaidAmount == null ? null : Number(r.PaidAmount) };
     }), function (r) { return [r.month].join("|"); });
@@ -891,7 +976,7 @@ $("importFile").addEventListener("change", async (e) => {
       $("empNameOther").value = name;
       $("hours").value = totalHours.toFixed(2);
       if (ents.some(x => x.training)) $("calcStatus").innerHTML = '<span class="warn">Import note: this export includes training shift(s) at $20/hr. Split training hours into a separate pay run at $20, or adjust the rate — this import used the regular rate for all hours.</span>';
-      const dates = ents.map(x => x.date).sort();
+      const dates = ents.map(x => payNormDate(x.date)).sort();
       if (dates.length) { $("ppStart").value = dates[0]; $("ppEnd").value = dates[dates.length-1]; }
     }
     $("mileKm").value = payKm.toFixed(1);
@@ -1270,6 +1355,12 @@ $("whatsDueRefreshBtn").onclick = renderWhatsDue;
   renderRemitList();
   renderWhatsDue();
   initLoginGate();
+})();
+
+// One section at a time — hide every section until Krystal picks one.
+(function(){
+  var secs = document.querySelectorAll(".pay-section");
+  for(var i=0;i<secs.length;i++){ secs[i].style.display = "none"; }
 })();
 </script>
 </body>
