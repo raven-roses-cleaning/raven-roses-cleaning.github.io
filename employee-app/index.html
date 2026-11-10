@@ -315,6 +315,12 @@
   <h3 style="font-size:1rem">🔑 House codes</h3>
   <div id="houseCodes" class="codes-box">Pick a job above to see its house codes.</div>
   <p class="small">Codes are blurred until you tap them. Tap to reveal at the door — they blur again after 30 seconds, or when you pick another house. Never share them.</p>
+  <hr>
+  <p><label for="houseQuestionBox"><strong>Ask a question or request a different cleaner</strong></label></p>
+  <p class="small">A question not answered here, a different cleaner you need, or an issue / something you do not know what to do about — write it here. Krystal will see it with your next clock-out.</p>
+  <textarea id="houseQuestionBox" rows="3" style="width:100%" placeholder="e.g. What should I use on this stain? I need a different cleaner for…"></textarea>
+  <button type="button" onclick="submitGuideQuestion('house')">Send question to Krystal</button>
+  <p id="houseQuestionStatus" class="small"></p>
 </div>
 </section>
 
@@ -331,6 +337,12 @@
   <div id="guideDetail"></div>
   <div id="guideSupplies"></div>
   <p class="small">How updates reach you: when Krystal changes it in her manager app, you see the new guide here automatically — no separate message needed.</p>
+  <hr>
+  <p><label for="guideQuestionBox"><strong>Ask a question or request a different cleaner</strong></label></p>
+  <p class="small">A question not answered here, a different cleaner you need, or an issue / something you do not know what to do about — write it here. Krystal will see it with your next clock-out.</p>
+  <textarea id="guideQuestionBox" rows="3" style="width:100%" placeholder="e.g. What should I use on this stain? I need a different cleaner for…"></textarea>
+  <button type="button" onclick="submitGuideQuestion('guide')">Send question to Krystal</button>
+  <p id="guideQuestionStatus" class="small"></p>
 </div>
 </section>
 
@@ -723,6 +735,28 @@ function repairPhotosList(){
   });
   return out;
 }
+// Guide question (Krystal, 2026-11-10): an employee can ask a question the
+// guide does not answer, request a different cleaner, or describe an issue
+// / not knowing what to do. Same box in the Supplies Guide and in House
+// instructions. It rides the clock-out payload like the other free-text
+// boxes (feedbackBox / otherReqBox): saved on this phone first, then sent
+// to Krystal with the clock-out email. No new backend action. Each
+// submission is its own entry — never deduped.
+const GUIDEQUESTIONKEY = "ravenGuideQuestionsV1";
+let guideQuestions = JSON.parse(localStorage.getItem(GUIDEQUESTIONKEY) || "[]");
+function saveGuideQuestions(){ localStorage.setItem(GUIDEQUESTIONKEY, JSON.stringify(guideQuestions)); }
+function submitGuideQuestion(from){
+  var box = $(from === "house" ? "houseQuestionBox" : "guideQuestionBox");
+  var st = $(from === "house" ? "houseQuestionStatus" : "guideQuestionStatus");
+  if(!box) return;
+  var text = box.value.trim();
+  if(!text){ if(st) st.innerHTML = "Write your question first."; return; }
+  guideQuestions.push({ text: text, from: from, created: Date.now() });
+  saveGuideQuestions();
+  box.value = "";
+  if(st) st.innerHTML = '<span class="ok">Saved — Krystal will see it with your next clock-out.</span>';
+}
+window.submitGuideQuestion = submitGuideQuestion;
 // The clock-out / send payload low list: tile flags + stool/spray requests
 // + the two free-text boxes (request + feedback), each clearly labelled.
 function payloadLow(){
@@ -732,6 +766,7 @@ function payloadLow(){
   var f = $("feedbackBox") ? $("feedbackBox").value.trim() : "";
   if (o) out.push("OTHER REQUEST: " + o);
   if (f) out.push("FEEDBACK: " + f);
+  (guideQuestions || []).forEach(function (q) { if (q && q.text) out.push("QUESTION" + (q.from === "house" ? " (House instructions)" : " (Supplies Guide)") + ": " + q.text); });
   return out;
 }
 function renderStoolBtns(){
@@ -1043,6 +1078,7 @@ $("outBtn").onclick = () => {
     hours: doneEntry.hours, training: doneEntry.training, issue: doneEntry.issue, refilled: doneEntry.refilled,
     low: doneEntry.low, stocked: doneEntry.stocked, cloth: doneEntry.cloth, vacuum: doneEntry.vacuum,
     repairPhotos: repairPhotosList() });
+  guideQuestions = []; saveGuideQuestions();
   repairs = {}; renderRepairBtns();
 };
 $("sendBtn").onclick = () => {
