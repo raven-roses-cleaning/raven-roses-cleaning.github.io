@@ -348,7 +348,7 @@
 
       <h2>Confidentiality</h2>
       <p>Any notes, reports, or documents regarding the services provided shall not be disclosed to any third party in any manner whatsoever.</p>
-      <p>Client information in the app: You may open the app to check information you need for a job. Do not copy, photograph, screenshot, or share any client information from the app. On leaving, you must return everything, and your access to the app will be removed.</p>
+      <p>Client information in the app: You may open the app to check information you need for a job. Do not copy, photograph, screenshot, or share any client information from the app. On leaving, you must return all supplies and materials provided by Raven &amp; Roses on the checklist at hiring, and all client notes, codes and lists, and your access to the app will be removed.</p>
 
       <h2>Photos &amp; Marketing</h2>
       <p>With the Company&rsquo;s permission, you may take before-and-after photos for cleaning purposes only, so the Company can market your work within Raven &amp; Roses Cleaning Co. — for example, to clients who specifically request you. The Company will do that marketing for you; do not use these photos to market yourself outside the Company. Any photo taken in a client&rsquo;s home during company time is the sole and exclusive legal property of Raven &amp; Roses Cleaning Co., and all right, title and interest in and to any such photo shall vest solely and exclusively in the Company. Such photos are not yours to keep, share, or use elsewhere. On leaving, any such photos must be deleted, as set out under Term &amp; Termination.</p>
@@ -404,7 +404,6 @@ var DOC_NAMES = ["Employee Information Package", "Confidentiality Agreement"];
 var nameInput = document.getElementById("empName");
 var printName = document.getElementById("printName");
 var printDate = document.getElementById("printDate");
-var today = new Date();
 function isoDate(d) {
   var m = d.getMonth() + 1, day = d.getDate();
   return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
@@ -412,21 +411,14 @@ function isoDate(d) {
 function friendlyDate(d) {
   return d.toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
 }
-var DATE_ISO = isoDate(today);
-var DATE_FRIENDLY = friendlyDate(today);
-printDate.textContent = DATE_FRIENDLY;
-document.querySelectorAll(".fillDate").forEach(function (el) { el.textContent = DATE_FRIENDLY; });
+// Name and date stay blank until the employee fills them in themselves.
+// The date is set at the moment they tap "Sign & Send", not when the page loads.
 function syncName() {
   var v = nameInput.value.trim();
   printName.textContent = v || "—";
   document.querySelectorAll(".fillName").forEach(function (el) { el.textContent = v || "______________________"; });
 }
 nameInput.addEventListener("input", syncName);
-// Pre-fill from ?name= if present
-try {
-  var q = new URLSearchParams(window.location.search).get("name");
-  if (q) nameInput.value = q;
-} catch (e) {}
 syncName();
 
 // ---- Home address + emergency contact ("About you") ----
@@ -609,6 +601,15 @@ sendBtn.addEventListener("click", function () {
   sending = true;
   sendBtn.disabled = true;
   sendBtn.textContent = "Sending…";
+  // The signing date is the moment they tap send — fill it in now, not before.
+  var signDate = new Date();
+  var DATE_ISO = isoDate(signDate);
+  var DATE_FRIENDLY = friendlyDate(signDate);
+  printDate.textContent = DATE_FRIENDLY;
+  // Effective Date gets the signing date; the employer's date line stays blank.
+  document.querySelectorAll(".fillDate").forEach(function (el) {
+    if (!el.closest("#employerSigBlock")) el.textContent = DATE_FRIENDLY;
+  });
   var signature = canvas.toDataURL("image/png");
   var payload = {
     action: "signPackage",
