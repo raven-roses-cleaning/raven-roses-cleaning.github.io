@@ -315,6 +315,8 @@
     <h3 id="calTitle"></h3>
     <button id="calNext" class="secondary" type="button" onclick="calMove(1)">›</button>
   </div>
+  <p><button id="calMonthBtn" class="secondary" type="button" onclick="downloadMonthShifts()">Download this month to my calendar</button></p>
+  <p class="small">Downloads a file with this month's shifts — open it and your phone adds them to your calendar. Add one shift at a time from a day below.</p>
   <div class="cal-grid" id="calGrid"></div>
   <div id="calDetail" class="cal-detail" style="display:none"></div>
   <p class="small" id="calEmpty" style="display:none">No shifts set yet — Krystal will set your schedule.</p>
@@ -2611,6 +2613,62 @@ function schedDateStr(y, m, d) {
 function shiftsOn(dateStr) {
   return (schedule || []).filter(function (s) { return schedNormDate(s.Date) === dateStr; });
 }
+// "2026-11-12" + "1:00pm" -> "20261112T130000" (local floating time, for
+// Google Calendar links and .ics downloads).
+function schedToCal(dateStr, timeStr){
+  var t = schedNormTime(timeStr);
+  var m = t.match(/(\d{1,2}):(\d{2})\s*([AaPp][Mm])/);
+  var h = 0, mm = "00";
+  if (m) {
+    h = parseInt(m[1], 10);
+    mm = m[2];
+    var ap = m[3].toLowerCase();
+    if (ap === "pm" && h !== 12) h += 12;
+    if (ap === "am" && h === 12) h = 0;
+  } else {
+    var p = t.split(":");
+    h = parseInt(p[0], 10) || 0;
+    mm = (p[1] || "00").replace(/\D/g, "") || "00";
+  }
+  var d = (dateStr || "").replace(/-/g, "");
+  var hh = String(h); if (hh.length < 2) hh = "0" + hh;
+  return d + "T" + hh + mm + "00";
+}
+function icsEscape(s){
+  return String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+}
+// Download every shift in the currently shown month as one .ics file —
+// the employee opens it and their phone adds all of them to their calendar.
+function downloadMonthShifts(){
+  var y = calYear, m = calMonth;
+  var prefix = y + "-" + (m + 1 < 10 ? "0" + (m + 1) : (m + 1)) + "-";
+  var rows = (schedule || []).filter(function (s) { return (schedNormDate(s.Date) || "").indexOf(prefix) === 0; });
+  if (!rows.length) { alert("No shifts in this month to download."); return; }
+  var now = new Date();
+  var stamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, "0") + String(now.getDate()).padStart(2, "0") + "T" + String(now.getHours()).padStart(2, "0") + String(now.getMinutes()).padStart(2, "0") + String(now.getSeconds()).padStart(2, "0");
+  var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Raven & Roses Cleaning Co.//EN"];
+  rows.forEach(function (s, i) {
+    var d = schedNormDate(s.Date);
+    var addr = addressForJob(s.Client);
+    lines.push("BEGIN:VEVENT");
+    lines.push("UID:raven-shift-" + d + "-" + i + "@raven-roses-cleaning.github.io");
+    lines.push("DTSTAMP:" + stamp);
+    lines.push("DTSTART:" + schedToCal(d, s.Start));
+    lines.push("DTEND:" + schedToCal(d, s.End));
+    lines.push("SUMMARY:" + icsEscape("Raven & Roses — " + s.Client));
+    lines.push("DESCRIPTION:" + icsEscape(s.Type || ""));
+    lines.push("LOCATION:" + icsEscape(addr || ""));
+    lines.push("END:VEVENT");
+  });
+  lines.push("END:VCALENDAR");
+  var blob = new Blob([lines.join("\r\n")], { type: "text/calendar" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "raven-shifts-" + y + "-" + (m + 1 < 10 ? "0" + (m + 1) : (m + 1)) + ".ics";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
 // Approved time off on one date, for the logged-in employee only (same
 // approved-only logic as hasApprovedTimeOffToday). Returns the row or null.
 function approvedTimeOffOn(dateStr) {
@@ -2639,7 +2697,13 @@ function showCalDay(y, m, d) {
   var dayShifts = shiftsOn(dateStr);
   if (dayShifts.length) {
     html += dayShifts.map(function (s) {
-      return "<p><strong>" + esc(s.Client) + "</strong><br>" + esc(schedFmtTime(s.Start)) + " – " + esc(schedFmtTime(s.End)) + " · " + esc(s.Type || "") + "</p>";
+      var addr = addressForJob(s.Client);
+      var gcal = "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+        "&text=" + encodeURIComponent("Raven & Roses — " + s.Client) +
+        "&dates=" + schedToCal(dateStr, s.Start) + "/" + schedToCal(dateStr, s.End) +
+        "&details=" + encodeURIComponent(s.Type || "") +
+        "&location=" + encodeURIComponent(addr || "");
+      return "<p><strong>" + esc(s.Client) + "</strong><br>" + esc(schedFmtTime(s.Start)) + " – " + esc(schedFmtTime(s.End)) + " · " + esc(s.Type || "") + "<br><a href=\"" + gcal + "\" target=\"_blank\" rel=\"noopener\">Add to my calendar</a></p>";
     }).join("");
   } else if (!off) {
     html += "<p>No shift.</p>";
