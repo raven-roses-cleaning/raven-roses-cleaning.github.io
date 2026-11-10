@@ -50,12 +50,15 @@
   .monthly-task .donebtn.undobtn{background:#5a5346}
   /* Monthly Focus — gold ribbon banner (Krystal, 2026-11-08): a decorative
      gold ribbon, not a plain box. Gold band, dark text, large folded ribbon
-     tails with swallowtail notches that tuck behind the band. */
-  #monthlyFocusBanner{background:linear-gradient(180deg,#f7dd85 0%,#f5d76e 45%,#e9c95c 100%);border:2px solid #b58900;border-radius:4px;color:#221f1a;box-shadow:0 4px 14px rgba(122,92,20,.45),inset 0 1px 0 rgba(255,255,255,.65);position:relative;z-index:1;margin-left:24px;margin-right:24px;padding:.35em 1em}
-  #monthlyFocusBanner h2{color:#3a2f10;margin:.05em 0;font-size:1.15rem}
+     tails with swallowtail notches that tuck behind the band.
+     Compact (Krystal, 2026-11-10): tight paragraph margins and padding so
+     the banner is short — the task names stay full size and readable. */
+  #monthlyFocusBanner{background:linear-gradient(180deg,#f7dd85 0%,#f5d76e 45%,#e9c95c 100%);border:2px solid #b58900;border-radius:4px;color:#221f1a;box-shadow:0 4px 14px rgba(122,92,20,.45),inset 0 1px 0 rgba(255,255,255,.65);position:relative;z-index:1;margin-left:24px;margin-right:24px;margin-top:6px;margin-bottom:6px;padding:.2em 1em}
+  #monthlyFocusBanner h2{color:#3a2f10;margin:0;font-size:1.15rem}
+  #monthlyFocusBanner p{margin:.1em 0;line-height:1.35}
   #monthlyFocusBanner .small{color:#4a3f1a;margin:.05em 0}
   #monthlyFocusBanner .monthly-task{background:rgba(255,253,247,.72);border-color:#b58900}
-  #monthlyFocusBanner::before,#monthlyFocusBanner::after{content:"";position:absolute;top:8px;bottom:8px;width:30px;z-index:-1;background:linear-gradient(180deg,#c89b1e 0%,#a87f00 100%)}
+  #monthlyFocusBanner::before,#monthlyFocusBanner::after{content:"";position:absolute;top:6px;bottom:6px;width:30px;z-index:-1;background:linear-gradient(180deg,#c89b1e 0%,#a87f00 100%)}
   #monthlyFocusBanner::before{left:-24px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,30% 50%)}
   #monthlyFocusBanner::after{right:-24px;clip-path:polygon(100% 0,0 0,0 100%,100% 100%,70% 50%)}
   .guide-room{border:1px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
@@ -87,7 +90,10 @@
   .cal-detail h3{margin:.2em 0;font-family:"Playfair Display",serif;color:#7a5c14}
   .cal-detail button{width:auto;padding:.4em 1em}
   .guide-search{margin:.5em 0}
-  #privacyNote{border:2px solid #b00020;background:#fff0f0;border-radius:10px;padding:10px;margin:12px 0;font-weight:700}
+  /* Notices sit ABOVE the app title (Krystal, 2026-11-10) and are compact:
+     same red/green borders, same wording, just less padding/margin and
+     slightly smaller readable text, so more room is left for the calendar. */
+  #privacyNote{border:2px solid #b00020;background:#fff0f0;border-radius:10px;padding:6px 10px;margin:6px 0;font-weight:700;font-size:.85rem;line-height:1.35}
   #copyWarning{position:fixed;left:12px;right:12px;top:12px;z-index:9997;background:#fff0f0;border:2px solid #b00020;border-radius:10px;padding:12px;display:none;font-weight:700}
   .protect{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   .codes-box{border:2px solid #c9a86a;border-radius:10px;padding:12px;margin:10px 0;background:#fffdf0}
@@ -105,7 +111,7 @@
   #loginOverlay label{font-family:"Cormorant Garamond",serif;font-size:1.05rem;color:#7a5c14;letter-spacing:.02em}
   #loginOverlay input:focus{outline:none;border-color:#b58900;box-shadow:0 0 0 3px rgba(212,175,55,.3)}
   #loginOverlay button{font-family:"Cormorant Garamond",serif;font-size:1.15rem;letter-spacing:.05em;padding:.7em}
-  #backendBanner{border:2px solid #b58900;background:#fffdf0;border-radius:10px;padding:10px;margin:12px 0}
+  #backendBanner{border:2px solid #b58900;background:#fffdf0;border-radius:10px;padding:6px 10px;margin:6px 0;font-size:.85rem;line-height:1.35}
   #backendBanner.connected{border-color:#1a7a2e;background:#f0f8f0}
   #watermark{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);transform-origin:center;z-index:9998;pointer-events:none;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#1d1d23;opacity:.05;letter-spacing:.05em}
   body.app-hidden #appContent{filter:blur(10px)}
@@ -202,9 +208,9 @@
   </div>
 </div>
 <div id="appContent">
-<h1><img src="/icon-employee-192.png" alt="" style="height:40px;width:40px;vertical-align:middle;border-radius:8px;margin-right:6px"> Raven &amp; Roses — Employee App</h1>
 <div id="privacyNote">Private information — for work purposes only. Do not share, copy, screenshot, or photograph this information.</div>
 <div id="backendBanner"></div>
+<h1><img src="/icon-employee-192.png" alt="" style="height:40px;width:40px;vertical-align:middle;border-radius:8px;margin-right:6px"> Raven &amp; Roses — Employee App</h1>
 <div class="card" id="monthlyFocusBanner"></div>
 <div id="monthlyFocusTasks"></div>
 <div class="card" id="fridayVacuumCard" style="display:none"></div>
@@ -227,6 +233,24 @@
 <option>Show all sections</option>
 </select>
 </div>
+
+<section class="emp-section" data-section="schedule">
+<div class="card" id="scheduleCard">
+  <h2>My schedule</h2>
+  <p class="small">Your shifts, set by Krystal. Only your shifts are shown here.</p>
+  <div id="schedBanner" class="cal-detail" style="display:none"></div>
+  <div class="cal-nav">
+    <button id="calPrev" class="secondary" type="button" onclick="calMove(-1)">‹</button>
+    <h3 id="calTitle"></h3>
+    <button id="calNext" class="secondary" type="button" onclick="calMove(1)">›</button>
+  </div>
+  <p><button id="calMonthBtn" class="secondary" type="button" onclick="downloadMonthShifts()">Download this month to my calendar</button></p>
+  <p class="small">Downloads a file with this month's shifts — open it and your phone adds them to your calendar. Add one shift at a time from a day below.</p>
+  <div class="cal-grid" id="calGrid"></div>
+  <div id="calDetail" class="cal-detail" style="display:none"></div>
+  <p class="small" id="calEmpty" style="display:none">No shifts set yet — Krystal will set your schedule.</p>
+</div>
+</section>
 
 <section class="emp-section" data-section="clock">
 <p class="small">Works offline — if you have no signal, your entries save on this phone and will send when you are back online.</p>
@@ -306,23 +330,6 @@
 </div>
 </section>
 
-<section class="emp-section" data-section="schedule">
-<div class="card" id="scheduleCard">
-  <h2>My schedule</h2>
-  <p class="small">Your shifts, set by Krystal. Only your shifts are shown here.</p>
-  <div id="schedBanner" class="cal-detail" style="display:none"></div>
-  <div class="cal-nav">
-    <button id="calPrev" class="secondary" type="button" onclick="calMove(-1)">‹</button>
-    <h3 id="calTitle"></h3>
-    <button id="calNext" class="secondary" type="button" onclick="calMove(1)">›</button>
-  </div>
-  <p><button id="calMonthBtn" class="secondary" type="button" onclick="downloadMonthShifts()">Download this month to my calendar</button></p>
-  <p class="small">Downloads a file with this month's shifts — open it and your phone adds them to your calendar. Add one shift at a time from a day below.</p>
-  <div class="cal-grid" id="calGrid"></div>
-  <div id="calDetail" class="cal-detail" style="display:none"></div>
-  <p class="small" id="calEmpty" style="display:none">No shifts set yet — Krystal will set your schedule.</p>
-</div>
-</section>
 
 <section class="emp-section" data-section="mileage">
 <div class="card" id="mileageCard">
@@ -466,7 +473,7 @@
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec"; // <-- PASTE THE BACKEND /exec URL HERE after deployment
 const BACKEND_ENABLED = BACKEND_URL !== "";
 // Section picker — Krystal: one section at a time, no long scrolling.
-// The first page is Clock in & houses; picking a section shows ONLY that
+// The first page is My schedule, then Clock in & houses; picking a section shows ONLY that
 // section; "Show all sections" shows everything.
 function showEmpSections(names){
   var secs = document.querySelectorAll(".emp-section");
@@ -3051,13 +3058,13 @@ var qrNever = $("colouringQrNever"); if (qrNever) qrNever.onclick = function () 
 var qrOverlay = $("colouringQrOverlay"); if (qrOverlay) qrOverlay.addEventListener("click", function (e) { if (e.target === qrOverlay) hideColouringQr(); });
 var qrBtn = $("colouringQrBtn"); if (qrBtn) qrBtn.onclick = function () { showColouringQr(); };
 
-// First page — Clock in & houses show on open; everything else is picked
-// from the dropdown. (Krystal, 2026-11-09.)
+// First page — My schedule (calendar) at the top, then Clock in & houses;
+// everything else is picked from the dropdown. (Krystal, 2026-11-10.)
 (function(){
   var secs = document.querySelectorAll(".emp-section");
   for(var i=0;i<secs.length;i++){
     var ds = secs[i].getAttribute("data-section");
-    secs[i].style.display = (ds === "clock" || ds === "house") ? "" : "none";
+    secs[i].style.display = (ds === "schedule" || ds === "clock" || ds === "house") ? "" : "none";
   }
 })();
 </script>
