@@ -235,15 +235,6 @@
 <section class="emp-section" data-section="clock">
 <p class="small">Works offline — if you have no signal, your entries save on this phone and will send when you are back online.</p>
 
-<label for="emp">Your name</label>
-<input id="emp" placeholder="e.g. Alex">
-
-<label for="job">Job / client — pick from your route</label>
-<select id="job"></select>
-
-<label for="workdate">Date</label>
-<input id="workdate" type="date">
-
 <div class="card" id="clockCard">
   <h2>Clock in / out</h2>
   <p id="status">Not clocked in.</p>
@@ -254,6 +245,15 @@
   </div>
   <p class="small">Times use this phone’s clock. Hours are calculated when you clock out.</p>
 </div>
+
+<label for="emp">Signed in as</label>
+<input id="emp" placeholder="e.g. Alex">
+
+<label for="job">Job / client — pick from your route</label>
+<select id="job"></select>
+
+<label for="workdate">Date</label>
+<input id="workdate" type="date">
 </section>
 
 <section class="emp-section" data-section="adjust">
@@ -284,8 +284,6 @@
   <p class="small">Pick a job to see what gets done at that house, plus any special instructions. Krystal adds these for each house in her manager app — if nothing shows here yet, she has not added that house’s instructions yet.</p>
   <label for="houseJob">Job / client (first name only)</label>
   <select id="houseJob"></select>
-  <label for="houseJobOther">Or type a first name</label>
-  <input id="houseJobOther" placeholder="e.g. Maria">
   <h3 style="font-size:1rem">🔒 Service note — for staff only</h3>
   <div id="houseService" class="service-note protect">Pick a job above to see its service note.</div>
   <p class="small">Internal note for staff only — do not show or read this to the client.</p>
@@ -1076,7 +1074,10 @@ function populateJobSelects(){
   if (curE) endSel.value = curE;
   const houseSel = $("houseJob");
   const curH = houseSel.value;
-  houseSel.innerHTML = "<option value=''>Pick a job…</option>" + jobs.map(j => "<option value='" + j + "'>" + j + "</option>").join("");
+  // House instructions are keyed by first name (Krystal saves them that way
+  // in the manager app), so list those first names here.
+  const houseKeys = Object.keys(houseInstructions || {});
+  houseSel.innerHTML = "<option value=''>Pick a job…</option>" + houseKeys.map(j => "<option value='" + esc(j) + "'>" + esc(j) + "</option>").join("");
   if (curH) houseSel.value = curH;
   const adjSel = $("adjJob");
   const curA = adjSel.value;
@@ -1245,12 +1246,63 @@ function linkSupplies(text){
   }
   return out;
 }
+// Find the house-instructions key (first name) for a full client name.
+// Krystal saves instructions by first name in the manager app, so match the
+// longest key that starts the full name ("Lee Anne" in "Lee Anne Robichaud"),
+// then any key that appears as a word in the name ("Marie" in "Roy & Marie Hilton").
+function houseKeyForJob(fullName){
+  if (!fullName) return "";
+  var keys = Object.keys(houseInstructions || {});
+  if (!keys.length) return "";
+  if (houseInstructions[fullName]) return fullName;
+  var lower = fullName.toLowerCase();
+  var best = "";
+  keys.forEach(function(k){
+    if (k && lower.indexOf(k.toLowerCase()) === 0 && k.length > best.length) best = k;
+  });
+  if (best) return best;
+  var words = fullName.split(/[\s&]+/).filter(Boolean);
+  for (var i = 0; i < words.length; i++){
+    for (var j = 0; j < keys.length; j++){
+      if (keys[j].toLowerCase() === words[i].toLowerCase()) return keys[j];
+    }
+  }
+  return "";
+}
+// First name to show in the "no instructions yet" message.
+function firstNameOf(fullName){
+  if (!fullName) return "";
+  return fullName.split(" ")[0];
+}
+// When the employee picks their job at the top, show that house's
+// instructions automatically — no second pick needed.
+function syncHouseFromJob(){
+  var full = currentJobName();
+  var key = houseKeyForJob(full);
+  var sel = $("houseJob");
+  if (key){
+    var found = false;
+    for (var i = 0; i < sel.options.length; i++){ if (sel.options[i].value === key) { found = true; break; } }
+    if (!found){
+      var opt = document.createElement("option");
+      opt.value = key; opt.textContent = key;
+      sel.appendChild(opt);
+    }
+    sel.value = key;
+  } else {
+    sel.value = "";
+  }
+  renderHouses();
+}
 function renderHouses(){
-  const name = $("houseJob").value || $("houseJobOther").value.trim();
+  // The house picked here wins; otherwise use the current job from the top
+  // picker so the instructions appear as soon as a client is picked.
+  const name = $("houseJob").value || houseKeyForJob(currentJobName());
+  const displayName = name || firstNameOf(currentJobName());
   const svc = $("houseService");
-  if (!name) { svc.className = "service-note"; svc.textContent = "Pick a job above to see its service note."; $("houseTasks").textContent = "Pick a job above to see its instructions."; $("houseSpecial").textContent = "—"; renderHouseCodes(""); return; }
-  const h = houseInstructions[name];
-  if (!h) { svc.className = "service-note"; svc.textContent = "No service note added for " + name + " yet — Krystal adds this in her manager app."; $("houseTasks").textContent = "No instructions added for " + name + " yet — Krystal adds these in her manager app."; $("houseSpecial").textContent = "No special instructions added yet."; renderHouseCodes(""); return; }
+  if (!displayName) { svc.className = "service-note"; svc.textContent = "Pick a job above to see its service note."; $("houseTasks").textContent = "Pick a job above to see its instructions."; $("houseSpecial").textContent = "—"; renderHouseCodes(""); return; }
+  const h = name ? houseInstructions[name] : null;
+  if (!h) { svc.className = "service-note"; svc.textContent = "No service note added for " + displayName + " yet — Krystal adds this in her manager app."; $("houseTasks").textContent = "No instructions added for " + displayName + " yet — Krystal adds these in her manager app."; $("houseSpecial").textContent = "No special instructions added yet."; renderHouseCodes(""); return; }
   const tag = h.serviceTag || "";
   svc.className = "service-note" + (tag === "good" ? " good" : tag === "okay" ? " okay" : tag === "not-so-good" ? " notgood" : "");
   svc.innerHTML = linkSupplies(h.serviceNote
@@ -1349,7 +1401,7 @@ $("mileAddBtn").onclick = () => {
   backendPost({ action: "mileage", date: date, start: start, end: end, km: km });
 };
 $("houseJob").addEventListener("change", renderHouses);
-$("houseJobOther").addEventListener("input", renderHouses);
+$("job").addEventListener("change", syncHouseFromJob);
 $("mileDate").addEventListener("change", renderMileage);
 
 
