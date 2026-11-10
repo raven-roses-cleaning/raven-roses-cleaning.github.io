@@ -86,10 +86,6 @@
   .cal-detail{border:1px solid #1a7a2e;border-radius:10px;padding:10px;margin:10px 0;background:#f0f8f0}
   .cal-detail h3{margin:.2em 0;font-family:"Playfair Display",serif;color:#7a5c14}
   .cal-detail button{width:auto;padding:.4em 1em}
-  .service-note{border:2px solid #c9a86a;border-radius:10px;padding:10px;margin:10px 0;background:rgba(255,253,247,.94)}
-  .service-note.good{border-color:#1a7a2e;background:#f0f8f0}
-  .service-note.okay{border-color:#b58900;background:#fffdf0}
-  .service-note.notgood{border-color:#b00020;background:#fff0f0}
   .guide-search{margin:.5em 0}
   #privacyNote{border:2px solid #b00020;background:#fff0f0;border-radius:10px;padding:10px;margin:12px 0;font-weight:700}
   #copyWarning{position:fixed;left:12px;right:12px;top:12px;z-index:9997;background:#fff0f0;border:2px solid #b00020;border-radius:10px;padding:12px;display:none;font-weight:700}
@@ -282,9 +278,6 @@
 <div class="card" id="houseCard">
   <h2>🏠 House instructions</h2>
   <p class="small">Shows the instructions for the job you picked at the top. Krystal adds these for each house in her manager app — if nothing shows here yet, she has not added that house’s instructions yet.</p>
-  <h3 style="font-size:1rem">🔒 Service note — for staff only</h3>
-  <div id="houseService" class="service-note protect">Pick a job above to see its service note.</div>
-  <p class="small">Internal note for staff only — do not show or read this to the client.</p>
   <h3 style="font-size:1rem">What gets done at this house</h3>
   <pre id="houseTasks" class="protect">Pick a job above to see its instructions.</pre>
   <h3 style="font-size:1rem">Special instructions</h3>
@@ -1086,12 +1079,6 @@ function renderMileage(){
   $("mileList").innerHTML = list.length ? "<table><tr><th>Start → End</th><th>Km</th><th>Type</th></tr>" + list.map(m => "<tr><td>" + m.start + " → " + m.end + "</td><td>" + m.km.toFixed(1) + "</td><td>" + (m.type === "between" ? "Between clients — payable" : m.type === "to_first" ? "To first — not payable" : "Home from last — not payable") + "</td></tr>").join("") + "</table>" : "<p class='small'>No mileage trips for this date yet.</p>";
   $("mileTotals").innerHTML = "Total today: <b>" + payable.toFixed(1) + " km</b> (Client 1 to Client 2, payable).";
 }
-function serviceLabel(tag){
-  if (tag === "good") return "Good service";
-  if (tag === "okay") return "Okay service";
-  if (tag === "not-so-good") return "Not so good service";
-  return "Service note";
-}
 // Clickable supply links in House instructions (Krystal, 2026-11-08):
 // supply names in the house text link to "What to use" (Supplies Guide)
 // and show what that supply is used for. Only names with a matching Guide
@@ -1271,15 +1258,9 @@ function renderHouses(){
   // Krystal saves instructions under in the manager app.
   const name = houseKeyForJob(currentJobName());
   const displayName = name || firstNameOf(currentJobName());
-  const svc = $("houseService");
-  if (!displayName) { svc.className = "service-note"; svc.textContent = "Pick a job above to see its service note."; $("houseTasks").textContent = "Pick a job above to see its instructions."; $("houseSpecial").textContent = "—"; renderHouseCodes(""); return; }
+  if (!displayName) { $("houseTasks").textContent = "Pick a job above to see its instructions."; $("houseSpecial").textContent = "—"; renderHouseCodes(""); return; }
   const h = name ? houseInstructions[name] : null;
-  if (!h) { svc.className = "service-note"; svc.textContent = "No service note added for " + displayName + " yet — Krystal adds this in her manager app."; $("houseTasks").textContent = "No instructions added for " + displayName + " yet — Krystal adds these in her manager app."; $("houseSpecial").textContent = "No special instructions added yet."; renderHouseCodes(""); return; }
-  const tag = h.serviceTag || "";
-  svc.className = "service-note" + (tag === "good" ? " good" : tag === "okay" ? " okay" : tag === "not-so-good" ? " notgood" : "");
-  svc.innerHTML = linkSupplies(h.serviceNote
-    ? serviceLabel(tag) + " — " + h.serviceNote
-    : serviceLabel(tag) + " — no service note written for this house yet. Krystal adds this in her manager app.");
+  if (!h) { $("houseTasks").textContent = "No instructions added for " + displayName + " yet — Krystal adds these in her manager app."; $("houseSpecial").textContent = "No special instructions added yet."; renderHouseCodes(""); return; }
   $("houseTasks").innerHTML = linkSupplies(h.tasks || "No tasks listed for this house yet.");
   $("houseSpecial").innerHTML = linkSupplies(h.special || "No special instructions for this house.");
   renderHouseCodes(h.codes || "");
