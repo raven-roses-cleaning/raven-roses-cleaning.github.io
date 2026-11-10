@@ -1436,17 +1436,18 @@ function renderMonthlyFocusBanner(){
   var el = $("monthlyFocusBanner"); if (!el) return;
   var box = $("monthlyFocusTasks"); if (!box) return;
   var tasks = (monthlyFocus.tasks || []);
-  var head = "<h2>🗓️ This Month&rsquo;s Focus — do in EVERY house this month</h2>" +
-    "<p class='small'><strong>" + esc(monthlyFocus.month || "") + "</strong>" + (monthlyFocus.note ? " — " + esc(monthlyFocus.note) : "") + "</p>";
-  el.innerHTML = head;
+  // Simple: the task(s) live inside the ribbon banner — just "Monthly task"
+  // and the task name(s). No separate cards below, no extra wording.
+  var html = "<h2>Monthly task</h2>";
   if (!tasks.length) {
-    box.innerHTML = "<p class='small'>No tasks set for this month yet — Krystal sets them in her manager app.</p>";
-    return;
+    html += "<p>No task set for this month yet.</p>";
+  } else {
+    html += tasks.map(function (t) {
+      return "<p>" + esc(t.title) + "</p>";
+    }).join("");
   }
-  box.innerHTML = tasks.map(function (t) {
-    return "<div class='monthly-task'><h3>" + esc(t.title) + "</h3>" +
-      "<p class='small'>Applies to: <strong>every house</strong></p></div>";
-  }).join("");
+  el.innerHTML = html;
+  box.innerHTML = "";
 }
 $("guideSearch").addEventListener("input", e => { guideGlobalQuery = e.target.value; renderGuide(); });
 
