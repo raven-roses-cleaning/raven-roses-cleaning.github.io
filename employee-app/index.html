@@ -278,13 +278,15 @@
 <div class="card" id="houseCard">
   <h2>🏠 House instructions</h2>
   <p class="small">Shows the instructions for the job you picked at the top. Krystal adds these for each house in her manager app — if nothing shows here yet, she has not added that house’s instructions yet.</p>
+  <h3 style="font-size:1rem">📍 Address</h3>
+  <div id="houseAddress" class="codes-box">Pick a job above to see its address.</div>
   <h3 style="font-size:1rem">What gets done at this house</h3>
   <pre id="houseTasks" class="protect">Pick a job above to see its instructions.</pre>
   <h3 style="font-size:1rem">Special instructions</h3>
   <pre id="houseSpecial" class="protect">—</pre>
   <h3 style="font-size:1rem">🔑 House codes</h3>
   <div id="houseCodes" class="codes-box">Pick a job above to see its house codes.</div>
-  <p class="small">Codes are blurred until you tap them. Tap to reveal at the door — they blur again after 30 seconds, or when you pick another house. Never share them. The address stays visible in the mileage list so you can open it in a map.</p>
+  <p class="small">Codes are blurred until you tap them. Tap to reveal at the door — they blur again after 30 seconds, or when you pick another house. Never share them.</p>
 </div>
 </section>
 
@@ -1247,6 +1249,29 @@ function houseKeyForJob(fullName){
   }
   return "";
 }
+// Address for a job, from the CLIENTS list (name + street address only).
+// Matches the same way houseKeyForJob does: exact name, then prefix, then
+// a word match — so "Randy & Barbara Cooper" finds "Randy and Barbara".
+function addressForJob(jobName){
+  if (!jobName) return "";
+  var lower = jobName.toLowerCase();
+  for (var i = 0; i < CLIENTS.length; i++){
+    if (CLIENTS[i][0].toLowerCase() === lower) return CLIENTS[i][1];
+  }
+  var best = "";
+  CLIENTS.forEach(function(c){
+    var n = c[0].toLowerCase();
+    if (n && (lower.indexOf(n) === 0 || n.indexOf(lower) === 0) && n.length > best.length) best = c[1];
+  });
+  if (best) return best;
+  var words = jobName.split(/[\s&]+/).filter(Boolean);
+  for (var w = 0; w < words.length; w++){
+    for (var j = 0; j < CLIENTS.length; j++){
+      if (CLIENTS[j][0].toLowerCase().split(/[\s&]+/).indexOf(words[w].toLowerCase()) !== -1) return CLIENTS[j][1];
+    }
+  }
+  return "";
+}
 // First name to show in the "no instructions yet" message.
 function firstNameOf(fullName){
   if (!fullName) return "";
@@ -1258,12 +1283,22 @@ function renderHouses(){
   // Krystal saves instructions under in the manager app.
   const name = houseKeyForJob(currentJobName());
   const displayName = name || firstNameOf(currentJobName());
+  renderHouseAddress(currentJobName());
   if (!displayName) { $("houseTasks").textContent = "Pick a job above to see its instructions."; $("houseSpecial").textContent = "—"; renderHouseCodes(""); return; }
   const h = name ? houseInstructions[name] : null;
   if (!h) { $("houseTasks").textContent = "No instructions added for " + displayName + " yet — Krystal adds these in her manager app."; $("houseSpecial").textContent = "No special instructions added yet."; renderHouseCodes(""); return; }
   $("houseTasks").innerHTML = linkSupplies(h.tasks || "No tasks listed for this house yet.");
   $("houseSpecial").innerHTML = linkSupplies(h.special || "No special instructions for this house.");
   renderHouseCodes(h.codes || "");
+}
+// Address for the picked job, as copyable text plus a tap-to-open Google
+// Maps link — so the cleaner can copy it or open it in a map to get there.
+function renderHouseAddress(jobName){
+  var el = $("houseAddress"); if (!el) return;
+  if (!jobName) { el.textContent = "Pick a job above to see its address."; return; }
+  var addr = addressForJob(jobName);
+  if (!addr) { el.textContent = "No address listed for this job yet."; return; }
+  el.innerHTML = esc(addr) + "<br><a href=\"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addr) + "\" target=\"_blank\" rel=\"noopener\">Open in Google Maps</a>";
 }
 // --- Easy monthly mileage submittal (weekend copy, 2026-11-06) ---
 // Per-trip "Add mileage trip" stays as-is. This adds ONE big monthly submit:
