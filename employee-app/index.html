@@ -527,6 +527,11 @@ let timeOff = JSON.parse(localStorage.getItem(TIMEOFFKEY) || "[]");
 // app. The backend only ever sends this employee's own rows.
 const SCHEDKEY = "ravenScheduleV1";
 let schedule = JSON.parse(localStorage.getItem(SCHEDKEY) || "[]");
+// Normalise any saved rows so an ISO date/time stored by an earlier sync
+// still matches — a saved shift must never go missing from the calendar.
+schedule = (schedule || []).map(function (r) {
+  return { Employee: r.Employee || r.employee || "", Date: schedNormDate(r.Date || r.date || ""), Client: r.Client || r.client || "", Start: schedNormTime(r.Start || r.start || ""), End: schedNormTime(r.End || r.end || ""), Type: r.Type || r.type || "" };
+});
 function saveSchedule() { localStorage.setItem(SCHEDKEY, JSON.stringify(schedule)); }
 // Monthly Focus — TO-DO in every house for a whole month, then it rotates.
 // Krystal sets the current month's task(s) in her manager app (same storage
@@ -2217,7 +2222,7 @@ function pullBackendData() {
       // the Sheet is the source of truth, so the backend wins outright.
       // Per-shift format (2026-11-09): Employee, Date, Client, Start, End, Type.
       schedule = d.schedule.map(function (r) {
-        return { Employee: r.Employee || r.employee || "", Date: r.Date || r.date || "", Client: r.Client || r.client || "", Start: r.Start || r.start || "", End: r.End || r.end || "", Type: r.Type || r.type || "" };
+        return { Employee: r.Employee || r.employee || "", Date: schedNormDate(r.Date || r.date || ""), Client: r.Client || r.client || "", Start: schedNormTime(r.Start || r.start || ""), End: schedNormTime(r.End || r.end || ""), Type: r.Type || r.type || "" };
       }).filter(function (r) { return r.Date && r.Client; });
       saveSchedule();
     }
@@ -2461,9 +2466,39 @@ function hasApprovedTimeOffToday() {
 var CAL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 var calYear = new Date().getFullYear();
 var calMonth = new Date().getMonth();
+// The Sheet stores Date as a real date and Start/End as real times, so the
+// backend returns ISO strings ("2026-11-12T00:00:00.000Z",
+// "1899-12-30T13:00:00.000Z"). The Sheet timezone is Etc/GMT, so read the
+// date/time parts straight from the ISO string — never through the browser's
+// local timezone, which would shift the day. Without this, a saved shift
+// never matches "2026-11-12" and the calendar shows nothing.
+function schedNormDate(v){
+  if (v == null) return "";
+  var s = String(v).trim();
+  if (!s) return "";
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + "-" + m[2] + "-" + m[3];
+  return s;
+}
+function schedNormTime(v){
+  if (v == null) return "";
+  var s = String(v).trim();
+  if (!s) return "";
+  if (/^\d{1,2}:\d{2}\s*([AaPp][Mm])?$/.test(s)) return s;
+  var m = s.match(/T(\d{2}):(\d{2})/);
+  if (m) {
+    var h = parseInt(m[1], 10), mm = m[2];
+    var ap = h >= 12 ? "pm" : "am";
+    var hh = h % 12; if (hh === 0) hh = 12;
+    return hh + ":" + mm + ap;
+  }
+  return s;
+}
 function schedFmtTime(t) {
   if (!t) return "";
-  var parts = String(t).split(":");
+  var s = schedNormTime(t);
+  if (/[AaPp][Mm]/.test(s)) return s;
+  var parts = s.split(":");
   var h = parseInt(parts[0], 10), m = parts[1] || "00";
   var ap = h >= 12 ? "pm" : "am";
   var hh = h % 12; if (hh === 0) hh = 12;
@@ -2471,7 +2506,7 @@ function schedFmtTime(t) {
 }
 function schedFmtDate(d) {
   if (!d) return "";
-  var parts = String(d).split("-");
+  var parts = schedNormDate(d).split("-");
   var dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   if (isNaN(dt.getTime())) return d;
   return dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -2482,7 +2517,7 @@ function schedDateStr(y, m, d) {
   return y + "-" + mm + "-" + dd;
 }
 function shiftsOn(dateStr) {
-  return (schedule || []).filter(function (s) { return s.Date === dateStr; });
+  return (schedule || []).filter(function (s) { return schedNormDate(s.Date) === dateStr; });
 }
 // Approved time off on one date, for the logged-in employee only (same
 // approved-only logic as hasApprovedTimeOffToday). Returns the row or null.
