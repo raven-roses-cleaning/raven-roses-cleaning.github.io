@@ -2252,7 +2252,7 @@ function renderGuide(){
   } else {
     // No room picker (Krystal, 2026-11-08): the guide is supplies-first.
     // Tap a supply to see everything it is good for, or search above.
-    if (menuEl) menuEl.innerHTML = "<button class='guide-item' onclick='guideShowSupplies()'><strong>Supplies</strong><br><small>Look up a cleaner, request refills, or see what everything is used for</small></button>";
+    if (menuEl) menuEl.innerHTML = "<button class='guide-item' onclick='guideShowSupplies()'><strong>Supplies</strong><br><small>Choose a cleaner from the dropdown to see what it is used for, or request a refill</small></button>";
     roomsEl.innerHTML = "";
     if (supEl) supEl.innerHTML = "";
   }
