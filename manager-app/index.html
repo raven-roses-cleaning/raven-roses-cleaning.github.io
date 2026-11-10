@@ -1579,6 +1579,27 @@ var schedCalYear = new Date().getFullYear();
 var schedDraft = [];    // working copy of ALL shifts {Employee, Date, Client, Start, End, Type}
 var schedDraftLoaded = false;
 var schedDetailDate = ""; // "YYYY-MM-DD" for the open detail, if any
+// Client list for the schedule dropdown — same list the employee app uses
+// for its clock-in / mileage dropdowns: name + street address, so Krystal
+// can see the address when she picks a client for a shift. No emails, no
+// keys/codes here. (Krystal, 2026-11-09: "This should pop up with every
+// client and their address.")
+var SCHED_CLIENTS = [
+  ["Allison & Ross McKenzie", "1316 Langara DR Nanaimo"],
+  ["Gary Scott", "2566 Pylades Drive Ladysmith, BC V9G 1E5"],
+  ["Jessica Phillips", "438 Hamilton Ave"],
+  ["Lee Anne Robichaud", "7271 Aulds road Lantzville"],
+  ["Maria & Terre Gomes", "307 Kennedy St"],
+  ["Maureen Endicott", "38 Front street"],
+  ["Randy and Barbara", "3721 Elworthy Pl"],
+  ["Roy & Marie Hilton", "5024 Vista View Crescent"],
+  ["Shirley & Al Hardy", "# 101 4469 Stonebridge Place Nanaimo"],
+  ["Tanya & Bob", "3069 Alan a Dale Place"],
+  ["Wendy Lim-Connoly", "718 Wentworth St Nanaimo"],
+  ["Kevin & Katie", "234-1130 Resort Drive, Parksville"],
+  ["Diane Kimba", ""],
+  ["Caledonia Fire Protection", "290 Fry St. Nanaimo"]
+];
 function schedClientNames() {
   var names = Object.keys(houseInstructions || {});
   names.sort(function (a, b) { return a.localeCompare(b); });
@@ -1614,10 +1635,18 @@ function schedEmpOptions() {
     : "<option value=''>No active employees yet</option>";
 }
 function schedClientOptions() {
-  var names = schedClientNames();
-  return names.length
-    ? names.map(function (n) { return "<option value='" + esc(n) + "'>" + esc(n) + "</option>"; }).join("")
-    : "<option value=''>No clients yet — type one below</option>";
+  var listed = SCHED_CLIENTS.map(function (c) { return c[1] ? c[0] + " — " + c[1] : c[0]; });
+  var extra = schedClientNames().filter(function (n) {
+    return !SCHED_CLIENTS.some(function (c) { return c[0] === n; }) && listed.indexOf(n) < 0;
+  });
+  var opts = SCHED_CLIENTS.map(function (c) {
+    var label = c[1] ? c[0] + " — " + c[1] : c[0];
+    return "<option value='" + esc(label) + "'>" + esc(label) + "</option>";
+  }).join("");
+  if (extra.length) {
+    opts += extra.map(function (n) { return "<option value='" + esc(n) + "'>" + esc(n) + "</option>"; }).join("");
+  }
+  return opts || "<option value=''>No clients yet — type one below</option>";
 }
 function schedCalMove(dir) {
   schedCalMonth += dir;
