@@ -217,10 +217,8 @@
 <label for="sectionJump" style="color:#fff;margin:0 0 .2em">Go to section:</label>
 <select id="sectionJump" onchange="jumpToSection(this)" style="margin-top:.3em">
 <option value="">— Pick a section —</option>
-<option>Top of the page</option>
-<option>Clock in / out</option>
+<option>Clock in &amp; houses</option>
 <option>⏱ Adjust time — request a correction</option>
-<option>🏠 House instructions</option>
 <option>🧴 What to use — Supplies Guide</option>
 <option>My schedule</option>
 <option>🚗 Mileage tracker</option>
@@ -230,9 +228,11 @@
 <option>Today’s entries</option>
 <option>Time adjustments</option>
 <option>End-of-day summary</option>
+<option>Show all sections</option>
 </select>
 </div>
 
+<section class="emp-section" data-section="clock">
 <p class="small">Works offline — if you have no signal, your entries save on this phone and will send when you are back online.</p>
 
 <label for="emp">Your name</label>
@@ -254,6 +254,9 @@
   </div>
   <p class="small">Times use this phone’s clock. Hours are calculated when you clock out.</p>
 </div>
+</section>
+
+<section class="emp-section" data-section="adjust">
 <div class="card" id="adjustCard">
   <h2>⏱ Adjust time — request a correction</h2>
   <p class="small">Forgot to clock in, forgot to clock out, or clocked in at the wrong time? Fill this in. <strong>Nothing changes until Krystal approves it.</strong></p>
@@ -273,6 +276,9 @@
   <button id="adjCancelBtn" class="secondary">Cancel — keep original times</button>
   <p id="adjStatus" class="small"></p>
 </div>
+</section>
+
+<section class="emp-section" data-section="house">
 <div class="card" id="houseCard">
   <h2>🏠 House instructions</h2>
   <p class="small">Pick a job to see what gets done at that house, plus any special instructions. Krystal adds these for each house in her manager app — if nothing shows here yet, she has not added that house’s instructions yet.</p>
@@ -291,6 +297,9 @@
   <div id="houseCodes" class="codes-box">Pick a job above to see its house codes.</div>
   <p class="small">Codes are blurred until you tap them. Tap to reveal at the door — they blur again after 30 seconds, or when you pick another house. Never share them. The address stays visible in the mileage list so you can open it in a map.</p>
 </div>
+</section>
+
+<section class="emp-section" data-section="guide">
 <div class="card" id="suppliesGuideCard">
   <h2>🧴 What to use — Supplies Guide</h2>
   <p class="small"><strong>Not sure what to use?</strong> Tap a supply below to see everything it is good for. Or search below.</p>
@@ -304,6 +313,9 @@
   <div id="guideSupplies"></div>
   <p class="small">How updates reach you: when Krystal changes it in her manager app, you see the new guide here automatically — no separate message needed.</p>
 </div>
+</section>
+
+<section class="emp-section" data-section="schedule">
 <div class="card" id="scheduleCard">
   <h2>My schedule</h2>
   <p class="small">Your shifts, set by Krystal. Only your shifts are shown here.</p>
@@ -316,6 +328,9 @@
   <div id="calDetail" class="cal-detail" style="display:none"></div>
   <p class="small" id="calEmpty" style="display:none">No shifts set yet — Krystal will set your schedule.</p>
 </div>
+</section>
+
+<section class="emp-section" data-section="mileage">
 <div class="card" id="mileageCard">
   <h2>🚗 Mileage tracker</h2>
   <p class="small">Client 1 to Client 2 — kilometres you enter yourself. No Google connection, no GPS.</p>
@@ -347,6 +362,9 @@
 
 
 
+</section>
+
+<section class="emp-section" data-section="issue">
 <div class="card" id="issueCard">
   <h2>⚠️ Job issue note</h2>
   <p class="small">Something went wrong, couldn’t finish a task, or damage? Write it here before you clock out — Krystal sees it with that job, the same day.</p>
@@ -355,6 +373,9 @@
 </div>
 
 
+</section>
+
+<section class="emp-section" data-section="timeoff">
 <div class="card" id="timeOffCard">
   <h2>🗓️ Time off / sick day request</h2>
   <p class="small">BC paid sick days: 5 per year. Vacation pay is already paid on every cheque, so vacation time off itself is unpaid time off — sick days are the paid ones, up to 5 per year. Nothing is approved until Krystal approves it.</p>
@@ -373,6 +394,9 @@
 </div>
 
 
+</section>
+
+<section class="emp-section" data-section="supplies">
 <div class="card" id="suppliesCard">
   <h2>End of job — no typing required</h2>
   <p>🔔 When you get home at the end of the day, refill supplies for tomorrow.</p>
@@ -410,20 +434,31 @@
   <button id="colouringQrBtn" class="secondary">🎨 Free colouring book — QR to share</button>
 </div>
 
+</section>
+
+<section class="emp-section" data-section="entries">
 <h2>Today’s entries</h2>
 <div id="entries"></div>
 <p class="small">Need to fix one of these? Tap <strong>Adjust</strong> next to that entry.</p>
 
+</section>
+
+<section class="emp-section" data-section="adjustments">
 <h2>Time adjustments</h2>
 <p class="small">Pending requests do <strong>not</strong> count in your total hours until approved.</p>
 <div id="pending"></div>
 
+</section>
+
+<section class="emp-section" data-section="summary">
 <h2>End-of-day summary</h2>
 <button id="summaryBtn" class="secondary">Show summary</button>
 <pre id="summary">Tap “Show summary” to see today’s total hours, supplies refilled, low items, and cloths status.</pre>
 <button id="copyBtn">Copy summary as text</button>
 <button id="csvBtn" class="secondary">Download / copy CSV</button>
-<pre id="csvOut" class="small"></pre>
+<pre id="csvOut" class="small"></pre></section>
+
+
 
 </div>
 <script>
@@ -436,28 +471,44 @@
 // ============================================================================
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec"; // <-- PASTE THE BACKEND /exec URL HERE after deployment
 const BACKEND_ENABLED = BACKEND_URL !== "";
-// Section jump menu — Krystal: no long scrolling to find a section.
-// FIXED 2026-11-09: scrollIntoView() was unreliable on phones (heading ended
-// up hidden under the sticky nav, or no visible scroll). Use window.scrollTo
-// with the heading's absolute position, offset below the sticky nav.
+// Section picker — Krystal: one section at a time, no long scrolling.
+// The first page is Clock in & houses; picking a section shows ONLY that
+// section; "Show all sections" shows everything.
+function showEmpSections(names){
+  var secs = document.querySelectorAll(".emp-section");
+  for(var i=0;i<secs.length;i++){
+    var ds = secs[i].getAttribute("data-section");
+    secs[i].style.display = (names.indexOf(ds) !== -1) ? "" : "none";
+  }
+  window.scrollTo({top:0, behavior:"smooth"});
+}
 function jumpToSection(sel){
   var label = sel.value;
   if(!label){ return; }
-  sel.value = "";
-  if(label === "Top of the page"){ window.scrollTo({top:0, behavior:"smooth"}); return; }
-  var norm = function(s){ return s.replace(/\s+/g, " ").trim(); };
-  var heads = document.querySelectorAll("h2");
-  for(var i=0;i<heads.length;i++){
-    if(norm(heads[i].textContent) === norm(label)){
-      var y = heads[i].getBoundingClientRect().top + window.pageYOffset - 80;
-      if(y < 0){ y = 0; }
-      window.scrollTo({top:y, behavior:"smooth"});
-      heads[i].style.outline = "3px solid #b58900";
-      heads[i].style.outlineOffset = "4px";
-      (function(h){ setTimeout(function(){ h.style.outline=""; h.style.outlineOffset=""; }, 2000); })(heads[i]);
-      return;
+  var norm = function(s){ return s.replace(/\u2019/g, "'").replace(/\s+/g, " ").trim(); };
+  var want = norm(label);
+  if(want === "Show all sections"){
+    var secs = document.querySelectorAll(".emp-section");
+    for(var i=0;i<secs.length;i++){ secs[i].style.display = ""; }
+    window.scrollTo({top:0, behavior:"smooth"});
+    return;
+  }
+  if(want === "Clock in & houses"){
+    showEmpSections(["clock","house"]);
+    return;
+  }
+  var secs2 = document.querySelectorAll(".emp-section");
+  for(var j=0;j<secs2.length;j++){
+    var h = secs2[j].querySelector("h2");
+    if(!h){ secs2[j].style.display = "none"; continue; }
+    var hn = norm(h.textContent);
+    if(hn === want || hn.indexOf(want) === 0 || want.indexOf(hn) === 0){
+      secs2[j].style.display = "";
+    } else {
+      secs2[j].style.display = "none";
     }
   }
+  window.scrollTo({top:0, behavior:"smooth"});
 }
 
 const KIT = [
@@ -855,6 +906,7 @@ window.requestAdjust = function(idx){
   $("adjTarget").innerHTML = "Correcting this entry: <b>" + e.job + ", " + e.date + ", " + fmt(e.in) + "–" + (e.out ? fmt(e.out) : "?") + " (" + (e.hours||0).toFixed(2) + "h)</b>. Original stays unchanged until Krystal approves.";
   $("adjStatus").textContent = "";
   updateAdjPreview();
+  showEmpSections(["adjust"]);
   document.getElementById("adjustCard").scrollIntoView();
 };
 $("adjCancelBtn").onclick = () => {
@@ -2837,6 +2889,16 @@ var qrGotIt = $("colouringQrGotIt"); if (qrGotIt) qrGotIt.onclick = hideColourin
 var qrNever = $("colouringQrNever"); if (qrNever) qrNever.onclick = function () { setColouringQr({ date: todayStr(), never: true }); hideColouringQr(); };
 var qrOverlay = $("colouringQrOverlay"); if (qrOverlay) qrOverlay.addEventListener("click", function (e) { if (e.target === qrOverlay) hideColouringQr(); });
 var qrBtn = $("colouringQrBtn"); if (qrBtn) qrBtn.onclick = function () { showColouringQr(); };
+
+// First page — Clock in & houses show on open; everything else is picked
+// from the dropdown. (Krystal, 2026-11-09.)
+(function(){
+  var secs = document.querySelectorAll(".emp-section");
+  for(var i=0;i<secs.length;i++){
+    var ds = secs[i].getAttribute("data-section");
+    secs[i].style.display = (ds === "clock" || ds === "house") ? "" : "none";
+  }
+})();
 </script>
 </body>
 </html>
