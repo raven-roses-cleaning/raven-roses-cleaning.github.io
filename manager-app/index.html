@@ -106,9 +106,9 @@
 <label for="sectionJump" style="color:#fff;margin:0 0 .2em">Go to section:</label>
 <select id="sectionJump" onchange="jumpToSection(this)" style="margin-top:.3em">
 <option value="">— Pick a section —</option>
-<option>Top of the page</option>
-<option>How entries get here — for now</option>
+<option>How entries get here</option>
 <option>Employees — codes, rates &amp; access (Krystal only)</option>
+<option>Work schedules — set shifts (Krystal only)</option>
 <option>Pay settings (Krystal only)</option>
 <option>Day total</option>
 <option>Weekly view</option>
@@ -124,14 +124,17 @@
 <option>This Month’s Focus — set the monthly tasks (Krystal only)</option>
 <option>What to use — Supplies Guide — edit (Krystal only)</option>
 <option>Export &amp; day summary</option>
+<option>Your signature (Krystal only)</option>
+<option>Show all sections</option>
 </select>
 </div>
 
+<div id="sectionStartMsg" class="card"><p class="small">Pick a section above to begin. You will see just that section — or pick Show all sections to see everything.</p></div>
 
+<section class="mgr-section" data-section="entries">
 <div class="card">
   <h2>How entries get here</h2>
-  <p class="small">Entries, approvals, house instructions, monthly focus and the guide sync automatically between the employee app and this manager app through the shared backend — no export / import needed.<br>
-  <strong>Testing on one phone:</strong> open the employee app and the manager app in the same browser on the same phone — they share the same saved entries, so you will see her entries here straight away.</p>
+  <p class="small">When your employee clocks in, adds mileage, or sends a note in their app, it shows up here on its own. You don't have to type anything in or move anything over. Pick a date and an employee below, then tap Refresh to see their entries for that day.</p>
   <label for="viewDate">Date to view</label>
   <input id="viewDate" type="date">
   <label for="empFilter">Employee</label>
@@ -139,10 +142,13 @@
   <button id="refreshBtn" class="secondary">Refresh</button>
 </div>
 
+</section>
+
+<section class="mgr-section" data-section="employees">
 <div class="card" id="employeesCard">
   <h2>Employees — codes, rates &amp; access (Krystal only)</h2>
-  <p class="small">Each employee signs into her app with her name and her own personal
-  code. Set the code here — tell it to her in person, never in a group
+  <p class="small">Each employee signs into their app with their name and their own personal
+  code. Set the code here — tell it to them in person, never in a group
   chat or email thread. A code is blank until you set it; an employee
   with no code cannot sign in at all.</p>
   <p class="small"><strong>Revoking cuts off app access only.</strong> If you revoke
@@ -181,21 +187,13 @@
   <p id="empStatus" class="small"></p>
 </div>
 
-<div class="card" id="signatureCard">
-  <h2>Your signature (Krystal only)</h2>
-  <p class="small">Draw your signature once here. It will appear on the agreements new hires sign, so the copy they see already has your signature on it.</p>
-  <canvas id="sigCanvas" class="sig-canvas" width="600" height="180"></canvas>
-  <p class="small">Draw with your finger or mouse. Tap Clear to start again.</p>
-  <button id="sigClearBtn" class="secondary" style="width:auto;padding:.4em 1em">Clear</button>
-  <button id="sigSaveBtn" style="width:auto;padding:.4em 1em">Save my signature</button>
-  <p id="sigStatus" class="small"></p>
-  <p id="sigSavedNote" class="small"></p>
-  <div id="sigSavedPreview"></div>
-</div>
+</section>
 
+<section class="mgr-section" data-section="schedule">
 <div class="card" id="scheduleCard">
   <h2>Work schedules — set shifts (Krystal only)</h2>
   <p class="small">Tap a day on the calendar to set a shift for that day: pick the employee, the client, type in the start and end times, and the kind of clean. One shift at a time — no preset times.</p>
+  <div id="schedLegend" class="small" style="margin:.4em 0"></div>
   <div class="cal-nav">
     <button id="schedCalPrev" class="secondary" type="button" onclick="schedCalMove(-1)">‹</button>
     <h3 id="schedCalTitle"></h3>
@@ -208,6 +206,9 @@
   <p id="schedStatus" class="small"></p>
 </div>
 
+</section>
+
+<section class="mgr-section" data-section="pay">
 <div class="card">
   <h2>Pay settings (Krystal only)</h2>
   <p class="small">Employee rates come from the rate saved when they clocked out, or from the rate you set here per employee. Mileage pay needs a CRA rate — enter the current CRA rate here, do not guess it. If it is blank, mileage shows kilometres only, no dollars.</p>
@@ -232,9 +233,15 @@
   <p id="rateStatus" class="small"></p>
 </div>
 
+</section>
+
+<section class="mgr-section" data-section="daytotal">
 <h2>Day total</h2>
 <p id="dayTotal" class="small"></p>
 
+</section>
+
+<section class="mgr-section" data-section="weekly">
 <h2>Weekly view</h2>
 <div class="card">
   <p class="small">Pick a week (Monday–Sunday). Hours and pay estimates are per employee for that week, plus mileage for the week. Pay is an estimate only — the payroll calculator is the pay authority, and final pay is confirmed by Krystal.</p>
@@ -245,24 +252,42 @@
   <p id="weekTotals" class="small"></p>
 </div>
 
+</section>
+
+<section class="mgr-section" data-section="today">
 <h2>Today’s entries</h2>
 <div id="entries"></div>
 
+</section>
+
+<section class="mgr-section" data-section="lowsupplies">
 <h2>Low supplies — roll-up for today</h2>
 <div id="lowRollup"></div>
 
+</section>
+
+<section class="mgr-section" data-section="adjustments">
 <h2>Time adjustments — approve / decline</h2>
 <p class="small">Pending requests do <strong>not</strong> count in totals until you approve them. Approving replaces the original times. Declining leaves the original times untouched.</p>
 <div id="pending"></div>
 
+</section>
+
+<section class="mgr-section" data-section="adjhistory">
 <h2>Approved / declined history</h2>
 <div id="history"></div>
 
 
+</section>
+
+<section class="mgr-section" data-section="mileage">
 <h2>Mileage — for this date</h2>
 <div id="mileageView"></div>
 <p id="mileageTotals" class="small"></p>
 
+</section>
+
+<section class="mgr-section" data-section="milesubs">
 <h2>Mileage submissions</h2>
 <div class="card">
   <p class="small">Months employees have submitted, per employee. Km only — the CRA rate is applied by Krystal in payroll. Mileage is submitted on the last day of the month and paid out on the 5th.</p>
@@ -270,9 +295,15 @@
 </div>
 
 
+</section>
+
+<section class="mgr-section" data-section="timeoff">
 <h2>Time off / sick requests — approve / decline (Krystal only)</h2>
 <div id="timeOffMgr"></div>
 
+</section>
+
+<section class="mgr-section" data-section="onboarding">
 <h2>Employee onboarding checklist — Krystal only (NO SIN in this app)</h2>
 <p class="small">Pay method: <strong>e-transfer, morning of payday</strong> (Krystal, 2026-11-03). Krystal keeps a copy of the employee’s information herself, separately — that copy is NOT stored in this app, and a SIN is NEVER entered here. In the backend version, a SIN will be held in an encrypted, masked vault for T4 filing only (see payroll file note) — in this draft, the SIN vault is NOT built, so do not type a SIN anywhere in these draft files.</p>
 <label for="obEmp">Employee (first name)</label>
@@ -282,8 +313,11 @@
 <button id="obSaveBtn" class="secondary">Save onboarding checklist</button>
 <p id="obStatus" class="small"></p>
 
+</section>
+
+<section class="mgr-section" data-section="house">
 <h2>House instructions — edit (Krystal only)</h2>
-<p class="small">Add what gets done at each house, plus special instructions. The employee sees this read-only in her app, by first name only. Do not put anything here you would not want the cleaner for that house to see. The <strong>service note</strong> below is also shown to the cleaner for that house, at the top of their house instructions — it is an internal staff note, so keep it professional and do not show it to the client.</p>
+<p class="small">Add what gets done at each house, plus special instructions. The employee sees this read-only in their app, by first name only. Do not put anything here you would not want the cleaner for that house to see. The <strong>service note</strong> below is also shown to the cleaner for that house, at the top of their house instructions — it is an internal staff note, so keep it professional and do not show it to the client.</p>
 <label for="hiName">Client first name</label>
 <input id="hiName" placeholder="e.g. Maria">
 <label for="hiServiceTag">Service note — how is service at this house?</label>
@@ -296,19 +330,22 @@
 <label for="hiServiceNote">Service note — what should the cleaner know? (internal, staff only)</label>
 <textarea id="hiServiceNote" rows="3" placeholder="e.g. Good service — easy access, dog is friendly. / Not so good service — hard to get in, allow extra time. — write it as you want the cleaner to see it, professionally"></textarea>
 <label for="hiTasks">What gets done at this house</label>
-<textarea id="hiTasks" rows="5" placeholder="e.g. Kitchen, bathrooms, floors, dusting… — write it as you want her to see it"></textarea>
+<textarea id="hiTasks" rows="5" placeholder="e.g. Kitchen, bathrooms, floors, dusting… — write it as you want them to see it"></textarea>
 <label for="hiSpecial">Special instructions</label>
 <textarea id="hiSpecial" rows="4" placeholder="e.g. Dog in backyard, key under mat, no bleach on…"></textarea>
 <label for="hiCodes">House codes — lock / alarm / key codes</label>
-<textarea id="hiCodes" rows="3" placeholder="e.g. Front door code 1234, alarm 5678 — write each code on its own line. Blurred in the employee app until she taps it at the door."></textarea>
+<textarea id="hiCodes" rows="3" placeholder="e.g. Front door code 1234, alarm 5678 — write each code on its own line. Blurred in the employee app until they tap it at the door."></textarea>
 <button id="hiSaveBtn">Save house instructions</button>
 <p id="hiStatus" class="small"></p>
 <div id="hiList"></div>
 
+</section>
+
+<section class="mgr-section" data-section="focus">
 <h2>This Month&rsquo;s Focus — set the monthly tasks (Krystal only)</h2>
 <div class="card">
-  <p class="small"><strong>TO-DO in every house for a whole month, then it rotates</strong> &mdash; not a check or inspection. Set 1&ndash;2 tasks for the month (sometimes more, depending on the task and the season). They last the whole month so every house gets done properly, then next month you set the next task(s) here and it rotates. The employee sees these in her app under &ldquo;This Month&rsquo;s Focus&rdquo; and ticks each one off per house.</p>
-  <p class="small"><strong>How she gets the update:</strong> this list is saved in the app&rsquo;s shared data. It syncs automatically to her app when you save here, with no separate message needed.</p>
+  <p class="small"><strong>TO-DO in every house for a whole month, then it rotates</strong> &mdash; not a check or inspection. Set 1&ndash;2 tasks for the month (sometimes more, depending on the task and the season). They last the whole month so every house gets done properly, then next month you set the next task(s) here and it rotates. The employee sees these in their app under &ldquo;This Month&rsquo;s Focus&rdquo; and ticks each one off per house.</p>
+  <p class="small"><strong>How they get the update:</strong> this list is saved here. It shows up in their app when you save here, with no separate message needed.</p>
   <label for="mfMonth">Month these tasks apply to</label>
   <input id="mfMonth" placeholder="e.g. November 2026">
   <label for="mfNote">Note to the employee (optional)</label>
@@ -328,10 +365,13 @@
   <div id="mfDoneList"></div>
 </div>
 
+</section>
+
+<section class="mgr-section" data-section="guide">
 <h2>What to use — Supplies Guide — edit (Krystal only)</h2>
 <div class="card" id="guideMgrCard">
-  <p class="small"><strong>The employee sees this in her app as &ldquo;What to use — Supplies Guide&rdquo;, by the cleaning supplies.</strong> It is <strong>completely separate</strong> from House instructions above — house instructions say what to <em>do</em> in a specific house / room; this guide says what <em>supply to use</em> for an item / dirt, and how. Each item is clickable in her app: tap it and it shows a list of what it is good for, how to use it, and the notes — including the notes from the bottle / lid, so she does not have to go find the bottle to read it. She can open a room and search inside that room, or use the search bar at the top of the guide to search anything.</p>
-  <p class="small"><strong>How she gets the update:</strong> this guide is saved in the app&rsquo;s shared data. It syncs automatically to her app when you save here.</p>
+  <p class="small"><strong>The employee sees this in their app as &ldquo;What to use — Supplies Guide&rdquo;, by the cleaning supplies.</strong> It is <strong>completely separate</strong> from House instructions above — house instructions say what to <em>do</em> in a specific house / room; this guide says what <em>supply to use</em> for an item / dirt, and how. Each item is clickable in their app: tap it and it shows a list of what it is good for, how to use it, and the notes — including the notes from the bottle / lid, so they do not have to go find the bottle to read it. They can open a room and search inside that room, or use the search bar at the top of the guide to search anything.</p>
+  <p class="small"><strong>How they get the update:</strong> this guide is saved here. It shows up in their app when you save here.</p>
   <p class="small">Starter examples are loaded the first time only, clearly marked EXAMPLE &mdash; replace them with your real supplies, uses and label notes. Bar Keepers Friend is listed only if you confirm it is in the standard kit.</p>
   <label for="guideRoomSel">Room to add an item to</label>
   <select id="guideRoomSel"></select>
@@ -346,9 +386,9 @@
   <textarea id="guideItemGood" rows="3" placeholder="e.g. Grease&#10;Cooking splatters"></textarea>
   <label for="guideItemHow">How to use it</label>
   <textarea id="guideItemHow" rows="3" placeholder="e.g. Apply solution, wipe with a cloth, rinse and dry. Wear gloves."></textarea>
-  <label for="guideItemNotes">Notes — copy the notes from the bottle / lid here, plus anything she needs to know</label>
+  <label for="guideItemNotes">Notes — copy the notes from the bottle / lid here, plus anything they need to know</label>
   <textarea id="guideItemNotes" rows="3" placeholder="e.g. Label notes from the bottle / lid — uses, warnings, what not to use it on. Mark TO CONFIRM if not confirmed yet."></textarea>
-  <label for="guideItemTags">Search words — comma separated (so she finds it by searching the dirt, stain or item)</label>
+  <label for="guideItemTags">Search words — comma separated (so they find it by searching the dirt, stain or item)</label>
   <input id="guideItemTags" placeholder="e.g. stove, grease, hob">
   <button id="guideAddItemBtn" class="secondary">Add / save this item</button>
   <p id="guideStatus" class="small"></p>
@@ -370,12 +410,31 @@
   <p id="guideSaveStatus" class="small"></p>
 </div>
 
+</section>
+
+<section class="mgr-section" data-section="export">
 <h2>Export &amp; day summary</h2>
 <button id="copyBtn">Copy day summary as text</button>
 <button id="csvBtn" class="secondary">Download day CSV</button>
 <button id="jsonBtn" class="secondary">Export day as JSON (for records)</button>
 <pre id="summary"></pre>
 <button id="clearBtn" class="secondary">Clear test entries on this device</button>
+</section>
+
+<section class="mgr-section" data-section="signature">
+<div class="card" id="signatureCard">
+  <h2>Your signature (Krystal only)</h2>
+  <p class="small">Draw your signature once here. It will appear on the agreements new hires sign, so the copy they see already has your signature on it.</p>
+  <canvas id="sigCanvas" class="sig-canvas" width="600" height="180"></canvas>
+  <p class="small">Draw with your finger or mouse. Tap Clear to start again.</p>
+  <button id="sigClearBtn" class="secondary" style="width:auto;padding:.4em 1em">Clear</button>
+  <button id="sigSaveBtn" style="width:auto;padding:.4em 1em">Save my signature</button>
+  <p id="sigStatus" class="small"></p>
+  <p id="sigSavedNote" class="small"></p>
+  <div id="sigSavedPreview"></div>
+</div>
+
+</section>
 
 </div>
 <script>
@@ -389,22 +448,36 @@
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxTCdlfxqp-_OhGlyddK5ySbQ1eOtxjBnebzXYfte3Jb9NRMJXjFJm_xMxAbIaYdcFieg/exec"; // <-- PASTE THE BACKEND /exec URL HERE after deployment
 const BACKEND_ENABLED = BACKEND_URL !== "";
 // Section jump menu — Krystal: no long scrolling to find a section.
+// Section picker — Krystal: one section at a time, no long scrolling.
+// Picking a section shows ONLY that section; "Show all sections" shows
+// everything. On load, no section is shown until one is picked.
 function jumpToSection(sel){
   var label = sel.value;
   if(!label){ return; }
-  sel.value = "";
-  if(label === "Top of the page"){ window.scrollTo({top:0, behavior:"smooth"}); return; }
-  var norm = function(s){ return s.replace(/\s+/g, " ").trim(); };
-  var heads = document.querySelectorAll("h2");
-  for(var i=0;i<heads.length;i++){
-    if(norm(heads[i].textContent) === norm(label)){
-      heads[i].scrollIntoView({behavior:"smooth", block:"start"});
-      heads[i].style.outline = "3px solid #b58900";
-      heads[i].style.outlineOffset = "4px";
-      (function(h){ setTimeout(function(){ h.style.outline=""; h.style.outlineOffset=""; }, 2000); })(heads[i]);
-      return;
+  var norm = function(s){ return s.replace(/\u2019/g, "'").replace(/\s+/g, " ").trim(); };
+  var want = norm(label);
+  var startMsg = $("sectionStartMsg");
+  var secs = document.querySelectorAll(".mgr-section");
+  if(want === "Show all sections"){
+    for(var i=0;i<secs.length;i++){ secs[i].style.display = ""; }
+    if(startMsg) startMsg.style.display = "none";
+    window.scrollTo({top:0, behavior:"smooth"});
+    return;
+  }
+  var found = false;
+  for(var j=0;j<secs.length;j++){
+    var h = secs[j].querySelector("h2");
+    if(!h){ secs[j].style.display = "none"; continue; }
+    var hn = norm(h.textContent);
+    if(hn === want || hn.indexOf(want) === 0 || want.indexOf(hn) === 0){
+      secs[j].style.display = "";
+      found = true;
+    } else {
+      secs[j].style.display = "none";
     }
   }
+  if(startMsg) startMsg.style.display = "none";
+  if(found){ window.scrollTo({top:0, behavior:"smooth"}); }
 }
 
 const KEY = "ravenTimeCardDemoV1";
@@ -492,7 +565,7 @@ $("mfSaveBtn").onclick = () => {
   saveAll(); renderMonthlyFocusMgr();
   mgrBackendPost({ action: "focusSave", month: monthlyFocus.month, note: monthlyFocus.note,
     tasks: monthlyFocus.tasks, rotation: monthlyFocus.rotation });
-  $("mfStatus").innerHTML = '<span class="ok">Monthly Focus saved for ' + monthlyFocus.month + ' — ' + monthlyFocus.tasks.length + ' task(s). The employee sees these in her app; they sync automatically (see the banner at the top).</span>';
+  $("mfStatus").innerHTML = '<span class="ok">Monthly Focus saved for ' + monthlyFocus.month + ' — ' + monthlyFocus.tasks.length + ' task(s). The employee sees these in their app; they show up there on their own.</span>';
 };
 
 const GUIDEKEY = "ravenSuppliesGuideV1";
@@ -715,18 +788,6 @@ const DEFAULT_GUIDE = {
           "how": "Dust with a dry cloth first, then wipe with a slightly damp cloth and dry straight away.",
           "notes": "Use wood polish if the wood is looking dull — not every time. Do not use a wet cloth on wood unless Krystal says so.",
           "tags": "wood table dust fingerprints"
-        },
-        {
-          "id": "l-tv",
-          "name": "TV screen",
-          "supply": "Cloths / mop heads",
-          "goodFor": [
-            "Dust",
-            "Fingerprints"
-          ],
-          "how": "Wipe gently with a clean, dry, soft cloth only.",
-          "notes": "TO CONFIRM WITH KRYSTAL: do not spray cleaner directly on a screen unless Krystal says so.",
-          "tags": "tv screen dust"
         },
         {
           "id": "l-floors",
@@ -1135,7 +1196,7 @@ $("guideAddSupBtn").onclick = () => {
   saveGuide(); renderGuideMgr();
   $("guideStatus").innerHTML = '<span class="ok">Supply saved: ' + esc(name) + '.</span>';
 };
-$("guideSaveBtn").onclick = () => { saveGuide(); saveAll(); renderGuideMgr(); mgrBackendPost({ action: "guideSave", guide: guide }); $("guideSaveStatus").innerHTML = '<span class="ok">Supplies Guide saved — the employee sees it in her app; it syncs automatically (see the banner at the top).</span>'; };
+$("guideSaveBtn").onclick = () => { saveGuide(); saveAll(); renderGuideMgr(); mgrBackendPost({ action: "guideSave", guide: guide }); $("guideSaveStatus").innerHTML = '<span class="ok">Supplies Guide saved — the employee sees it in their app; it shows up there on its own.</span>'; };
 
 function renderTimeOffMgr(){
   const el = $("timeOffMgr"); if (!el) return;
@@ -1302,7 +1363,7 @@ function pullMgrBackendData() {
       // the backend wins here — a merge would resurrect shifts Krystal removed.
       // Per-shift format (2026-11-09): Employee, Date, Client, Start, End, Type.
       schedule = d.schedule.map(function (r) {
-        return { Employee: r.Employee || r.employee || "", Date: r.Date || r.date || "", Client: r.Client || r.client || "", Start: r.Start || r.start || "", End: r.End || r.end || "", Type: r.Type || r.type || "" };
+        return { Employee: r.Employee || r.employee || "", Date: schedNormDate(r.Date || r.date || ""), Client: r.Client || r.client || "", Start: schedNormTime(r.Start || r.start || ""), End: schedNormTime(r.End || r.end || ""), Type: r.Type || r.type || "" };
       }).filter(function (r) { return r.Employee && r.Date && r.Client; });
       saveSchedule();
       schedDraftLoaded = false;
@@ -1345,10 +1406,10 @@ function updateMgrBanner() {
     b.innerHTML = "<strong>Not connected to the shared backend yet — everything saves on this phone only.</strong> Entries arrive here by the employee's JSON export until the backend is connected (see backend/BACKEND-SETUP.md). Review mode only.";
   } else if (mgrSession && mgrSession.role === "review") {
     b.className = "";
-    b.innerHTML = "<strong>Review mode</strong> — backend is set but you are not signed in with your manager code. Sign out and sign in with your code to sync.";
+    b.innerHTML = "<strong>Review mode</strong> — backend is set but you are not signed in with your manager code. Sign out and sign in with your code to see the latest.";
   } else {
     b.className = "connected";
-    b.innerHTML = "<strong>Connected to the shared backend</strong> — signed in as Krystal. Entries, adjustments, time off and mileage sync here automatically.";
+    b.innerHTML = "<strong>Connected to the shared backend</strong> — signed in as Krystal. Entries, adjustments, time off and mileage show up here on their own.";
   }
   // Quarterly duties due this month also show in the banner, so they
   // cannot be missed. Rotation entries start with "Month Year — ...".
@@ -1531,39 +1592,46 @@ var empPickName = "";
 function renderEmployees() {
   var el = $("employeeList"); if (!el) return;
   // Employees only — managers (Krystal) are never listed here. Pick one
-  // employee from the dropdown to see and change her code, rate and access.
+  // employee from the dropdown to see and change their code, rate and access.
   var list = [];
   employees.forEach(function (emp, i) {
     if (String(emp.role || "Employee").toLowerCase() !== "manager") list.push({ emp: emp, idx: i });
   });
   var pick = $("empPick");
   if (pick) {
-    var cur = pick.value || empPickName;
-    pick.innerHTML = list.length
-      ? list.map(function (x) { return "<option value='" + esc(x.emp.name) + "'>" + esc(x.emp.name) + "</option>"; }).join("")
-      : "<option value=''>No employees yet</option>";
-    if (list.some(function (x) { return x.emp.name === cur; })) pick.value = cur;
-    else if (list.length) pick.value = list[0].emp.name;
+    var cur = pick.value || empPickName || "";
+    pick.innerHTML = "<option value=''>— Pick an employee —</option>" +
+      (list.length ? "<option value='__all__'>All employees</option>" : "") +
+      list.map(function (x) { return "<option value='" + esc(x.emp.name) + "'>" + esc(x.emp.name) + "</option>"; }).join("");
+    if (cur === "__all__" || list.some(function (x) { return x.emp.name === cur; })) pick.value = cur;
+    else pick.value = "";
     empPickName = pick.value;
   }
   var rateOptions = [20, 23, 24, 24.5, 25, 25.5, 26].map(function (r) {
     return "<option value='" + r + "'>" + (r === 20 ? "Training — $20/hr" : r === 23 ? "Starting — $23/hr" : r === 24 ? "After probation — $24/hr" : r === 26 ? "Cap — $26/hr" : "$" + r + "/hr") + "</option>";
   }).join("");
-  var picked = list.filter(function (x) { return x.emp.name === empPickName; })[0];
-  if (!picked) { el.innerHTML = list.length ? "" : "<p class='small'>No employees yet.</p>"; return; }
-  var emp = picked.emp, i = picked.idx;
-  var rateLabel = (emp.rate === "" || emp.rate == null) ? "Rate not set" : "$" + Number(emp.rate).toFixed(2) + "/hr";
-  var tempNote = emp.tempCode ? "<br><span class='warn'>Temporary code — they have not set their own code yet.</span>" : "";
-  el.innerHTML = "<div class='emp-row" + (emp.active ? "" : " revoked") + "'><strong>" + esc(emp.name) + "</strong> — " + esc(emp.role || "Employee") +
-    " · " + rateLabel + " · <b>" + (emp.active ? "Active" : "REVOKED") + "</b>" + tempNote +
-    "<br><label>Personal code</label><input type='password' id='empCode-" + i + "' autocomplete='off' placeholder='" + (emp.code ? "Code set — type a new one to change it" : "Blank — no code set yet") + "'>" +
-    "<button class='smallbtn secondary' onclick='empSaveCode(" + i + ")'>Save code</button>" +
-    "<button class='smallbtn secondary' onclick='empGenCode(" + i + ")'>Generate random code</button>" +
-    "<br><label>Hourly rate ($)</label><select id='empRate-" + i + "'>" + rateOptions + "</select>" +
-    "<button class='smallbtn secondary' onclick='empSaveRate(" + i + ")'>Save rate</button>" +
-    "<br><button class='smallbtn " + (emp.active ? "revoke" : "restore") + "' onclick='empToggleActive(" + i + ")'>" + (emp.active ? "Revoke access" : "Restore access") + "</button></div>";
-  var sel = $("empRate-" + i);
-  if (sel && emp.rate !== "" && emp.rate != null) sel.value = String(emp.rate);
+  // Nothing is shown until Krystal picks one employee or "All employees".
+  var toShow = [];
+  if (empPickName === "__all__") toShow = list.slice();
+  else if (empPickName) { var one = list.filter(function (x) { return x.emp.name === empPickName; })[0]; if (one) toShow = [one]; }
+  if (!toShow.length) { el.innerHTML = list.length ? "" : "<p class='small'>No employees yet.</p>"; return; }
+  el.innerHTML = toShow.map(function (picked) {
+    var emp = picked.emp, i = picked.idx;
+    var rateLabel = (emp.rate === "" || emp.rate == null) ? "Rate not set" : "$" + Number(emp.rate).toFixed(2) + "/hr";
+    var tempNote = emp.tempCode ? "<br><span class='warn'>Temporary code — they have not set their own code yet.</span>" : "";
+    return "<div class='emp-row" + (emp.active ? "" : " revoked") + "'><strong>" + esc(emp.name) + "</strong> — " + esc(emp.role || "Employee") +
+      " · " + rateLabel + " · <b>" + (emp.active ? "Active" : "REVOKED") + "</b>" + tempNote +
+      "<br><label>Personal code</label><input type='password' id='empCode-" + i + "' autocomplete='off' placeholder='" + (emp.code ? "Code set — type a new one to change it" : "Blank — no code set yet") + "'>" +
+      "<button class='smallbtn secondary' onclick='empSaveCode(" + i + ")'>Save code</button>" +
+      "<button class='smallbtn secondary' onclick='empGenCode(" + i + ")'>Generate random code</button>" +
+      "<br><label>Hourly rate ($)</label><select id='empRate-" + i + "'>" + rateOptions + "</select>" +
+      "<button class='smallbtn secondary' onclick='empSaveRate(" + i + ")'>Save rate</button>" +
+      "<br><button class='smallbtn " + (emp.active ? "revoke" : "restore") + "' onclick='empToggleActive(" + i + ")'>" + (emp.active ? "Revoke access" : "Restore access") + "</button></div>";
+  }).join("");
+  toShow.forEach(function (picked) {
+    var sel = $("empRate-" + picked.idx);
+    if (sel && picked.emp.rate !== "" && picked.emp.rate != null) sel.value = String(picked.emp.rate);
+  });
 }
 $("empPick").addEventListener("change", function () { empPickName = $("empPick").value; renderEmployees(); });
 // Work schedules — calendar (Krystal, 2026-11-09). Tap a day on the
@@ -1605,9 +1673,59 @@ function schedClientNames() {
   names.sort(function (a, b) { return a.localeCompare(b); });
   return names;
 }
+// The Sheet stores dates and times as real dates/times, so the backend
+// sends them back as ISO strings (date: "2026-11-12T00:00:00.000Z", time:
+// "1899-12-30T13:00:00.000Z" for 1:00 PM). The Sheet's timezone is UTC,
+// so the date and time parts in those strings ARE the date and time
+// Krystal set — read them straight from the string, never through the
+// browser's local timezone, or a shift lands on the wrong day.
+function schedNormDate(v){
+  if (v == null) return "";
+  var s = String(v).trim();
+  if (!s) return "";
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + "-" + m[2] + "-" + m[3];
+  return s;
+}
+function schedNormTime(v){
+  if (v == null) return "";
+  var s = String(v).trim();
+  if (!s) return "";
+  if (/^\d{1,2}:\d{2}\s*([AaPp][Mm])?$/.test(s)) return s;
+  var m = s.match(/T(\d{2}):(\d{2})/);
+  if (m) {
+    var h = parseInt(m[1], 10), mm = m[2];
+    var ap = h >= 12 ? "pm" : "am";
+    var hh = h % 12; if (hh === 0) hh = 12;
+    return hh + ":" + mm + ap;
+  }
+  return s;
+}
+// One colour per employee, so every shift on the calendar shows who it
+// belongs to at a glance. Colours are dark so they read on the cream
+// background. Assigned by position in the employee list, so each person
+// keeps the same colour.
+var EMP_COLORS = ["#7a4a00", "#1f5c3d", "#1f3f7a", "#7a1f3d", "#4a2d7a", "#0f5c5c", "#7a2d00", "#5c3d00"];
+function empColor(name){
+  var actives = employees.filter(function (e) { return e.active && String(e.role || "Employee").toLowerCase() !== "manager"; });
+  for(var i=0;i<actives.length;i++){ if(actives[i].name === name) return EMP_COLORS[i % EMP_COLORS.length]; }
+  var h = 0, n = String(name || "");
+  for(var j=0;j<n.length;j++){ h = (h * 31 + n.charCodeAt(j)) % 997; }
+  return EMP_COLORS[h % EMP_COLORS.length];
+}
+function renderSchedLegend(){
+  var leg = $("schedLegend"); if(!leg) return;
+  var actives = employees.filter(function (e) { return e.active && String(e.role || "Employee").toLowerCase() !== "manager"; });
+  if(!actives.length){ leg.innerHTML = ""; return; }
+  leg.innerHTML = "<strong>Who is who:</strong> " + actives.map(function (e) {
+    return "<span style=\"white-space:nowrap\"><span style=\"display:inline-block;width:12px;height:12px;background:" + empColor(e.name) + ";border-radius:3px;vertical-align:-1px\"></span> " + esc(e.name) + "</span>";
+  }).join(" &nbsp; ");
+}
 function schedFmtTime(t) {
   if (!t) return "";
-  var parts = String(t).split(":");
+  var s = String(t).trim();
+  if (/[AaPp][Mm]/.test(s)) return s;
+  var parts = s.split(":");
   var h = parseInt(parts[0], 10), m = parts[1] || "00";
   var ap = h >= 12 ? "pm" : "am";
   var hh = h % 12; if (hh === 0) hh = 12;
@@ -1666,7 +1784,7 @@ function showSchedCalDay(y, m, d) {
   if (dayShifts.length) {
     html += dayShifts.map(function (s) {
       var idx = schedDraft.indexOf(s);
-      return "<div class='card'><strong>" + esc(s.Employee) + "</strong> — " + esc(s.Client) + "<br>" +
+      return "<div class='card'><strong style=\"color:" + empColor(s.Employee) + "\">" + esc(s.Employee) + "</strong> — " + esc(s.Client) + "<br>" +
         esc(schedFmtTime(s.Start)) + " – " + esc(schedFmtTime(s.End)) + " · " + esc(s.Type || "") +
         "<br><button class='smallbtn secondary' type='button' onclick='schedRemoveShift(" + idx + ")'>Remove</button></div>";
     }).join("");
@@ -1720,10 +1838,11 @@ function schedRemoveShift(i) {
 function renderSchedCal() {
   var grid = $("schedCalGrid"); if (!grid) return;
   if (!schedDraftLoaded) {
-    schedDraft = (schedule || []).map(function (r) { return { Employee: r.Employee, Date: r.Date, Client: r.Client, Start: r.Start, End: r.End, Type: r.Type }; });
+    schedDraft = (schedule || []).map(function (r) { return { Employee: r.Employee, Date: schedNormDate(r.Date), Client: r.Client, Start: schedNormTime(r.Start), End: schedNormTime(r.End), Type: r.Type }; });
     schedDraftLoaded = true;
   }
   $("schedCalTitle").textContent = SCHED_MONTHS[schedCalMonth] + " " + schedCalYear;
+  renderSchedLegend();
   var empty = $("schedCalEmpty");
   if (empty) empty.style.display = schedDraft.length ? "none" : "block";
   var first = new Date(schedCalYear, schedCalMonth, 1);
@@ -1743,7 +1862,7 @@ function renderSchedCal() {
     var cls = "cal-day";
     if (dayShifts.length) cls += " shift";
     if (isToday) cls += " today";
-    var label = dayShifts.map(function (s) { return esc(s.Employee.split(" ")[0]) + " — " + esc(s.Client) + " " + esc(schedFmtTime(s.Start)); }).join("<br>");
+    var label = dayShifts.map(function (s) { return "<span style=\"color:" + empColor(s.Employee) + "\">" + esc(s.Employee.split(" ")[0]) + " — " + esc(s.Client) + " " + esc(schedFmtTime(s.Start)) + "</span>"; }).join("<br>");
     html += "<div class=\"" + cls + "\" onclick=\"showSchedCalDay(" + schedCalYear + "," + schedCalMonth + "," + i + ")\"><span class=\"cal-num\">" + i + "</span>" +
       (label ? "<span class=\"cal-shift\">" + label + "</span>" : "") + "</div>";
   }
@@ -2024,6 +2143,12 @@ $("sigSaveBtn").onclick = function () {
 if ($("weekPick")) $("weekPick").value = mondayOf(localDate());
 initMgrLogin();
 render();
+
+// One section at a time — hide every section until Krystal picks one.
+(function(){
+  var secs = document.querySelectorAll(".mgr-section");
+  for(var i=0;i<secs.length;i++){ secs[i].style.display = "none"; }
+})();
 </script>
 </body>
 </html>
