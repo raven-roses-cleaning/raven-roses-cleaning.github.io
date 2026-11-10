@@ -310,6 +310,7 @@
 <div class="card" id="scheduleCard">
   <h2>My schedule</h2>
   <p class="small">Your shifts, set by Krystal. Only your shifts are shown here.</p>
+  <div id="schedBanner" class="cal-detail" style="display:none"></div>
   <div class="cal-nav">
     <button id="calPrev" class="secondary" type="button" onclick="calMove(-1)">‹</button>
     <h3 id="calTitle"></h3>
@@ -577,6 +578,59 @@ schedule = (schedule || []).map(function (r) {
   return { Employee: r.Employee || r.employee || "", Date: schedNormDate(r.Date || r.date || ""), Client: r.Client || r.client || "", Start: schedNormTime(r.Start || r.start || ""), End: schedNormTime(r.End || r.end || ""), Type: r.Type || r.type || "" };
 });
 function saveSchedule() { localStorage.setItem(SCHEDKEY, JSON.stringify(schedule)); }
+// Schedule change alerts (Krystal, 2026-11-09): when Krystal adds, changes
+// or removes a shift, the employee sees a banner on the schedule page.
+// We keep the schedule as the employee last acknowledged it ("seen") and
+// compare each sync against that. First run just saves the snapshot with
+// no banner, so everything doesn't show as "new" at once.
+const SCHEDSEENKEY = "ravenScheduleSeenV1";
+const SCHEDCHANGESKEY = "ravenScheduleChangesV1";
+let schedSeen = JSON.parse(localStorage.getItem(SCHEDSEENKEY) || "null");
+let schedChanges = JSON.parse(localStorage.getItem(SCHEDCHANGESKEY) || "[]");
+function saveSchedSeen() { localStorage.setItem(SCHEDSEENKEY, JSON.stringify(schedSeen)); }
+function saveSchedChanges() { localStorage.setItem(SCHEDCHANGESKEY, JSON.stringify(schedChanges)); }
+function schedKey(s){ return (s.Date || "") + "|" + (s.Client || ""); }
+function detectScheduleChanges(newSched){
+  newSched = newSched || [];
+  if (!schedSeen) { schedSeen = newSched; saveSchedSeen(); return; }
+  var seenMap = {}, newMap = {};
+  (schedSeen || []).forEach(function(s){ seenMap[schedKey(s)] = s; });
+  newSched.forEach(function(s){ newMap[schedKey(s)] = s; });
+  var changes = [];
+  newSched.forEach(function(s){
+    var old = seenMap[schedKey(s)];
+    if (!old) {
+      changes.push({ kind: "added", date: s.Date, client: s.Client, start: s.Start, end: s.End, type: s.Type });
+    } else if (old.Start !== s.Start || old.End !== s.End || old.Type !== s.Type) {
+      changes.push({ kind: "changed", date: s.Date, client: s.Client, start: s.Start, end: s.End, type: s.Type, oldStart: old.Start, oldEnd: old.End, oldType: old.Type });
+    }
+  });
+  (schedSeen || []).forEach(function(s){
+    if (!newMap[schedKey(s)]) {
+      changes.push({ kind: "removed", date: s.Date, client: s.Client, start: s.Start, end: s.End, type: s.Type });
+    }
+  });
+  if (changes.length) { schedChanges = changes; saveSchedChanges(); }
+}
+function renderSchedBanner(){
+  var el = $("schedBanner"); if (!el) return;
+  if (!schedChanges || !schedChanges.length) { el.style.display = "none"; el.innerHTML = ""; return; }
+  var html = "<h3>Schedule update</h3>" + schedChanges.map(function(c){
+    var when = schedFmtDate(c.date) + " — " + esc(c.client);
+    if (c.kind === "added") return "<p><strong>New shift:</strong> " + when + "<br>" + esc(schedFmtTime(c.start)) + " – " + esc(schedFmtTime(c.end)) + (c.type ? " · " + esc(c.type) : "") + "</p>";
+    if (c.kind === "removed") return "<p><strong>Shift removed:</strong> " + when + "<br>" + esc(schedFmtTime(c.start)) + " – " + esc(schedFmtTime(c.end)) + (c.type ? " · " + esc(c.type) : "") + "</p>";
+    return "<p><strong>Shift changed:</strong> " + when + "<br>" + esc(schedFmtTime(c.oldStart)) + " – " + esc(schedFmtTime(c.oldEnd)) + (c.oldType ? " · " + esc(c.oldType) : "") + " → <strong>" + esc(schedFmtTime(c.start)) + " – " + esc(schedFmtTime(c.end)) + (c.type ? " · " + esc(c.type) : "") + "</strong></p>";
+  }).join("") + "<button class=\"secondary\" type=\"button\" onclick=\"dismissSchedBanner()\">Got it</button>";
+  el.innerHTML = html;
+  el.style.display = "block";
+}
+function dismissSchedBanner(){
+  schedSeen = schedule;
+  saveSchedSeen();
+  schedChanges = [];
+  saveSchedChanges();
+  renderSchedBanner();
+}
 // Monthly Focus — TO-DO in every house for a whole month, then it rotates.
 // Krystal sets the current month's task(s) in her manager app (same storage
 // keys, so the same code can be synced by the backend when it is built).
@@ -2315,9 +2369,11 @@ function pullBackendData() {
       // The backend already filtered this to the employee's own rows, and
       // the Sheet is the source of truth, so the backend wins outright.
       // Per-shift format (2026-11-09): Employee, Date, Client, Start, End, Type.
-      schedule = d.schedule.map(function (r) {
+      var newSched = d.schedule.map(function (r) {
         return { Employee: r.Employee || r.employee || "", Date: schedNormDate(r.Date || r.date || ""), Client: r.Client || r.client || "", Start: schedNormTime(r.Start || r.start || ""), End: schedNormTime(r.End || r.end || ""), Type: r.Type || r.type || "" };
       }).filter(function (r) { return r.Date && r.Client; });
+      detectScheduleChanges(newSched);
+      schedule = newSched;
       saveSchedule();
     }
     if (d.mileage) mileage = mergeByKey(mileage, d.mileage.map(function (r) {
@@ -2717,6 +2773,7 @@ function closeCalDetail() {
 }
 function renderScheduleCalendar() {
   var grid = $("calGrid"); if (!grid) return;
+  renderSchedBanner();
   $("calTitle").textContent = CAL_MONTHS[calMonth] + " " + calYear;
   var empty = $("calEmpty");
   if (empty) empty.style.display = schedule.length ? "none" : "block";
