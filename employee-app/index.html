@@ -58,6 +58,10 @@
   #monthlyFocusBanner p{margin:.1em 0;line-height:1.35}
   #monthlyFocusBanner .small{color:#4a3f1a;margin:.05em 0}
   #monthlyFocusBanner .monthly-task{background:rgba(255,253,247,.72);border-color:#b58900}
+  /* Section menu (Krystal, 2026-11-10): a tap list, not a native <select> —
+     tapping a section goes there at once, no "Done" tap needed. */
+  #sectionMenu button{display:block;width:100%;text-align:left;background:#fffdf7;color:#221f1a;border:1px solid #c9a86a;border-radius:8px;padding:.6em .8em;margin:.3em 0;font-size:1rem}
+  #sectionMenu button:active{background:#f3e9c8}
   #monthlyFocusBanner::before,#monthlyFocusBanner::after{content:"";position:absolute;top:6px;bottom:6px;width:30px;z-index:-1;background:linear-gradient(180deg,#c89b1e 0%,#a87f00 100%)}
   #monthlyFocusBanner::before{left:-24px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,30% 50%)}
   #monthlyFocusBanner::after{right:-24px;clip-path:polygon(100% 0,0 0,0 100%,100% 100%,70% 50%)}
@@ -216,22 +220,22 @@
 <div class="card" id="fridayVacuumCard" style="display:none"></div>
 <button id="signOutBtn" class="secondary" style="width:auto;padding:.4em 1em">Sign out</button>
 <div id="sectionNav" style="position:sticky;top:0;z-index:200;background:#111;color:#fff;padding:10px 12px;border-radius:0 0 10px 10px;margin:12px 0">
-<label for="sectionJump" style="color:#fff;margin:0 0 .2em">Go to section:</label>
-<select id="sectionJump" onchange="jumpToSection(this)" style="margin-top:.3em">
-<option value="">— Pick a section —</option>
-<option>Clock in &amp; houses</option>
-<option>⏱ Adjust time — request a correction</option>
-<option>🧴 What to use — Supplies Guide</option>
-<option>My schedule</option>
-<option>🚗 Mileage tracker</option>
-<option>⚠️ Job issue note</option>
-<option>🗓️ Time off / sick day request</option>
-<option>End of job — no typing required</option>
-<option>Today’s entries</option>
-<option>Time adjustments</option>
-<option>End-of-day summary</option>
-<option>Show all sections</option>
-</select>
+<span style="color:#fff;display:block;margin:0 0 .2em;font-weight:600">Go to section:</span>
+<button id="sectionJumpBtn" type="button" onclick="toggleSectionMenu()" style="width:100%;text-align:left;background:#fffdf7;color:#221f1a;border:1px solid #c9a86a;border-radius:8px;padding:.6em .8em;font-size:1rem;margin-top:.3em">— Pick a section — ▾</button>
+<div id="sectionMenu" style="display:none;margin-top:.4em">
+<button type="button" onclick="jumpToSection('Clock in &amp; houses')">Clock in &amp; houses</button>
+<button type="button" onclick="jumpToSection('⏱ Adjust time — request a correction')">⏱ Adjust time — request a correction</button>
+<button type="button" onclick="jumpToSection('🧴 What to use — Supplies Guide')">🧴 What to use — Supplies Guide</button>
+<button type="button" onclick="jumpToSection('My schedule')">My schedule</button>
+<button type="button" onclick="jumpToSection('🚗 Mileage tracker')">🚗 Mileage tracker</button>
+<button type="button" onclick="jumpToSection('⚠️ Job issue note')">⚠️ Job issue note</button>
+<button type="button" onclick="jumpToSection('🗓️ Time off / sick day request')">🗓️ Time off / sick day request</button>
+<button type="button" onclick="jumpToSection('End of job — no typing required')">End of job — no typing required</button>
+<button type="button" onclick="jumpToSection('Today’s entries')">Today’s entries</button>
+<button type="button" onclick="jumpToSection('Time adjustments')">Time adjustments</button>
+<button type="button" onclick="jumpToSection('End-of-day summary')">End-of-day summary</button>
+<button type="button" onclick="jumpToSection('Show all sections')">Show all sections</button>
+</div>
 </div>
 
 <section class="emp-section" data-section="schedule">
@@ -245,7 +249,7 @@
     <button id="calNext" class="secondary" type="button" onclick="calMove(1)">›</button>
   </div>
   <p><button id="calMonthBtn" class="secondary" type="button" onclick="downloadMonthShifts()">Download this month to my calendar</button></p>
-  <p class="small">Downloads a file with this month's shifts — open it and your phone adds them to your calendar. Add one shift at a time from a day below.</p>
+  <p class="small">Downloads one file with all your shifts for this month — open it and your phone adds them all to your calendar at once.</p>
   <div class="cal-grid" id="calGrid"></div>
   <div id="calDetail" class="cal-detail" style="display:none"></div>
   <p class="small" id="calEmpty" style="display:none">No shifts set yet — Krystal will set your schedule.</p>
@@ -483,9 +487,22 @@ function showEmpSections(names){
   }
   window.scrollTo({top:0, behavior:"smooth"});
 }
-function jumpToSection(sel){
-  var label = sel.value;
+function toggleSectionMenu(){
+  var m = document.getElementById("sectionMenu");
+  if(!m){ return; }
+  m.style.display = (m.style.display === "none" || m.style.display === "") ? "block" : "none";
+}
+document.addEventListener("click", function(e){
+  var nav = document.getElementById("sectionNav");
+  var menu = document.getElementById("sectionMenu");
+  if(menu && nav && !nav.contains(e.target)){ menu.style.display = "none"; }
+});
+function jumpToSection(label){
   if(!label){ return; }
+  var menu = document.getElementById("sectionMenu");
+  if(menu){ menu.style.display = "none"; }
+  var btn = document.getElementById("sectionJumpBtn");
+  if(btn){ btn.textContent = label + " ▾"; }
   var norm = function(s){ return s.replace(/\u2019/g, "'").replace(/\s+/g, " ").trim(); };
   var want = norm(label);
   if(want === "Show all sections"){
@@ -575,8 +592,10 @@ let mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]");
 let houseInstructions = JSON.parse(localStorage.getItem(HOUSEKEY) || "{}");
 const TIMEOFFKEY = "ravenTimeOffV1";
 let timeOff = JSON.parse(localStorage.getItem(TIMEOFFKEY) || "[]");
-// Work schedule — {Employee, Day, Shift} rows Krystal sets in the manager
-// app. The backend only ever sends this employee's own rows.
+// Work schedule — {Employee, Date, Client, Start, End, Type} rows Krystal
+// sets in the manager app. The backend sends every employee's rows, so
+// this app filters to the signed-in employee's own shifts only (ownShift,
+// below) — nobody ever sees anyone else's shifts.
 const SCHEDKEY = "ravenScheduleV1";
 let schedule = JSON.parse(localStorage.getItem(SCHEDKEY) || "[]");
 // Normalise any saved rows so an ISO date/time stored by an earlier sync
@@ -2373,12 +2392,13 @@ function pullBackendData() {
         declineReason: r.DeclineReason || r.declineReason || "", created: Date.now() };
     }), function (r) { return [r.name, r.date, r.type].join("|"); });
     if (d.schedule) {
-      // The backend already filtered this to the employee's own rows, and
-      // the Sheet is the source of truth, so the backend wins outright.
+      // PRIVACY (Krystal, 2026-11-10): the backend sends every employee's
+      // rows, so keep only the signed-in employee's own shifts here. The
+      // Sheet is the source of truth, so the backend wins outright.
       // Per-shift format (2026-11-09): Employee, Date, Client, Start, End, Type.
       var newSched = d.schedule.map(function (r) {
         return { Employee: r.Employee || r.employee || "", Date: schedNormDate(r.Date || r.date || ""), Client: r.Client || r.client || "", Start: schedNormTime(r.Start || r.start || ""), End: schedNormTime(r.End || r.end || ""), Type: r.Type || r.type || "" };
-      }).filter(function (r) { return r.Date && r.Client; });
+      }).filter(function (r) { return r.Date && r.Client && ownShift(r); });
       detectScheduleChanges(newSched);
       schedule = newSched;
       saveSchedule();
@@ -2440,6 +2460,13 @@ function applySession() {
   emp.disabled = !!(session && session.role !== "review");
   var tn = $("trainingNote");
   if (tn) tn.style.display = (session && Number(session.rate) === 20) ? "block" : "none";
+  // PRIVACY (Krystal, 2026-11-10): drop any cached shifts that are not
+  // this employee's — saved before the own-shifts-only filter — so a stale
+  // cache can never show someone else's shifts. Filter the change baseline
+  // too, so the first sync after the fix does not banner other people's
+  // shifts as "removed".
+  schedule = ownShifts(schedule); saveSchedule();
+  if (schedSeen) { schedSeen = ownShifts(schedSeen); saveSchedSeen(); }
   updateBanner();
   updateWatermark();
   maybeShowColouringQr();
@@ -2615,10 +2642,19 @@ function hasApprovedTimeOffToday() {
 // MY SCHEDULE CALENDAR (Krystal, 2026-11-09): a month view of THIS
 // employee's own shifts only. Per-shift assignments — one row per shift
 // with a date, a client, actual start/end times and a clean type
-// (Training / Regular / Deep clean / Move-in / Move-out). The backend only
-// ever sends this employee's own rows, so nothing here can show anyone
-// else's shifts. Tap a day to see that day's shift. Approved time off
-// shows as "Time off" instead of a shift.
+// (Training / Regular / Deep clean / Move-in / Move-out). PRIVACY
+// (Krystal, 2026-11-10): the backend sends every employee's rows, so
+// every shift shown here is filtered to the signed-in employee (ownShift
+// below) — nobody ever sees anyone else's shifts. No signed-in name
+// means no shifts at all. Tap a day to see that day's shift. Approved
+// time off shows as "Time off" instead of a shift.
+function ownShift(r) {
+  if (!session || !session.name) return false;
+  return String((r && (r.Employee || r.employee)) || "").trim() === String(session.name).trim();
+}
+function ownShifts(rows) {
+  return (rows || []).filter(ownShift);
+}
 // ===========================================================================
 var CAL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 var calYear = new Date().getFullYear();
@@ -2674,7 +2710,7 @@ function schedDateStr(y, m, d) {
   return y + "-" + mm + "-" + dd;
 }
 function shiftsOn(dateStr) {
-  return (schedule || []).filter(function (s) { return schedNormDate(s.Date) === dateStr; });
+  return (schedule || []).filter(function (s) { return ownShift(s) && schedNormDate(s.Date) === dateStr; });
 }
 // "2026-11-12" + "1:00pm" -> "20261112T130000" (local floating time, for
 // Google Calendar links and .ics downloads).
@@ -2700,12 +2736,14 @@ function schedToCal(dateStr, timeStr){
 function icsEscape(s){
   return String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 }
-// Download every shift in the currently shown month as one .ics file —
-// the employee opens it and their phone adds all of them to their calendar.
+// Download the signed-in employee's own shifts for the currently shown
+// month as one .ics file — the employee opens it and their phone adds
+// all of them to their calendar at once. (Krystal, 2026-11-10: the whole
+// month at once — no adding one shift at a time.)
 function downloadMonthShifts(){
   var y = calYear, m = calMonth;
   var prefix = y + "-" + (m + 1 < 10 ? "0" + (m + 1) : (m + 1)) + "-";
-  var rows = (schedule || []).filter(function (s) { return (schedNormDate(s.Date) || "").indexOf(prefix) === 0; });
+  var rows = (schedule || []).filter(function (s) { return ownShift(s) && (schedNormDate(s.Date) || "").indexOf(prefix) === 0; });
   if (!rows.length) { alert("No shifts in this month to download."); return; }
   var now = new Date();
   var stamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, "0") + String(now.getDate()).padStart(2, "0") + "T" + String(now.getHours()).padStart(2, "0") + String(now.getMinutes()).padStart(2, "0") + String(now.getSeconds()).padStart(2, "0");
@@ -2760,13 +2798,7 @@ function showCalDay(y, m, d) {
   var dayShifts = shiftsOn(dateStr);
   if (dayShifts.length) {
     html += dayShifts.map(function (s) {
-      var addr = addressForJob(s.Client);
-      var gcal = "https://calendar.google.com/calendar/render?action=TEMPLATE" +
-        "&text=" + encodeURIComponent("Raven & Roses — " + s.Client) +
-        "&dates=" + schedToCal(dateStr, s.Start) + "/" + schedToCal(dateStr, s.End) +
-        "&details=" + encodeURIComponent(s.Type || "") +
-        "&location=" + encodeURIComponent(addr || "");
-      return "<p><strong>" + esc(s.Client) + "</strong><br>" + esc(schedFmtTime(s.Start)) + " – " + esc(schedFmtTime(s.End)) + " · " + esc(s.Type || "") + "<br><a href=\"" + gcal + "\" target=\"_blank\" rel=\"noopener\">Add to my calendar</a></p>";
+      return "<p><strong>" + esc(s.Client) + "</strong><br>" + esc(schedFmtTime(s.Start)) + " – " + esc(schedFmtTime(s.End)) + " · " + esc(s.Type || "") + "</p>";
     }).join("");
   } else if (!off) {
     html += "<p>No shift.</p>";
