@@ -249,6 +249,7 @@
     <button id="calNext" class="secondary" type="button" onclick="calMove(1)">›</button>
   </div>
   <p><button id="calMonthBtn" class="secondary" type="button" onclick="downloadMonthShifts()">Download this month to my calendar</button></p>
+  <p id="calMonthMsg" class="small"></p>
   <p class="small">Downloads one file with all your shifts for this month — open it and your phone adds them all to your calendar at once.</p>
   <div class="cal-grid" id="calGrid"></div>
   <div id="calDetail" class="cal-detail" style="display:none"></div>
@@ -473,6 +474,7 @@
 <pre id="summary">Tap “Show summary” to see today’s total hours, supplies refilled, low items, and cloths status.</pre>
 <button id="copyBtn">Copy summary as text</button>
 <button id="csvBtn" class="secondary">Download / copy CSV</button>
+<p id="copyMsg" class="small"></p>
 <pre id="csvOut" class="small"></pre></section>
 
 
@@ -1134,8 +1136,11 @@ function summaryText(){
 $("summaryBtn").onclick = () => { $("summary").textContent = summaryText(); };
 $("copyBtn").onclick = async () => {
   const t = summaryText();
-  try { await navigator.clipboard.writeText(t); alert("Summary copied."); }
-  catch(e){ $("summary").textContent = t; alert("Copy not available in this browser — summary is shown above, select and copy it."); }
+  const m = document.getElementById("copyMsg");
+  // No alert() here: pop-up messages can be missed or swallowed, so the
+  // result is written on the page under the button instead. (2026-11-11)
+  try { await navigator.clipboard.writeText(t); if (m) m.textContent = "Summary copied."; }
+  catch(e){ $("summary").textContent = t; if (m) m.textContent = "Copy did not work in this browser — the summary is shown above, select it and copy it yourself."; }
 };
 $("csvBtn").onclick = () => {
   const d = dayEntries();
@@ -2143,11 +2148,21 @@ function guideMatches(q, it){
   const hay = [it.name, it.supply, (it.goodFor || []).join(" "), it.how || "", it.notes || "", it.tags || ""].join(" ").toLowerCase();
   return hay.indexOf(q) >= 0;
 }
+// Cross-section links — "What it cleans" in End of job, task words in
+// House instructions — open a detail inside the Supplies Guide. If the
+// employee is viewing one section at a time, the guide section is hidden,
+// so bring it into view first; otherwise the tap looks dead. (2026-11-11)
+function goToGuideSection(){
+  showEmpSections(["guide"]);
+  var btn = document.getElementById("sectionJumpBtn");
+  if (btn) btn.textContent = "🧴 What to use — Supplies Guide ▾";
+}
 function guideShowItem(roomId, itemId){
   const room = (guide.rooms || []).find(r => r.id === roomId); if (!room) return;
   const it = (room.items || []).find(x => x.id === itemId); if (!it) return;
   guideOpenRoom = roomId; guideOpenItem = itemId; guideOpenSupply = null;
   guideSuppliesOpen = false; guideAllUses = false; guideRefillMode = false;
+  goToGuideSection();
   renderGuide();
   const el = $("guideDetail"); if (el) el.scrollIntoView();
 }
@@ -2155,6 +2170,7 @@ function guideShowSupply(supplyId){
   const s = (guide.supplies || []).find(x => x.id === supplyId); if (!s) return;
   guideOpenSupply = supplyId; guideOpenItem = null;
   guideSuppliesOpen = true; guideAllUses = false; guideRefillMode = false;
+  goToGuideSection();
   renderGuide();
   const el = $("guideDetail"); if (el) el.scrollIntoView();
 }
@@ -2780,7 +2796,11 @@ function downloadMonthShifts(){
   var y = calYear, m = calMonth;
   var prefix = y + "-" + (m + 1 < 10 ? "0" + (m + 1) : (m + 1)) + "-";
   var rows = (schedule || []).filter(function (s) { return ownShift(s) && (schedNormDate(s.Date) || "").indexOf(prefix) === 0; });
-  if (!rows.length) { alert("No shifts in this month to download."); return; }
+  // No alert() here: pop-up messages can be missed or swallowed, so the
+  // result is written on the page next to the button instead. (2026-11-11)
+  var cm = document.getElementById("calMonthMsg");
+  if (!rows.length) { if (cm) cm.textContent = "No shifts in this month to download."; return; }
+  if (cm) cm.textContent = "";
   var now = new Date();
   var stamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, "0") + String(now.getDate()).padStart(2, "0") + "T" + String(now.getHours()).padStart(2, "0") + String(now.getMinutes()).padStart(2, "0") + String(now.getSeconds()).padStart(2, "0");
   var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Raven & Roses Cleaning Co.//EN"];
