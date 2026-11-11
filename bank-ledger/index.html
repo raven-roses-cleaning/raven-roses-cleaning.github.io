@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Raven &amp; Roses">
+<meta name="theme-color" content="#f7f1e3">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Raven &amp; Roses — Bank Ledger</title>
+<style>
+  /* Same look as the payroll app: cream, gold, dark buttons. */
+  body{font-family:"EB Garamond",Georgia,serif;max-width:820px;margin:0 auto;padding:16px;line-height:1.5;background:#f7f1e3;color:#221f1a}
+  body::before{content:"";position:fixed;inset:0;background-image:url('../cream-velvet-roses.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;opacity:.15;pointer-events:none;z-index:0}
+  #appContent{position:relative;z-index:1}
+  h1{font-family:"Cormorant Garamond",serif;font-size:1.6rem;color:#221f1a;border-bottom:2px solid #d4af37;padding-bottom:.2em}
+  h2{font-family:"Cormorant Garamond",serif;font-size:1.25rem;margin-top:1.5em;color:#221f1a}
+  label{display:block;margin:.6em 0 .2em;font-weight:600;color:#221f1a}
+  input,select,button,textarea{font-family:inherit;font-size:1rem;padding:.6em;width:100%;box-sizing:border-box;background:#fffdf7;border:1px solid #c9a86a;border-radius:8px;color:#221f1a}
+  input::placeholder,textarea::placeholder{color:#6b6255}
+  button{margin:.4em 0;background:#1d1d23;color:#f5d76e;border:1px solid #d4af37;border-radius:8px;cursor:pointer}
+  button.secondary{background:#f3e9c8;color:#221f1a;border:1px solid #b58900}
+  button:disabled{opacity:.5}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{border:1px solid #c9a86a;border-radius:12px;padding:12px;margin:12px 0;background:rgba(255,253,247,.94);box-shadow:0 1px 4px rgba(122,92,20,.12)}
+  .small{font-size:.85rem;color:#221f1a} .ok{color:#1a7a2e;font-weight:700}
+  .warn{color:#b00020;font-weight:700}
+  .card.warncard{border:2px solid #b58900;background:#fffdf0}
+  table{width:100%;border-collapse:collapse;font-size:.9rem} td,th{border-bottom:1px solid #ddd2b8;padding:.4em;text-align:left}
+  th{white-space:nowrap}
+  td.num,th.num{text-align:right;white-space:nowrap}
+  button.smallbtn{width:auto;padding:.5em 1em;margin:.25em .25em .25em 0}
+  .topnote{background:#fff3cd;border:2px solid #b58900;border-radius:8px;padding:12px;font-weight:700}
+  .bigbal{font-size:1.5rem;font-weight:700}
+  @media print { button, input, select, textarea, .noprint { display:none !important; } }
+</style>
+</head>
+<body>
+<div id="appContent">
+
+<p class="topnote"><strong>Krystal only.</strong> No bank connection — entries come from your receipts and statements. This ledger starts fresh from your start date; no old transactions are in here.</p>
+
+<h1><img src="/icon-192.png" alt="" style="height:40px;width:40px;vertical-align:middle;border-radius:8px;margin-right:6px"> Raven &amp; Roses — Bank Ledger</h1>
+<p class="small">One page for the money in and out of the business bank account. Add each transaction as it happens — money in from client payments and deposits, money out from receipts. The balance works itself out.</p>
+
+<div class="card" id="setupCard">
+  <h2 style="margin-top:0">Setup — where this ledger starts</h2>
+  <p class="small">Pick the start date and the balance in the account on that day. Nothing from before that date goes in here. You can change these any time.</p>
+  <label for="sStartDate">Start date</label>
+  <input id="sStartDate" type="date">
+  <label for="sOpening">Opening balance ($)</label>
+  <input id="sOpening" type="number" step="0.01" placeholder="0.00">
+  <label for="sAccount">Account name</label>
+  <input id="sAccount" type="text" placeholder="Business Chequing">
+  <button id="saveSetupBtn">Save setup</button>
+  <p id="setupError" class="small warn"></p>
+  <p id="setupSavedLine" class="small ok"></p>
+</div>
+
+<p id="setupNeeded" class="card warncard" style="display:none">Setup is needed first. Pick a start date and an opening balance above, then save — the ledger will appear here.</p>
+
+<div id="ledgerContent" style="display:none">
+
+  <div class="card">
+    <p class="small" id="ledgerTitleLine"></p>
+    <p>Current balance<br><span class="bigbal" id="currentBalance">$0.00</span></p>
+    <p class="small">Money in: <strong id="totalIn">$0.00</strong> &nbsp; Money out: <strong id="totalOut">$0.00</strong> &nbsp; Transactions: <strong id="txnCount">0</strong></p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Add a transaction</h2>
+    <div class="row">
+      <div>
+        <label for="fDate">Date</label>
+        <input id="fDate" type="date">
+      </div>
+      <div>
+        <label for="fDir">Money in or out</label>
+        <select id="fDir">
+          <option value="in">Money in</option>
+          <option value="out">Money out</option>
+        </select>
+      </div>
+    </div>
+    <label for="fDesc">Description</label>
+    <input id="fDesc" type="text" placeholder="e.g. Petro — gas, or E-transfer from Allison">
+    <div class="row">
+      <div>
+        <label for="fCat">Category</label>
+        <select id="fCat"></select>
+      </div>
+      <div>
+        <label for="fAmount">Amount ($)</label>
+        <input id="fAmount" type="number" step="0.01" min="0" placeholder="0.00">
+      </div>
+    </div>
+    <label for="fNote">Note / receipt ref (optional)</label>
+    <input id="fNote" type="text" placeholder="e.g. receipt photo name">
+    <button id="addTxnBtn">Add transaction</button>
+    <p id="addError" class="small warn"></p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Find transactions</h2>
+    <div class="row">
+      <div>
+        <label for="fltMonth">Month</label>
+        <input id="fltMonth" type="month">
+      </div>
+      <div>
+        <label for="fltCat">Category</label>
+        <select id="fltCat"></select>
+      </div>
+    </div>
+    <label for="fltSearch">Search</label>
+    <input id="fltSearch" type="text" placeholder="Search description, category or note">
+    <button id="clearFiltersBtn" class="secondary">Clear filters</button>
+  </div>
+
+  <h2>By month</h2>
+  <div id="monthlySummary"></div>
+
+  <h2>Ledger</h2>
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Description</th><th>Category</th><th class="num">Money in</th><th class="num">Money out</th><th class="num">Balance</th><th class="noprint"></th></tr>
+      </thead>
+      <tbody id="ledgerBody"></tbody>
+    </table>
+  </div>
+  <p id="noTxns" class="small" style="display:none">No transactions yet. Add your first one above.</p>
+  <p id="filterEmpty" class="small" style="display:none">Nothing matches those filters. Clear them to see the whole ledger.</p>
+
+  <div class="card">
+    <button id="exportBtn">Export CSV</button>
+    <button id="clearBtn" class="secondary">Clear all transactions</button>
+    <p class="small">Export downloads a file called raven-bank-ledger.csv with every transaction. Clear all removes every transaction — your setup (start date, opening balance, account name) stays.</p>
+  </div>
+
+</div>
+</div>
+
+<script>
+"use strict";
+// Bank ledger — Raven & Roses. Fresh start only: the ledger begins empty
+// on the start date Krystal picks. No old transactions are ever imported.
+// Data lives in localStorage under ravenBankLedgerV1. No bank connection,
+// no outside calls, no SINs, no passwords. Money is Canadian dollars.
+var KEY = "ravenBankLedgerV1";
+
+// Categories match the receipt categories Krystal already uses, plus income.
+var CATEGORIES = [
+  "Income — client payment",
+  "Income — other",
+  "Gas",
+  "Supplies",
+  "Office",
+  "Equipment",
+  "Equipment repair",
+  "Vehicle maintenance",
+  "Phone repairs",
+  "Garbage disposal",
+  "Working meals",
+  "Dog treats",
+  "Licences",
+  "Legal and professional fees",
+  "Wages",
+  "Mileage",
+  "Other"
+];
+
+// store = { setup: {startDate, openingBalance, accountName} | null,
+//           txns: [{id, date, desc, cat, dir, amount, note, added}], seq: next id number }
+var store = { setup: null, txns: [], seq: 1 };
+
+function $(id){ return document.getElementById(id); }
+
+function load(){
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        store.setup = parsed.setup || null;
+        store.txns = Array.isArray(parsed.txns) ? parsed.txns : [];
+        store.seq = parsed.seq || (store.txns.length + 1);
+      }
+    }
+  } catch (e) {
+    store = { setup: null, txns: [], seq: 1 };
+  }
+}
+
+function save(){
+  localStorage.setItem(KEY, JSON.stringify(store));
+}
+
+function money(n){
+  var v = Number(n) || 0;
+  var sign = v < 0 ? "-" : "";
+  var abs = Math.abs(v);
+  return sign + "$" + abs.toLocaleString("en-CA", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+function esc(s){
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function todayStr(){
+  var d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+// Transactions in date order; ties keep the order they were added in.
+function sortedTxns(){
+  return store.txns.slice().sort(function(a, b){
+    if (a.date < b.date) return -1;
+    if (a.date > b.date) return 1;
+    return (a.added || 0) - (b.added || 0);
+  });
+}
+
+// Running balance for EVERY transaction, worked out from the opening
+// balance through the whole list. Filters never change these — they are
+// worked out on the full list first, then rows are hidden for display.
+function withBalances(){
+  var bal = store.setup ? (Number(store.setup.openingBalance) || 0) : 0;
+  return sortedTxns().map(function(t){
+    var inn = t.dir === "in" ? (Number(t.amount) || 0) : 0;
+    var out = t.dir === "out" ? (Number(t.amount) || 0) : 0;
+    bal = Math.round((bal + inn - out) * 100) / 100;
+    var copy = {};
+    for (var k in t) copy[k] = t[k];
+    copy.balance = bal;
+    return copy;
+  });
+}
+
+function monthName(ym){
+  var parts = ym.split("-");
+  var d = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+  return d.toLocaleString("en-CA", {month: "long", year: "numeric"});
+}
+
+function render(){
+  var hasSetup = !!store.setup;
+  $("setupNeeded").style.display = hasSetup ? "none" : "block";
+  $("ledgerContent").style.display = hasSetup ? "block" : "none";
+  if (hasSetup) {
+    $("setupSavedLine").textContent = "Saved — ledger starts " + store.setup.startDate + ", " + store.setup.accountName + ", opening balance " + money(store.setup.openingBalance) + ".";
+  } else {
+    $("setupSavedLine").textContent = "";
+  }
+  if (!hasSetup) return;
+
+  var rows = withBalances();
+  var opening = Number(store.setup.openingBalance) || 0;
+  var totalIn = 0, totalOut = 0;
+  rows.forEach(function(t){
+    if (t.dir === "in") totalIn += Number(t.amount) || 0;
+    else totalOut += Number(t.amount) || 0;
+  });
+  totalIn = Math.round(totalIn * 100) / 100;
+  totalOut = Math.round(totalOut * 100) / 100;
+  var current = rows.length ? rows[rows.length - 1].balance : opening;
+  $("ledgerTitleLine").textContent = store.setup.accountName + " — from " + store.setup.startDate + ". Opening balance " + money(opening) + ".";
+  $("currentBalance").textContent = money(current);
+  $("totalIn").textContent = money(totalIn);
+  $("totalOut").textContent = money(totalOut);
+  $("txnCount").textContent = String(rows.length);
+
+  // Filters: month, category, search. These only hide rows — the balance
+  // shown on each row is still the running balance from the full ledger.
+  var fMonth = $("fltMonth").value;
+  var fCat = $("fltCat").value;
+  var fSearch = $("fltSearch").value.trim().toLowerCase();
+  var shown = rows.filter(function(t){
+    if (fMonth && t.date.slice(0, 7) !== fMonth) return false;
+    if (fCat && t.cat !== fCat) return false;
+    if (fSearch) {
+      var hay = ((t.desc || "") + " " + (t.cat || "") + " " + (t.note || "")).toLowerCase();
+      if (hay.indexOf(fSearch) === -1) return false;
+    }
+    return true;
+  });
+
+  var body = $("ledgerBody");
+  if (!rows.length) {
+    body.innerHTML = "";
+    $("noTxns").style.display = "block";
+    $("filterEmpty").style.display = "none";
+  } else if (!shown.length) {
+    body.innerHTML = "";
+    $("noTxns").style.display = "none";
+    $("filterEmpty").style.display = "block";
+  } else {
+    $("noTxns").style.display = "none";
+    $("filterEmpty").style.display = "none";
+    var html = "";
+    shown.forEach(function(t){
+      var inn = t.dir === "in" ? money(t.amount) : "";
+      var out = t.dir === "out" ? money(t.amount) : "";
+      var desc = esc(t.desc);
+      if (t.note) desc += "<br><span class=\"small\">" + esc(t.note) + "</span>";
+      html += "<tr><td>" + esc(t.date) + "</td><td>" + desc + "</td><td>" + esc(t.cat) + "</td>"
+        + "<td class=\"num\">" + inn + "</td><td class=\"num\">" + out + "</td>"
+        + "<td class=\"num\">" + money(t.balance) + "</td>"
+        + "<td class=\"noprint\"><button class=\"smallbtn secondary\" onclick=\"deleteTxn('" + t.id + "')\">Delete</button></td></tr>";
+    });
+    body.innerHTML = html;
+  }
+
+  // Monthly summary: one card per month that has transactions.
+  var months = {};
+  var order = [];
+  rows.forEach(function(t){
+    var ym = t.date.slice(0, 7);
+    if (!months[ym]) { months[ym] = {inn: 0, out: 0, end: 0}; order.push(ym); }
+    if (t.dir === "in") months[ym].inn += Number(t.amount) || 0;
+    else months[ym].out += Number(t.amount) || 0;
+    months[ym].end = t.balance; // last transaction of the month
+  });
+  var ms = $("monthlySummary");
+  if (!order.length) {
+    ms.innerHTML = "<p class=\"small\">No months yet.</p>";
+  } else {
+    ms.innerHTML = order.map(function(ym){
+      var m = months[ym];
+      var net = Math.round((m.inn - m.out) * 100) / 100;
+      return "<div class=\"card\"><strong>" + esc(monthName(ym)) + "</strong><br>"
+        + "Money in: " + money(m.inn) + " &nbsp; Money out: " + money(m.out)
+        + "<br>Net: " + money(net) + " &nbsp; Balance at end of month: " + money(m.end) + "</div>";
+    }).join("");
+  }
+}
+
+function fillSetupForm(){
+  if (store.setup) {
+    $("sStartDate").value = store.setup.startDate || "";
+    $("sOpening").value = store.setup.openingBalance;
+    $("sAccount").value = store.setup.accountName || "";
+  }
+}
+
+function saveSetup(){
+  var err = $("setupError");
+  err.textContent = "";
+  var startDate = $("sStartDate").value;
+  var opening = parseFloat($("sOpening").value);
+  var account = $("sAccount").value.trim() || "Business Chequing";
+  if (!startDate) { err.textContent = "Pick a start date."; return; }
+  if (!isFinite(opening)) { err.textContent = "Enter an opening balance (0 is fine)."; return; }
+  store.setup = {
+    startDate: startDate,
+    openingBalance: Math.round(opening * 100) / 100,
+    accountName: account
+  };
+  save();
+  fillSetupForm();
+  render();
+}
+
+function addTxn(){
+  var err = $("addError");
+  err.textContent = "";
+  var date = $("fDate").value;
+  var desc = $("fDesc").value.trim();
+  var cat = $("fCat").value;
+  var dir = $("fDir").value;
+  var amount = parseFloat($("fAmount").value);
+  var note = $("fNote").value.trim();
+  if (!date) { err.textContent = "Pick a date."; return; }
+  if (!desc) { err.textContent = "Write a short description."; return; }
+  if (!isFinite(amount) || amount <= 0) { err.textContent = "Enter an amount above $0.00."; return; }
+  if (store.setup && date < store.setup.startDate) {
+    err.textContent = "That date is before your start date (" + store.setup.startDate + "). This ledger starts on the start date.";
+    return;
+  }
+  var id = "t" + store.seq;
+  store.txns.push({
+    id: id, date: date, desc: desc, cat: cat, dir: dir,
+    amount: Math.round(amount * 100) / 100, note: note, added: store.seq
+  });
+  store.seq += 1;
+  save();
+  $("fDesc").value = "";
+  $("fAmount").value = "";
+  $("fNote").value = "";
+  $("fDate").value = todayStr();
+  render();
+}
+
+function deleteTxn(id){
+  var t = null;
+  store.txns.forEach(function(x){ if (x.id === id) t = x; });
+  if (!t) return;
+  if (!confirm("Delete this transaction?\n" + t.date + " — " + t.desc + " — " + money(t.amount))) return;
+  store.txns = store.txns.filter(function(x){ return x.id !== id; });
+  save();
+  render();
+}
+window.deleteTxn = deleteTxn;
+
+function csvCell(v){
+  var s = String(v == null ? "" : v);
+  if (/[",\n]/.test(s)) return "\"" + s.replace(/"/g, "\"\"") + "\"";
+  return s;
+}
+
+function exportCSV(){
+  var rows = withBalances();
+  var lines = ["date,description,category,in,out,balance"];
+  rows.forEach(function(t){
+    var inn = t.dir === "in" ? Number(t.amount).toFixed(2) : "";
+    var out = t.dir === "out" ? Number(t.amount).toFixed(2) : "";
+    lines.push([t.date, csvCell(t.desc), csvCell(t.cat), inn, out, Number(t.balance).toFixed(2)].join(","));
+  });
+  var blob = new Blob([lines.join("\n")], {type: "text/csv"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "raven-bank-ledger.csv";
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+
+function clearAll(){
+  if (!store.txns.length) return;
+  if (!confirm("Remove every transaction in this ledger? Your setup (start date, opening balance, account name) stays.")) return;
+  store.txns = [];
+  save();
+  render();
+}
+
+function buildCategoryOptions(){
+  var catSel = $("fCat");
+  catSel.innerHTML = CATEGORIES.map(function(c){
+    return "<option value=\"" + esc(c) + "\">" + esc(c) + "</option>";
+  }).join("");
+  var fltSel = $("fltCat");
+  fltSel.innerHTML = "<option value=\"\">All categories</option>" + CATEGORIES.map(function(c){
+    return "<option value=\"" + esc(c) + "\">" + esc(c) + "</option>";
+  }).join("");
+}
+
+function init(){
+  load();
+  buildCategoryOptions();
+  $("fDate").value = todayStr();
+  $("saveSetupBtn").onclick = saveSetup;
+  $("addTxnBtn").onclick = addTxn;
+  $("clearFiltersBtn").onclick = function(){
+    $("fltMonth").value = "";
+    $("fltCat").value = "";
+    $("fltSearch").value = "";
+    render();
+  };
+  $("fltMonth").oninput = render;
+  $("fltCat").onchange = render;
+  $("fltSearch").oninput = render;
+  $("exportBtn").onclick = exportCSV;
+  $("clearBtn").onclick = clearAll;
+  fillSetupForm();
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
