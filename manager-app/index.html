@@ -1892,12 +1892,12 @@ window.empGenCode = function (i) {
   var emp = employees[i]; if (!emp) return;
   var code = randomCode();
   $("empCode-" + i).value = code;
-  $("empStatus").innerHTML = '<span class="ok">Random first-time code generated for ' + esc(emp.name) + ' — tap "Save code", then tell it to them in person. They will create their own code when they first sign in.</span>';
+  $("empStatus").innerHTML = '<span class="ok">Random first-time code generated for ' + esc(emp.name) + ': <strong>' + esc(code) + '</strong> — tap "Save code", then tell it to them in person. They will create their own code when they first sign in.</span>';
 };
 $("empGenCodeBtn").onclick = function () {
   var code = randomCode();
   $("empNewCode").value = code;
-  $("empStatus").innerHTML = '<span class="ok">Random first-time code generated — tell it to them in person when you add them. They will create their own code when they first sign in.</span>';
+  $("empStatus").innerHTML = '<span class="ok">Random first-time code generated: <strong>' + esc(code) + '</strong> — tell it to them in person when you add them. They will create their own code when they first sign in.</span>';
 };
 window.empSaveCode = function (i) {
   var emp = employees[i]; if (!emp) return;
@@ -1909,7 +1909,7 @@ window.empSaveCode = function (i) {
   emp.tempCode = !!code;
   saveEmployees();
   mgrBackendPost({ action: "employeeSave", employee: emp.name, code: code });
-  $("empStatus").innerHTML = '<span class="ok">Code ' + (code ? "set" : "cleared") + ' for ' + esc(emp.name) + '. ' + (code ? "It is a first-time code — tell it to them in person. They will create their own code when they first sign in." : "") + '</span>';
+  $("empStatus").innerHTML = '<span class="ok">Code ' + (code ? "set" : "cleared") + ' for ' + esc(emp.name) + '. ' + (code ? 'The code is <strong>' + esc(code) + '</strong>. It is a first-time code — tell it to them in person. They will create their own code when they first sign in.' : "") + '</span>';
   renderEmployees();
 };
 window.empSaveRate = function (i) {
