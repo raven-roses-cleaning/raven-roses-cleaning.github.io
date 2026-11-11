@@ -2841,6 +2841,10 @@ function calMove(dir) {
   if (calMonth < 0) { calMonth = 11; calYear--; }
   if (calMonth > 11) { calMonth = 0; calYear++; }
   var det = $("calDetail"); if (det) { det.style.display = "none"; det.innerHTML = ""; }
+  // Clear the month-download message when changing months, so a message
+  // from an empty month does not linger over a month that has shifts.
+  // (2026-11-11, found in the fix verification test.)
+  var cm = document.getElementById("calMonthMsg"); if (cm) cm.textContent = "";
   renderScheduleCalendar();
 }
 function showCalDay(y, m, d) {
