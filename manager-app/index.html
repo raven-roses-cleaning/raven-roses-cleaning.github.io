@@ -1325,11 +1325,12 @@ function pullMgrBackendData() {
     if (d.rates) Object.assign(employeeRates, d.rates);
     if (d.craRate !== undefined && d.craRate !== "") craRate = Number(d.craRate);
     if (d.employees) {
-      // Codes are deliberately NOT kept here: the manager sets codes, she
-      // does not need them stored on this phone. Code fields stay blank.
+      // Codes ARE kept here (Krystal, 2026-11-11): the manager needs to look
+      // a code up later, so the code from the backend is kept on this phone.
+      // The code field stays masked until she taps Show.
       employees = d.employees.map(function (r) {
         return { name: r.Name, role: r.Role || "Employee", rate: r.Rate === "" ? "" : Number(r.Rate),
-          active: String(r.Active || "").toLowerCase() === "yes", code: "",
+          active: String(r.Active || "").toLowerCase() === "yes", code: r.Code || "",
           tempCode: String(r.TempCode || "").toLowerCase() === "yes" };
       });
       saveEmployees();
@@ -1612,7 +1613,8 @@ function renderEmployees() {
     var tempNote = emp.tempCode ? "<br><span class='warn'>Temporary code — they have not set their own code yet.</span>" : "";
     return "<div class='emp-row" + (emp.active ? "" : " revoked") + "'><strong>" + esc(emp.name) + "</strong> — " + esc(emp.role || "Employee") +
       " · " + rateLabel + " · <b>" + (emp.active ? "Active" : "REVOKED") + "</b>" + tempNote +
-      "<br><label>Personal code</label><input type='password' id='empCode-" + i + "' autocomplete='off' placeholder='" + (emp.code ? "Code set — type a new one to change it" : "Blank — no code set yet") + "'>" +
+      "<br><label>Personal code</label><input type='password' id='empCode-" + i + "' autocomplete='off' value='" + esc(emp.code || "") + "' placeholder='" + (emp.code ? "Code set — type a new one to change it" : "Blank — no code set yet") + "'>" +
+      "<button class='smallbtn secondary' id='empShowCode-" + i + "' onclick='empToggleCode(" + i + ")'>Show</button>" +
       "<button class='smallbtn secondary' onclick='empSaveCode(" + i + ")'>Save code</button>" +
       "<button class='smallbtn secondary' onclick='empGenCode(" + i + ")'>Generate random code</button>" +
       "<br><label>Hourly rate ($)</label><select id='empRate-" + i + "'>" + rateOptions + "</select>" +
@@ -1888,6 +1890,14 @@ function randomCode() {
   do { c = String(Math.floor(1000 + Math.random() * 9000)); } while (c === "1234");
   return c;
 }
+// Show/hide the saved code in the Personal code field (Krystal, 2026-11-11).
+// The code stays hidden (dots) until she taps Show.
+window.empToggleCode = function (i) {
+  var f = $("empCode-" + i); if (!f) return;
+  var show = f.type === "password";
+  f.type = show ? "text" : "password";
+  var b = $("empShowCode-" + i); if (b) b.textContent = show ? "Hide" : "Show";
+};
 window.empGenCode = function (i) {
   var emp = employees[i]; if (!emp) return;
   var code = randomCode();
