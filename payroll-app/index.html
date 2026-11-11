@@ -98,6 +98,9 @@
 <option>Saved pay runs + monthly remittance totals</option>
 <option>Monthly CRA remittance report</option>
 <option>Year-end totals — for T4 (Krystal / bookkeeper, NOT a filed T4)</option>
+<option>T4 slip — make one from saved runs</option>
+<option>ROE — make one when someone leaves</option>
+<option>Filings log — what you have filed</option>
 <option>Rates used — 2026, BC, outside Quebec</option>
 <option>Pay data — from the backend (setup)</option>
 <option>Show all sections</option>
@@ -272,6 +275,61 @@
 <h2>Year-end totals — for T4 (Krystal / bookkeeper, NOT a filed T4)</h2>
 <p class="small">Totals from saved runs, grouped by employee and year. This is a totals sheet for White Rapids Books / CRA filing — it is NOT itself a T4 slip or a CRA XML filing. Bookkeeper maps these totals to the correct T4 boxes (gross, CPP, CPP2, EI, income tax). Do not send a T4 from this app alone.</p>
 <div id="t4totals"></div>
+
+</section>
+
+<section class="pay-section" data-section="t4slip">
+<h2>T4 slip — make one from saved runs</h2>
+<p class="small">Makes a T4 slip from the pay runs saved in this app, for one employee and one year. Print it and type the numbers into CRA Web Forms — this app does NOT file it. Only pay runs saved in this app count: anything from QuickBooks is not in here. The SIN is never stored in this app, so it stays blank on the slip — enter it in Web Forms.</p>
+<div class="row">
+  <div><label for="t4slipEmp">Employee</label><select id="t4slipEmp"></select></div>
+  <div><label for="t4slipYear">Tax year</label><select id="t4slipYear"></select></div>
+</div>
+<button id="t4slipBtn">Make the T4 slip</button>
+<div id="t4slipOut"></div>
+
+</section>
+
+<section class="pay-section" data-section="roe">
+<h2>ROE — make one when someone leaves</h2>
+<p class="small">Makes the figures for a Record of Employment from the pay runs saved in this app. Enter them in Service Canada's ROE Web — this app does NOT file it. Only pay runs saved in this app count. Insurable hours and earnings come from the last 27 pay periods saved here (or all of them, if there are fewer). The SIN is never stored in this app.</p>
+<div class="row">
+  <div><label for="roeEmp">Employee</label><select id="roeEmp"></select></div>
+  <div><label for="roeReason">Reason for issuing the ROE</label><select id="roeReason">
+    <option value="A00">A00 — Shortage of work / end of contract or season</option>
+    <option value="E06" selected>E06 — Quit / took another job</option>
+    <option value="M00">M00 — Dismissal</option>
+    <option value="K00">K00 — Other</option>
+  </select></div>
+</div>
+<div class="row">
+  <div><label for="roeFirstDay">First day worked</label><input id="roeFirstDay" type="date"></div>
+  <div><label for="roeLastDay">Last day for which paid</label><input id="roeLastDay" type="date"></div>
+</div>
+<div class="row">
+  <div><label for="roeFinalPp">Final pay period ending date</label><input id="roeFinalPp" type="date"></div>
+  <div><label for="roePayType">Pay period type</label><select id="roePayType"><option selected>Bi-weekly</option><option>Weekly</option><option>Semi-monthly</option><option>Monthly</option></select></div>
+</div>
+<button id="roeBtn">Make the ROE figures</button>
+<div id="roeOut"></div>
+
+</section>
+
+<section class="pay-section" data-section="filings">
+<h2>Filings log — what you have filed</h2>
+<p class="small">A record of the T4s, T4 Summaries and ROEs you have filed, so you can see at a glance what is done. It starts empty — add each filing yourself after you file it. The confirmation number goes here too.</p>
+<div class="row">
+  <div><label for="filType">What was filed</label><select id="filType"><option>T4 return (slips + T4 Summary)</option><option>T4 slip only</option><option>ROE</option><option>Other</option></select></div>
+  <div><label for="filYear">Tax year</label><input id="filYear" type="number" min="2020" max="2100" placeholder="e.g. 2025"></div>
+</div>
+<div class="row">
+  <div><label for="filEmp">Employee (if it is about one person)</label><input id="filEmp" placeholder="e.g. Eva Rutzebeck"></div>
+  <div><label for="filDate">Date filed</label><input id="filDate" type="date"></div>
+</div>
+<label for="filConf">Confirmation number (from CRA Web Forms or ROE Web)</label><input id="filConf" placeholder="Leave blank until you have it">
+<label for="filNote">Note (optional)</label><input id="filNote" placeholder="e.g. 1 slip, $100 late penalty expected">
+<button id="filAddBtn">Add to the log</button>
+<div id="filList"></div>
 
 </section>
 
@@ -940,7 +998,130 @@ function renderT4(){
     const b = by[k]; b.gross += r.gross; b.cpp += r.cpp; b.cpp2 += r.cpp2; b.ei += r.ei; b.tax += r.incomeTax; b.net += r.net; b.count++;
   });
   el.innerHTML = Object.keys(by).sort().map(k => { const b = by[k]; return "<div class='card'><strong>" + esc(k) + "</strong> — " + b.count + " run(s)<br>Gross (employment income): " + money(b.gross) + "<br>CPP: " + money(b.cpp) + " | CPP2: " + money(b.cpp2) + "<br>EI premiums: " + money(b.ei) + "<br>Income tax deducted: " + money(b.tax) + "<br>Net paid: " + money(b.net) + "</div>"; }).join("");
+  fillGenPickers();
 }
+
+// ============================================================================
+// T4 SLIP + ROE GENERATORS (Krystal, 2026-11-11)
+// Only pay runs saved in THIS app count — no QuickBooks history is in here.
+// Neither generator files anything: the T4 is filed in CRA Web Forms, the
+// ROE in Service Canada ROE Web. A SIN is never stored in this app.
+// ============================================================================
+const FILKEY = "ravenPayrollFilingsV1";      // filings log — starts empty
+let filings = JSON.parse(localStorage.getItem(FILKEY) || "[]");
+filings = (filings || []).map(function (f) { f.date = payNormDate(f.date); return f; });
+
+function genEmployees(){
+  var names = [];
+  runs.forEach(function (r) { if (r.emp && names.indexOf(r.emp) === -1) names.push(r.emp); });
+  return names.sort();
+}
+function genYears(){
+  var years = [];
+  runs.forEach(function (r) {
+    var y = (r.payDate || r.ppEnd || "?").slice(0, 4);
+    if (y !== "?" && years.indexOf(y) === -1) years.push(y);
+  });
+  return years.sort();
+}
+function fillGenPickers(){
+  var emps = genEmployees(), years = genYears();
+  ["t4slipEmp", "roeEmp"].forEach(function (id) {
+    var sel = $(id); if (!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = emps.length ? emps.map(function (e) { return "<option>" + esc(e) + "</option>"; }).join("") : "<option value=''>— no saved pay runs yet —</option>";
+    if (emps.indexOf(cur) !== -1) sel.value = cur;
+  });
+  var ysel = $("t4slipYear"); if (ysel) {
+    var cy = ysel.value;
+    ysel.innerHTML = years.length ? years.map(function (y) { return "<option>" + y + "</option>"; }).join("") : "<option value=''>— no saved pay runs yet —</option>";
+    if (years.indexOf(cy) !== -1) ysel.value = cy;
+  }
+}
+// All paid hours in a run count as insurable hours: regular + training + overtime + paid sick.
+function runHours(r){ return (r.hours || 0) + (r.trainHours || 0) + (r.ot15 || 0) + (r.ot20 || 0) + (r.sickHours || 0); }
+function yearTotals(emp, y){
+  var t = {gross:0, cpp:0, cpp2:0, ei:0, tax:0, net:0, empCpp:0, empEi:0, count:0};
+  runs.forEach(function (r) {
+    var yy = (r.payDate || r.ppEnd || "?").slice(0, 4);
+    if (r.emp === emp && yy === y) {
+      t.gross += r.gross; t.cpp += r.cpp; t.cpp2 += r.cpp2; t.ei += r.ei;
+      t.tax += r.incomeTax; t.net += r.net; t.empCpp += r.empCpp; t.empEi += r.empEi; t.count++;
+    }
+  });
+  return t;
+}
+$("t4slipBtn").onclick = function () {
+  var emp = $("t4slipEmp").value, y = $("t4slipYear").value;
+  var out = $("t4slipOut");
+  if (!emp || !y) { out.innerHTML = "<p class='small warn'>No saved pay runs yet — save a pay run first, then make the slip.</p>"; return; }
+  var t = yearTotals(emp, y);
+  if (!t.count) { out.innerHTML = "<p class='small warn'>No saved pay runs for " + esc(emp) + " in " + esc(y) + ".</p>"; return; }
+  var bn = ($("bnInput") && $("bnInput").value.trim()) || "722557212";
+  var rp = ($("rpInput") && $("rpInput").value.trim()) || "722557212RP0001";
+  var empEi = r2(t.ei * 1.4);
+  var box80 = r2(t.cpp + t.empCpp + t.ei + empEi + t.tax);
+  out.innerHTML = "<div class='card'><strong>T4 slip — " + esc(emp) + ", " + esc(y) + "</strong> (" + t.count + " saved pay run(s))<br>" +
+    "Employer: Raven &amp; Roses Cleaning Co., 3207 Hammond Bay Road, Nanaimo BC V9T 1E4<br>" +
+    "Business number: " + esc(bn) + " &nbsp; Payroll account: " + esc(rp) + "<br>" +
+    "Employee SIN: <strong>blank — enter it in CRA Web Forms</strong> (never stored in this app)<br>" +
+    "Province of employment: BC &nbsp; Box 45 (dental): 1 — no dental coverage offered<br>" +
+    "<table><tr><th>Box</th><th>Amount</th></tr>" +
+    "<tr><td>14 — Employment income</td><td>" + money(t.gross) + "</td></tr>" +
+    "<tr><td>16 — Employee's CPP contributions</td><td>" + money(t.cpp) + "</td></tr>" +
+    "<tr><td>16A — Employee's CPP2 contributions</td><td>" + money(t.cpp2) + "</td></tr>" +
+    "<tr><td>18 — Employee's EI premiums</td><td>" + money(t.ei) + "</td></tr>" +
+    "<tr><td>22 — Income tax deducted</td><td>" + money(t.tax) + "</td></tr>" +
+    "<tr><td>24 — EI insurable earnings</td><td>" + money(t.gross) + "</td></tr>" +
+    "<tr><td>26 — CPP pensionable earnings</td><td>" + money(t.gross) + "</td></tr></table>" +
+    "<p class='small'>Box 24 and Box 26 are the same as Box 14 here — that is right for Raven, where all pay is EI-insurable and CPP-pensionable. Print this page and give the employee their copy after filing.</p>" +
+    "<p class='small'><strong>For the T4 Summary (this employee, " + esc(y) + "):</strong> employer EI premiums (Box 19) " + money(empEi) + "; total deductions reported (Box 80) " + money(box80) + " — that is employee CPP + employer CPP + employee EI + employer EI + income tax. Web Forms adds the summary up across all slips; check its totals against this app before you submit.</p></div>";
+};
+$("roeBtn").onclick = function () {
+  var emp = $("roeEmp").value;
+  var out = $("roeOut");
+  if (!emp) { out.innerHTML = "<p class='small warn'>No saved pay runs yet — save a pay run first, then make the ROE figures.</p>"; return; }
+  var rs = runs.filter(function (r) { return r.emp === emp; }).sort(function (a, b) { return (a.ppEnd || "") < (b.ppEnd || "") ? -1 : ((a.ppEnd || "") > (b.ppEnd || "") ? 1 : 0); });
+  if (!rs.length) { out.innerHTML = "<p class='small warn'>No saved pay runs for " + esc(emp) + ".</p>"; return; }
+  var last = rs.slice(-27);
+  var hours = 0, earn = 0;
+  last.forEach(function (r) { hours += runHours(r); earn += (r.gross || 0); });
+  var reason = $("roeReason").value;
+  var firstDay = $("roeFirstDay").value || "— fill in —";
+  var lastDay = $("roeLastDay").value || "— fill in —";
+  var finalPp = $("roeFinalPp").value || "— fill in —";
+  var payType = $("roePayType").value;
+  var rows = last.map(function (r) {
+    return "<tr><td>" + esc(r.ppEnd || r.payDate || "?") + "</td><td>" + runHours(r).toFixed(2) + "</td><td>" + money(r.gross) + "</td></tr>";
+  }).join("");
+  out.innerHTML = "<div class='card'><strong>ROE figures — " + esc(emp) + "</strong><br>" +
+    "Reason: " + esc(reason) + " &nbsp; Pay period type: " + esc(payType) + "<br>" +
+    "First day worked: " + esc(firstDay) + " &nbsp; Last day for which paid: " + esc(lastDay) + " &nbsp; Final pay period ending: " + esc(finalPp) + "<br>" +
+    "<strong>Total insurable hours: " + hours.toFixed(2) + "</strong> &nbsp; <strong>Total insurable earnings: " + money(earn) + "</strong><br>" +
+    "<span class='small'>From the last " + last.length + " pay period(s) saved in this app" + (rs.length > 27 ? " (of " + rs.length + " saved)" : "") + ". Hours include regular, training, overtime and paid sick hours. Enter these in ROE Web. If vacation pay is still owed to them, add it in ROE Web under separation payments.</span>" +
+    "<table><tr><th>Pay period ending</th><th>Hours</th><th>Gross pay</th></tr>" + rows + "</table></div>";
+};
+function renderFilings(){
+  var el = $("filList"); if (!el) return;
+  if (!filings.length) { el.innerHTML = "<p class='small'>Nothing filed yet — the log starts empty.</p>"; return; }
+  el.innerHTML = filings.map(function (f, i) {
+    return "<div class='card'><strong>" + esc(f.type) + "</strong> — " + esc(f.year || "?") + (f.emp ? " — " + esc(f.emp) : "") + "<br>Filed: " + esc(f.date || "?") + (f.conf ? "<br>Confirmation: " + esc(f.conf) : "<br>Confirmation: not recorded yet") + (f.note ? "<br>" + esc(f.note) : "") + "<br><button class='secondary smallbtn' onclick='delFiling(" + i + ")'>Delete</button></div>";
+  }).join("");
+}
+window.delFiling = function (i) {
+  if (!confirm("Delete this filing from the log?")) return;
+  filings.splice(i, 1);
+  localStorage.setItem(FILKEY, JSON.stringify(filings));
+  renderFilings();
+};
+$("filAddBtn").onclick = function () {
+  var f = { type: $("filType").value, year: $("filYear").value.trim(), emp: $("filEmp").value.trim(), date: $("filDate").value, conf: $("filConf").value.trim(), note: $("filNote").value.trim() };
+  if (!f.year || !f.date) { alert("Add the tax year and the date filed."); return; }
+  filings.push(f);
+  localStorage.setItem(FILKEY, JSON.stringify(filings));
+  $("filYear").value = ""; $("filEmp").value = ""; $("filDate").value = ""; $("filConf").value = ""; $("filNote").value = "";
+  renderFilings();
+};
 function renderRuns(){
   if (!runs.length) { $("runs").innerHTML = "<p class='small'>No saved pay runs yet.</p>"; renderT4(); return; }
   var byMonth = monthlyTotals();
@@ -1277,8 +1458,8 @@ const DUE_GUIDES = {
     "When every employee’s signed TD1s are on file, tap “Mark as done” below."
   ], markDone: "td1" },
   t4: { title: "T4 slips — what to give the bookkeeper, and how to do it yourself", steps: [
-    "There are two ways to get T4s done. Either way, the numbers come from this app’s “Year-end totals — for T4” section.",
-    "IF WHITE RAPIDS BOOKS DOES IT: give them (1) the year-end totals from this app for each employee — gross, CPP, CPP2, EI, income tax; (2) each employee’s SIN, full name, and home address; (3) your business number and your payroll (RP) account number. They prepare the T4 slips and the T4 Summary and file them with CRA for you. They (or you) give each employee their copy of their T4.",
+    "The numbers come from this app’s “Year-end totals — for T4” section. You file the T4s yourself — White Rapids Books does not file them for you (Krystal, 2026-11-11).",
+    "IF YOU ASK WHITE RAPIDS BOOKS FOR HELP: give them (1) the year-end totals from this app for each employee — gross, CPP, CPP2, EI, income tax; (2) each employee’s SIN, full name, and home address; (3) your business number and your payroll (RP) account number. They can check the figures, but the filing itself is yours.",
     "IF YOU DO IT YOURSELF: use CRA Web Forms — it is free, it handles up to 100 slips, and it makes the T4 Summary for you. Go to canada.ca and search “Web Forms” (under “File information returns electronically”).",
     "Sign in with CRA My Business Account. If you do not have that, you can sign in with your 15-digit payroll (RP) account number and a web access code — get one from that same CRA page, or by calling 1-800-959-5525.",
     "Create one T4 slip for each employee. For each one you need the employee’s SIN, full name, and home address, plus the numbers from this app’s “Year-end totals — for T4” section: gross pay goes in Box 14, CPP in Box 16, EI in Box 18, income tax in Box 22.",
@@ -1361,6 +1542,7 @@ $("whatsDueRefreshBtn").onclick = renderWhatsDue;
   renderEmailList();
   renderCraReport();
   renderRemitList();
+  renderFilings();
   renderWhatsDue();
   initLoginGate();
 })();
