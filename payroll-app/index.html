@@ -95,12 +95,14 @@
 <option>Paystub — for the employee (copy / print / email)</option>
 <option>Remittance — for Krystal / CRA (does NOT submit to CRA)</option>
 <option>Email paystubs for this pay period</option>
+<option>Payday payout list — who gets paid</option>
 <option>Saved pay runs + monthly remittance totals</option>
 <option>Monthly CRA remittance report</option>
 <option>Year-end totals — for T4 (Krystal / bookkeeper, NOT a filed T4)</option>
 <option>T4 slip — make one from saved runs</option>
 <option>ROE — make one when someone leaves</option>
 <option>Filings log — what you have filed</option>
+<option>New hire — payroll checklist</option>
 <option>Rates used — 2026, BC, outside Quebec</option>
 <option>Pay data — from the backend (setup)</option>
 <option>Show all sections</option>
@@ -229,6 +231,17 @@
 
 </section>
 
+<section class="pay-section" data-section="payout">
+<h2>Payday payout list — who gets paid</h2>
+<p class="small">Payday morning, one list: who gets paid, how much, and where the e-transfer goes. Pick the payday, send each person's net pay by e-transfer, then tap "Mark as paid" next to them. The tick-offs are saved on this phone only. Mileage is included in the net pay shown here (as on the paystub) — it is not a separate payment in this app.</p>
+<div class="row">
+  <div><label for="payoutDate">Payday</label><select id="payoutDate"></select></div>
+  <div><label>&nbsp;</label><p class="small" style="margin:.2em 0">Only paydays with saved runs are listed. Save each employee's run first.</p></div>
+</div>
+<div id="payoutList"></div>
+
+</section>
+
 <section class="pay-section" data-section="savedruns">
 <h2>Saved pay runs + monthly remittance totals</h2>
 <div id="runs"></div>
@@ -330,6 +343,17 @@
 <label for="filNote">Note (optional)</label><input id="filNote" placeholder="e.g. 1 slip, $100 late penalty expected">
 <button id="filAddBtn">Add to the log</button>
 <div id="filList"></div>
+
+</section>
+
+<section class="pay-section" data-section="newhire">
+<h2>New hire — payroll checklist</h2>
+<p class="small">The payroll side of a new starter, in order. Type their name, open their checklist, and tick each step off as you do it. This is payroll only — the hiring paperwork (information package, confidentiality agreement) lives in the Hiring Paperwork folder in Drive. The SIN is collected on the paper TD1 only — never type it into this app.</p>
+<div class="row">
+  <div><label for="nhName">New employee</label><input id="nhName" placeholder="e.g. Ramona Cyre"></div>
+  <div><label>&nbsp;</label><button id="nhLoadBtn" class="secondary">Open their checklist</button></div>
+</div>
+<div id="nhList"></div>
 
 </section>
 
@@ -1122,10 +1146,103 @@ $("filAddBtn").onclick = function () {
   $("filYear").value = ""; $("filEmp").value = ""; $("filDate").value = ""; $("filConf").value = ""; $("filNote").value = "";
   renderFilings();
 };
+
+// ============================================================================
+// PAYDAY PAYOUT LIST (Krystal, 2026-11-11)
+// One list for payday morning: who gets paid, how much, where it goes.
+// Paid ticks are saved on this phone only. Net pay is the app's net —
+// mileage is included in it (as on the paystub), not a separate payment.
+// ============================================================================
+const PAYKEY = "ravenPayrollPayoutsV1";      // paid ticks — { "payDate|emp": {paidAt} }
+let payouts = JSON.parse(localStorage.getItem(PAYKEY) || "{}");
+function payoutDates(){
+  var ds = [];
+  runs.forEach(function (r) { if (r.payDate && ds.indexOf(r.payDate) === -1) ds.push(r.payDate); });
+  return ds.sort().reverse();
+}
+function fillPayoutDates(){
+  var sel = $("payoutDate"); if (!sel) return;
+  var cur = sel.value, ds = payoutDates();
+  sel.innerHTML = ds.length ? ds.map(function (d) { return "<option>" + d + "</option>"; }).join("") : "<option value=''>— no saved pay runs yet —</option>";
+  if (ds.indexOf(cur) !== -1) sel.value = cur;
+  renderPayoutList();
+}
+function renderPayoutList(){
+  var el = $("payoutList"); if (!el) return;
+  var d = $("payoutDate").value;
+  if (!d) { el.innerHTML = "<p class='small'>No saved pay runs yet — calculate and save each employee's run first.</p>"; return; }
+  var list = runs.filter(function (r) { return r.payDate === d; });
+  if (!list.length) { el.innerHTML = "<p class='small'>No saved pay runs for " + esc(d) + ".</p>"; return; }
+  var total = 0; list.forEach(function (r) { total += r.net; });
+  el.innerHTML = list.map(function (r) {
+    var email = employeeEmail(r.emp);
+    var key = d + "|" + r.emp;
+    var paid = payouts[key];
+    return "<div class='card" + (paid ? " sent" : "") + "'><strong>" + esc(r.emp) + "</strong> — net pay " + money(r.net) + " (" + esc(r.ppStart) + " to " + esc(r.ppEnd) + ")" +
+      "<br>E-transfer to: " + (email ? esc(email) : "<span class='warn'><strong>NO EMAIL ON FILE — check the Sheet's Employees tab.</strong></span>") +
+      (r.milePay ? "<br><span class='small'>Includes mileage " + money(r.milePay) + " (" + (r.mileKm || 0).toFixed(1) + " km).</span>" : "") +
+      "<br>" + (paid ? "<span class='ok'>Paid on " + esc(String(paid.paidAt || "").slice(0, 10)) + ".</span> " : "<span class='warn'>Not paid yet.</span> ") +
+      "<button class='secondary smallbtn' onclick='togglePaid(\"" + esc(d) + "\",\"" + esc(r.emp).replace(/"/g, "") + "\")'>" + (paid ? "Undo paid" : "Mark as paid") + "</button></div>";
+  }).join("") + "<p class='small'><strong>Total net pay for " + esc(d) + ": " + money(total) + "</strong> (" + list.length + " person(s)).</p>";
+}
+window.togglePaid = function (d, emp) {
+  var key = d + "|" + emp;
+  if (payouts[key]) delete payouts[key];
+  else payouts[key] = { paidAt: new Date().toISOString() };
+  localStorage.setItem(PAYKEY, JSON.stringify(payouts));
+  renderPayoutList();
+};
+$("payoutDate").onchange = renderPayoutList;
+
+// ============================================================================
+// NEW-HIRE PAYROLL CHECKLIST (Krystal, 2026-11-11)
+// Payroll side of a new starter only. Ticks are saved on this phone only,
+// one checklist per employee name. The SIN stays on paper — never in here.
+// ============================================================================
+const NEWKEY = "ravenPayrollNewHireV1";      // new-hire checklists — { name: {item: true} }
+let newHires = JSON.parse(localStorage.getItem(NEWKEY) || "{}");
+const NH_ITEMS = [
+  ["td1fed", "TD1 federal signed — paper form, in the locked box"],
+  ["td1bc", "TD1 BC signed — paper form, in the locked box"],
+  ["sin", "SIN collected on the paper TD1 (never typed into this app)"],
+  ["rate", "Rate set — starting $23/hr (training $20/hr)"],
+  ["code", "Employee code made in the manager app and given to them in person"],
+  ["sheet", "Employee added to the Employees tab in the Sheet"],
+  ["firstrun", "First pay run saved in this app"],
+  ["firststub", "First paystub sent to them"]
+];
+function nhName(){ return ($("nhName").value || "").trim(); }
+function renderNhList(){
+  var el = $("nhList"); if (!el) return;
+  var name = nhName();
+  if (!name) { el.innerHTML = "<p class='small'>Type the new employee's name above, then open their checklist.</p>"; return; }
+  var done = newHires[name] || {};
+  var n = NH_ITEMS.filter(function (it) { return done[it[0]]; }).length;
+  el.innerHTML = "<p class='small'><strong>" + esc(name) + "</strong> — " + n + " of " + NH_ITEMS.length + " done.</p>" + NH_ITEMS.map(function (it) {
+    return "<div class='dueitem'><input type='checkbox' style='width:auto' " + (done[it[0]] ? "checked" : "") + " onchange='toggleNh(\"" + it[0] + "\")'> <div class='txt'>" + esc(it[1]) + "</div></div>";
+  }).join("") + "<button class='secondary smallbtn' onclick='clearNh()'>Clear this checklist</button>";
+}
+window.toggleNh = function (key) {
+  var name = nhName(); if (!name) return;
+  if (!newHires[name]) newHires[name] = {};
+  newHires[name][key] = !newHires[name][key];
+  localStorage.setItem(NEWKEY, JSON.stringify(newHires));
+  renderNhList();
+};
+window.clearNh = function () {
+  var name = nhName(); if (!name) return;
+  if (!confirm("Clear the checklist for " + name + "?")) return;
+  delete newHires[name];
+  localStorage.setItem(NEWKEY, JSON.stringify(newHires));
+  renderNhList();
+};
+$("nhLoadBtn").onclick = renderNhList;
+$("nhName").addEventListener("keydown", function (e) { if (e.key === "Enter") renderNhList(); });
 function renderRuns(){
-  if (!runs.length) { $("runs").innerHTML = "<p class='small'>No saved pay runs yet.</p>"; renderT4(); return; }
+  if (!runs.length) { $("runs").innerHTML = "<p class='small'>No saved pay runs yet.</p>"; renderT4(); fillPayoutDates(); return; }
   var byMonth = monthlyTotals();
   renderT4();
+  fillPayoutDates();
   $("runs").innerHTML = runs.map((r,i) => "<div class='card'><strong>" + esc(r.emp) + "</strong> — " + (r.ppStart||"?") + " to " + (r.ppEnd||"?") + ", pay date " + (r.payDate||"?") + "<br>Gross " + money(r.gross) + " | CPP " + money(r.cpp) + " | CPP2 " + money(r.cpp2) + " | EI " + money(r.ei) + " | Tax " + money(r.incomeTax) + " | Net " + money(r.net) + " | Remit " + money(r.remitTotal) + "</div>").join("") +
     "<h3>Monthly remittance totals (for PD7A / CRA payment)</h3>" + Object.keys(byMonth).sort().map(m => { const b = byMonth[m]; return "<div class='card'><strong>" + m + "</strong> — " + b.runs + " run(s), gross " + money(b.gross) + ", net " + money(b.net) + "<br>Remit total " + money(b.remit) + " (tax " + money(b.tax) + " + employee CPP " + money(b.cpp) + " + CPP2 " + money(b.cpp2) + " + EI " + money(b.ei) + " + employer CPP " + money(b.empCpp) + " + employer EI " + money(b.empEi) + ")<br>Due (regular): 15th of the month after " + m + "</div>"; }).join("");
 }
