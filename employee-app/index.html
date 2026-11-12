@@ -702,6 +702,40 @@ let monthlyFocus = JSON.parse(localStorage.getItem(MONTHLYKEY) || "null") || JSO
 let monthlyDone = JSON.parse(localStorage.getItem(MONTHLYDONEKEY) || "[]");
 let adjustingEntryIdx = -1; // -1 = new / missed shift, otherwise index into entries
 let current = null; // {name, job, date, in, out}
+const CURRENTKEY = "ravenCurrentClockInV1";
+// CLOCK-IN RECOVERY (Krystal, 2026-11-12): the active clock-in used to live
+// in memory only, so closing or refreshing the app before clock-out lost it
+// and the app said the employee had not clocked in — even though the sheet
+// already had the clock-in. The clock-in is now saved on this phone as well,
+// and on load the app restores it: from this phone first, then from any open
+// entry the backend sent (ClockIn set, ClockOut empty). That way an employee
+// can close the app, reopen it, and still clock out.
+function saveCurrentClockIn(){ try { if (current) localStorage.setItem(CURRENTKEY, JSON.stringify(current)); else localStorage.removeItem(CURRENTKEY); } catch (e) {} }
+function restoreCurrentClockIn(){
+  if (current) return;
+  if (!session || !session.name || session.role === "review") return;
+  // 1) This phone's saved clock-in.
+  try {
+    var saved = JSON.parse(localStorage.getItem(CURRENTKEY) || "null");
+    if (saved && saved.in && !saved.out) { current = saved; }
+  } catch (e) {}
+  // 2) An open entry from the backend (ClockIn set, ClockOut empty) for
+  // today, for the signed-in employee — newest first.
+  if (!current) {
+    var today = $("workdate") ? $("workdate").value : "";
+    var mine = (entries || []).filter(function (e) { return e && !e.out && e.in && (!today || e.date === today) && e.name === session.name; });
+    if (mine.length) {
+      mine.sort(function (a, b) { return b.in - a.in; });
+      var o = mine[0];
+      current = { name: o.name, job: o.job, date: o.date, in: o.in, out: null, refilled: !!o.refilled, low: o.low || [], stocked: !!o.stocked, cloth: !!o.cloth, vacuum: false, training: !!o.training, issue: o.issue || "" };
+    }
+  }
+  if (current) {
+    $("status").innerHTML = "Clocked in at <b>" + fmt(current.in) + "</b> for " + current.job + ".";
+    $("inBtn").disabled = true; $("outBtn").disabled = false;
+    saveCurrentClockIn();
+  }
+}
 let refilled = false, low = new Set(), stocked = false, cloth = false;
 // 2-step stool request + spray bottle quantity. These live in `low` as
 // labelled entries so they reach Krystal in the clock-out payload / email
@@ -1066,6 +1100,7 @@ $("inBtn").onclick = () => {
   current = { name, job, date: $("workdate").value, in: Date.now(), out: null, refilled:false, low:[], stocked:false, cloth:false, vacuum:false, training: isTraining, issue: "" };
   $("status").innerHTML = "Clocked in at <b>" + fmt(current.in) + "</b> for " + job + ".";
   $("inBtn").disabled = true; $("outBtn").disabled = false;
+  saveCurrentClockIn();
   backendPost({ action: "clockin", date: current.date, job: job, in: current.in, training: current.training });
 };
 $("outBtn").onclick = () => {
@@ -1077,6 +1112,7 @@ $("outBtn").onclick = () => {
   const doneEntry = current;
   $("status").innerHTML = "Clocked out at <b>" + fmt(current.out) + "</b> — " + current.hours.toFixed(2) + " hours.";
   current = null; $("inBtn").disabled = false; $("outBtn").disabled = true;
+  saveCurrentClockIn();
   save();
   backendPost({ action: "clockout", date: doneEntry.date, job: doneEntry.job, in: doneEntry.in, out: doneEntry.out,
     hours: doneEntry.hours, training: doneEntry.training, issue: doneEntry.issue, refilled: doneEntry.refilled,
@@ -2495,6 +2531,7 @@ function pullBackendData() {
     }
     save(); saveAdj(); saveTimeOff(); saveMileage(); saveMileageSubmissions();
     renderPending(); renderTimeOff(); renderMileageSubmissions(); renderScheduleCalendar();
+    restoreCurrentClockIn();
   });
 }
 function showLogin() {
@@ -2544,6 +2581,7 @@ function applySession() {
   updateBanner();
   updateWatermark();
   maybeShowColouringQr();
+  restoreCurrentClockIn();
   if (session && session.role !== "review") pullBackendData();
 }
 function updateBanner() {
