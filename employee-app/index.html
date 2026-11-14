@@ -2616,7 +2616,7 @@ $("loginBtn").onclick = function () {
   $("loginError").textContent = "Checking…";
   backendJsonp("login", { name: name, code: code }).then(function (d) {
     if (d && d.ok) {
-      session = { name: d.name, token: d.token, role: d.role || "Employee", rate: d.rate || "", lastActive: Date.now() };
+      session = { name: d.name, token: d.token, role: d.role || "Employee", rate: d.rate || "", lastActive: Date.now(), signedInAt: Date.now() };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
       $("loginCode").value = "";
       if (d.mustChangeCode) { showChangeCode(); return; }
@@ -3076,9 +3076,16 @@ function tickShiftReminders() {
     alert("It's 4:00 — time to clock out of your shift?");
     return;
   }
-  // 16:20 — sign out automatically
+    // 16:20 — sign out automatically, but ONLY if this session started
+  // before 16:20 today. Signing in after 16:20 (evening check-in) must
+  // NOT be kicked out — the old check fired on every tick past 16:20,
+  // so anyone signing in after 16:20 was signed out within a minute.
   if (mins >= 980) {
-    autoSignOut();
+    var cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 20, 0, 0).getTime();
+    var started = (session && session.signedInAt) || 0;
+    if (started && started < cutoff) {
+      autoSignOut();
+    }
   }
 }
 setInterval(tickShiftReminders, 60000);
