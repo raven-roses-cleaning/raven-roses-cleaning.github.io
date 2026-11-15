@@ -2642,7 +2642,7 @@ function loginLockApply() {
   var err = $("loginError");
   if (locked) {
     var mins = Math.ceil((s.lockedUntil - Date.now()) / 60000);
-    if (err) err.textContent = "Too many wrong codes. Sign-in is locked on this device for " + mins + (mins === 1 ? " minute" : " minutes") + ". Try again later.";
+    if (err) err.textContent = "Too many wrong codes. Sign-in is locked on this device for " + mins + (mins === 1 ? " minute" : " minutes") + ". If it was an accident, contact Krystal \u2014 she can unlock it early.";
     setTimeout(loginLockApply, Math.min(Math.max(s.lockedUntil - Date.now(), 1000), LOGIN_LOCK_MS) + 1000);
   } else if (err && err.textContent.indexOf("Too many wrong codes") === 0) {
     err.textContent = "";
@@ -2655,7 +2655,7 @@ $("loginBtn").onclick = function () {
   var code = $("loginCode").value;
   if (!name || !code) { $("loginError").textContent = "Enter your name and your code."; return; }
   $("loginError").textContent = "Checking…";
-  backendJsonp("login", { name: name, code: code }).then(function (d) {
+  backendJsonp("login", { name: name, code: code, app: "employee" }).then(function (d) {
     if (d && d.ok) {
       loginClear();
       session = { name: d.name, token: d.token, role: d.role || "Employee", rate: d.rate || "", lastActive: Date.now(), signedInAt: Date.now() };
@@ -2664,6 +2664,14 @@ $("loginBtn").onclick = function () {
       if (d.mustChangeCode) { showChangeCode(); return; }
       hideLogin();
       applySession();
+    } else if (d && d.error === "locked") {
+      // The backend locked this sign-in (5 wrong codes). Mirror it on this
+      // device so the button disables and the countdown shows.
+      var ls = loginLockRead();
+      ls.lockedUntil = d.lockedUntil || (Date.now() + LOGIN_LOCK_MS);
+      ls.fails = 0;
+      loginLockSave(ls);
+      loginLockApply();
     } else if (loginIsCodeError(d)) {
       var s = loginFail();
       if (!loginLockApply()) {
