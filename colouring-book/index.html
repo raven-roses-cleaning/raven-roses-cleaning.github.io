@@ -374,6 +374,63 @@
   @media (prefers-color-scheme: dark){ .page-pick .page-pick-pct{color:var(--gold-bright)} }
   .page-pick.selected{background:var(--btn-on);color:var(--btn-on-ink);border-color:var(--gold-deep)}
   .page-pick.selected .page-pick-pct{color:var(--btn-on-ink)}
+  /* New-page ribbon — a small, real ribbon banner in Raven black
+     & gold, for a page that has just been added. Nothing huge: a
+     short gold strip with notched ribbon ends and little folded
+     tails underneath, sitting under the page name in the picker
+     and under the title on the colouring page itself. */
+  .page-pick-text{flex:1 1 auto;display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+  .page-pick-text .page-pick-name{flex:none}
+  .new-ribbon{
+    position:relative;display:inline-flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,#eec95c,#d4af37 55%,#c39a2e);
+    color:#221d12;font-size:.7rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+    line-height:1;padding:4px 13px 5px;margin:0 4px 3px;
+    clip-path:polygon(0 0,100% 0,calc(100% - 6px) 50%,100% 100%,0 100%,6px 50%);
+    box-shadow:0 1px 3px rgba(34,29,18,.28);
+  }
+  .new-ribbon::before,.new-ribbon::after{
+    content:"";position:absolute;bottom:-3px;width:7px;height:7px;background:#7c5f10;z-index:-1;
+  }
+  .new-ribbon::before{left:2px;transform:rotate(45deg)}
+  .new-ribbon::after{right:2px;transform:rotate(45deg)}
+  .new-ribbon--large{font-size:.8rem;padding:6px 18px 7px;letter-spacing:.08em}
+  .sheet-new-ribbon{margin:8px 0 0;text-align:center}
+  .sheet-new-ribbon[hidden]{display:none}
+  /* Top new-page ribbon — a full-width gold ribbon banner pinned
+     directly under the black title band, the first thing a reader
+     sees. Same gold ribbon skin as the little .new-ribbon, sized
+     up into a banner: notched swallowtail ends, folded tails
+     underneath, the new page's name in the middle and a quiet
+     "tap to colour it" hint. It is a button — tapping anywhere on
+     it opens the new page. Shown only during a new page's first
+     3 days (see isNewPage in the script). */
+  .top-new-ribbon{margin:10px 2px 2px;text-align:center}
+  .top-new-ribbon[hidden]{display:none}
+  .top-new-ribbon button{
+    display:block;width:100%;padding:0;margin:0;background:transparent;border:none;
+    border-radius:0;min-height:0;cursor:pointer;font-family:inherit;
+  }
+  .top-new-ribbon button:hover{border:none}
+  .top-new-ribbon button:focus-visible{outline:3px solid var(--gold-deep);outline-offset:3px;border-radius:4px}
+  .top-new-ribbon-strip{
+    position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;
+    background:linear-gradient(180deg,#eec95c,#d4af37 55%,#c39a2e);
+    color:#221d12;padding:9px 30px 11px;margin:0 7px 5px;
+    clip-path:polygon(0 0,100% 0,calc(100% - 11px) 50%,100% 100%,0 100%,11px 50%);
+    box-shadow:0 2px 7px rgba(34,29,18,.3);
+  }
+  .top-new-ribbon-strip::before,.top-new-ribbon-strip::after{
+    content:"";position:absolute;bottom:-4px;width:9px;height:9px;background:#7c5f10;z-index:-1;
+  }
+  .top-new-ribbon-strip::before{left:4px;transform:rotate(45deg)}
+  .top-new-ribbon-strip::after{right:4px;transform:rotate(45deg)}
+  .top-new-ribbon-head{
+    font-family:"Pirata One",Georgia,"Times New Roman",serif;font-weight:400;
+    font-size:1.28rem;line-height:1.15;letter-spacing:.05em;
+  }
+  .top-new-ribbon-name{font-size:.98rem;font-weight:700;line-height:1.25}
+  .top-new-ribbon-hint{font-size:.82rem;font-style:italic;line-height:1.25;color:#4a3a10}
   .picker-intro{margin-top:2px}
   /* Quiet music control right above the colouring page */
   .music-mini{
@@ -824,6 +881,22 @@
   @media (prefers-color-scheme: dark){ .page-pick .fav-heart.is-fav{color:#e88ca0} }
   #fav-pages-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
   #fav-pages-section{margin:10px 0 2px;padding-top:10px;border-top:1px solid var(--panel-line)}
+  /* New pages — the announced page, listed at the very top of the
+     picker in its own gold-edged box, so it can be found at a
+     glance without guessing which level it sits under. */
+  #new-pages-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  #new-pages-section{
+    margin:10px 0 4px;padding:10px 10px 11px;
+    border:1px solid var(--gold);border-radius:10px;
+    background:rgba(212,175,55,.1);
+  }
+  #new-pages-section .picker-step{color:var(--gold-deep)}
+  @media (prefers-color-scheme: dark){ #new-pages-section .picker-step{color:var(--gold-bright)} }
+  html[data-app-bg="black"] #new-pages-section .picker-step{color:var(--gold-bright)}
+  /* Plain count line under the picker intro — filled from the real
+     PAGES list by JS, so the number it promises always matches the
+     pages that can actually be found below it. */
+  .picker-count-line{font-weight:600;color:var(--ink);margin:3px 0 0;font-size:.92rem}
   /* The colouring sheet — always a white page on white paper */
   .sheet-head{text-align:center;margin:16px 0 8px}
   .sheet-head h2{font-family:"Pirata One",Georgia,"Times New Roman",serif;font-weight:400;font-size:1.55rem;margin:0 0 2px}
@@ -1234,6 +1307,29 @@
   .end-links a{color:var(--gold-deep);font-weight:600;overflow-wrap:anywhere}
   .cleaning-ad{border-top:1px solid var(--panel-line);padding-top:12px;margin-top:14px}
   .cleaning-ad .ad-name{font-family:"Pirata One",Georgia,"Times New Roman",serif;font-weight:400;font-size:1.25rem;color:var(--ink)}
+  /* Owner "Don't count my visits" switch — at the bottom of More.
+     A real switch (role="switch"): a pill track in the book's own
+     button colours with a gold knob that slides across when it is
+     on. It recolours with the app background like everything else,
+     through the same palette variables. */
+  .owner-nocount{border-top:1px solid var(--panel-line);padding-top:12px;margin-top:14px}
+  .owner-nocount-row{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+  .owner-nocount-label{font-weight:700;font-size:1rem;color:var(--ink)}
+  .owner-switch{
+    position:relative;flex:none;width:60px;height:34px;min-height:34px;padding:0;
+    border-radius:999px;background:var(--btn);border:1px solid var(--btn-line);cursor:pointer;
+  }
+  .owner-switch:hover{border-color:var(--gold-deep)}
+  .owner-switch:focus-visible{outline:3px solid var(--gold-deep);outline-offset:2px}
+  .owner-switch-knob{
+    position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;
+    background:var(--gold-bright);border:1px solid var(--gold-deep);
+    transition:transform .2s ease;
+  }
+  .owner-switch[aria-checked="true"]{background:var(--btn-on);border-color:var(--gold-deep)}
+  .owner-switch[aria-checked="true"] .owner-switch-knob{transform:translateX(26px)}
+  @media (prefers-reduced-motion: reduce){ .owner-switch-knob{transition:none} }
+  .owner-nocount-status{font-weight:600;color:var(--ink)}
   .coming-soon{color:var(--ink-soft);font-style:italic}
   footer{text-align:center;color:var(--ink-soft);font-size:.9rem;margin-top:20px}
   footer p{margin:6px 0}
@@ -1336,6 +1432,20 @@
     <p>A Relaxing Colouring Book — a free gift from Raven &amp; Roses Cleaning. No payment, no signup — just colour.</p>
   </div>
 
+  <!-- New-page ribbon — right at the top, so a new page is the
+       first thing seen. JS shows it only while a page is within
+       its first 3 days in the book (see isNewPage); tapping it
+       jumps straight to that page. -->
+  <div class="top-new-ribbon" id="top-new-ribbon" hidden>
+    <button type="button" id="top-new-ribbon-btn">
+      <span class="top-new-ribbon-strip">
+        <span class="top-new-ribbon-head">✦ New page just added ✦</span>
+        <span class="top-new-ribbon-name" id="top-new-ribbon-name"></span>
+        <span class="top-new-ribbon-hint">Tap to colour it →</span>
+      </span>
+    </button>
+  </div>
+
   <p class="top-lilith-link"><a href="https://lilithmoonhaven.github.io/colouring-book/">More free colouring pages →</a></p>
 
   <p class="top-tip">Tip: Add to Home Screen to keep this book on your phone like an app.</p>
@@ -1355,15 +1465,27 @@
       <button class="info-btn" type="button" data-help-target="levels-help" aria-expanded="false" aria-controls="levels-help" aria-label="How the levels work">ⓘ</button>
     </div>
     <div class="help-panel" id="levels-help" hidden>
-      <p>First choose a level — pages are grouped into 5 levels, from very easy to super intricate. Then the pages in just that level drop down below, with their pictures — tap one to colour it. Pick the level that feels relaxing to you — you can change any time.</p>
+      <p>Choose <strong>All pages</strong> to see every page in the book at once — the Cover and all the colouring pages, in order. Or choose a level — pages are grouped into 5 levels, from very easy to super intricate — to see just that level's pages. Each choice says how many pages it holds. Tap a page's picture to colour it. You can change any time.</p>
     </div>
-    <p class="note picker-intro">First pick a level, then tap a page to colour it.</p>
+    <p class="note picker-intro">See every page at once, or pick a level — then tap a page to colour it.</p>
+    <p class="picker-count-line" id="picker-count-line"></p>
+    <!-- While a page is new it is ALSO listed right here, above the
+         level list — the ribbon at the top announces it, so it must
+         be findable in this picker without first guessing which
+         level it sits under. JS fills this from the same PAGES list
+         and hides the section when no page is new (see
+         renderLevelPages). -->
+    <div id="new-pages-section" hidden>
+      <p class="picker-step" style="margin-top:2px">★ New page — just added · tap it to colour it</p>
+      <div id="new-pages-list"></div>
+    </div>
     <div id="fav-pages-section" hidden>
       <p class="picker-step" style="margin-top:2px">My favourite pages</p>
       <div id="fav-pages-list"></div>
     </div>
-    <label for="level-select">1 — Choose a level
-      <select id="level-select" aria-label="Choose a level">
+    <label for="level-select">1 — See all pages, or choose a level
+      <select id="level-select" aria-label="See all pages, or choose a level">
+        <option value="all">All pages</option>
         <option value="level1">Level 1 — Very easy</option>
         <option value="level2">Level 2 — Easy</option>
         <option value="level3">Level 3 — Moderate</option>
@@ -1395,6 +1517,7 @@
       <h2 id="page-title">Loading…</h2>
       <p id="page-count"></p>
       <p id="page-difficulty" class="difficulty-line"></p>
+      <p class="sheet-new-ribbon" id="page-new-ribbon" hidden><span class="new-ribbon new-ribbon--large">New page — just added</span></p>
     </div>
 
     <div class="music-mini">
@@ -1682,7 +1805,7 @@
       <div class="badge" data-badge="all-pages">
         <div class="badge-medal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5 C7.5 3.4 10 3.4 12 5 V19.5 C10 18 7.5 18 5 19 Z"/><path d="M19 4.5 C16.5 3.4 14 3.4 12 5 V19.5 C14 18 16.5 18 19 19 Z"/></svg></div>
         <h3>Bookworm — All Pages</h3>
-        <p>Colour something on all 11 pages.</p>
+        <p>Colour something on all 12 pages.</p>
         <p class="badge-state">Not yet</p>
       </div>
     </div>
@@ -1822,6 +1945,14 @@
     <a href="https://lilithmoonhaven.etsy.com">https://lilithmoonhaven.etsy.com</a></p>
     <p><a href="https://lilithmoonhaven.github.io/colouring-book/">Try our other free colouring book — Lilith Moon Haven Colouring Book</a><br>
     <span class="note">Another free gift from Lilith Moon Haven — Lilith in her night garden. Free to colour, no payment, no signup.</span></p>
+    <div class="owner-nocount">
+      <div class="owner-nocount-row">
+        <span class="owner-nocount-label" id="owner-nocount-label">Don't count my visits</span>
+        <button type="button" class="owner-switch" id="owner-nocount-switch" role="switch" aria-checked="false" aria-labelledby="owner-nocount-label"><span class="owner-switch-knob" aria-hidden="true"></span></button>
+      </div>
+      <p class="note owner-nocount-status" id="owner-nocount-status" aria-live="polite" style="margin:6px 0 0">Off — your visits are counted, like everyone else's.</p>
+      <p class="note" style="margin:4px 0 0">For the book's owner: turn this on on your own phone, and your opens of this book won't be added to the visitor counts, so they don't skew the numbers. It only affects this phone — everyone else is still counted as usual. Turn it off any time to count your visits again.</p>
+    </div>
   </section>
 
   <section class="panel paper-panel" aria-label="Choose the app background">
@@ -1894,16 +2025,16 @@
    entry to the PAGES list below — { id, title, file, level }.
    "level" is the page's difficulty, 1 to 5: "level1" (Very easy),
    "level2" (Easy), "level3" (Moderate), "level4" (Intricate), or
-   "level5" (Super intricate). The picker groups pages into those
-   5 sections from that field, Level 1 and Level 2 first, so every
-   new page must be given a level. New free pages are added as a
+   "level5" (Super intricate). The picker lists pages under those
+   5 levels from that field — and also all together under its
+   "All pages" choice — so every new page must be given a level. New free pages are added as a
    MIXTURE of all 5 levels over time — not all one difficulty — so
    there is always something new for people who like very easy
    colouring and for people who like very detailed colouring. Any
    kind of image can be added; the list is not limited to one theme.
    The cover is a colouring page like any other, but it is NOT a
    numbered page: it is called "Cover" only, with no page number.
-   The colouring pages after it are Page 1 to Page 11, so there is
+   The colouring pages after it are Page 1 to Page 12, so there is
    only ever one Page 1. The cover carries its own level — Level 4,
    Intricate, matching its detailed raven, roses and ornate border —
    and sits at the start of that level's page list in the picker,
@@ -1932,8 +2063,37 @@ var PAGES = [
   { "id": "page-08", "title": "Page 8 — Raven on the rose branch",       "file": "media-generation-raven-colouring-page-08-v6-ros-0-485c7240-a87a-4878-830d-395abf193888.webp", "level": "level1" },
   { "id": "page-09", "title": "Page 9 — Raven at the birdbath",          "file": "media-generation-raven-colouring-page-09-v6-bir-0-d9f4e94c-097e-47dc-9a1c-ee5447a20393.webp", "level": "level2" },
   { "id": "page-10", "title": "Page 10 — Raven at the lakeside cabin",   "file": "media-generation-raven-lakeside-cabin-level2-re-0-8885449a-8330-49f8-a2ab-5ce83beeb2c4.webp", "level": "level2" },
-  { "id": "page-11", "title": "Page 11 — Raven in the rugged mountains", "file": "media-generation-raven-rugged-mountain-level4-0-11fc21e4-8630-4edf-b4c8-e94ae7543057.webp", "level": "level4" }
+  { "id": "page-11", "title": "Page 11 — Raven in the rugged mountains", "file": "media-generation-raven-rugged-mountain-level4-0-11fc21e4-8630-4edf-b4c8-e94ae7543057.webp", "level": "level4" },
+  { "id": "page-12", "title": "Page 12 — Raven at the garden gate",       "file": "raven-page-12-garden-gate.webp", "level": "level1", "addedOn": "2026-11-09" }
 ];
+
+/* ---- New-page ribbon, for 3 days only ----
+   A page stamped with "addedOn" (the day it went into the book)
+   wears the New ribbons — the banner at the very top of the book,
+   the little ribbon beside its name in the picker, and the ribbon
+   under its title on the colouring page — for 3 days from that
+   date. On the 4th day every ribbon is gone on its own; the page
+   itself stays in the book like any other. The next new page just
+   gets its own "addedOn" date and the ribbons come back for it.
+   Dates are compared as whole local days, so the ribbons show for
+   the full 3rd day and disappear the morning after. */
+var NEW_RIBBON_DAYS = 3;
+function isNewPage(pg) {
+  if (!pg || !pg.addedOn) return false;
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(pg.addedOn);
+  if (!m) return false;
+  var added = new Date(+m[1], +m[2] - 1, +m[3]);
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var days = Math.round((today - added) / 86400000);
+  return days >= 0 && days < NEW_RIBBON_DAYS;
+}
+function newestNewPage() {
+  for (var i = PAGES.length - 1; i >= 0; i--) {
+    if (isNewPage(PAGES[i])) return PAGES[i];
+  }
+  return null;
+}
 
 var PALETTES = {
   "Raven":  ["#1a1a1a", "#d4af37", "#c0392b", "#7b2d26", "#f5d76e", "#8a8a8a", "#ffffff"],
@@ -1960,7 +2120,8 @@ var SUGGESTED = {
   "page-08": { note: "Big, easy shapes — moon gold, rose reds and calm night blue for this very easy page.", colours: ["#d4af37", "#f5d76e", "#c0392b", "#7b2d26", "#2c3e50", "#27ae60"] },
   "page-09": { note: "Easy garden calm — soft blues for the birdbath water, stone grey, rose reds and gold.", colours: ["#2980b9", "#aed6f1", "#8a8a8a", "#c0392b", "#d4af37", "#27ae60"] },
   "page-10": { note: "Lakeside calm — water blues, pine greens and warm cabin browns for this easy page.", colours: ["#2980b9", "#aed6f1", "#145a32", "#27ae60", "#6d4c41", "#d4af37"] },
-  "page-11": { note: "Mountain strength — stone greys, deep pine greens and a cold sky for this intricate page.", colours: ["#8a8a8a", "#2c3e50", "#145a32", "#27ae60", "#2980b9", "#6d4c41"] }
+  "page-11": { note: "Mountain strength — stone greys, deep pine greens and a cold sky for this intricate page.", colours: ["#8a8a8a", "#2c3e50", "#145a32", "#27ae60", "#2980b9", "#6d4c41"] },
+  "page-12": { note: "Garden-gate calm — rose reds, leaf greens, iron greys and moon gold for this very easy new page.", colours: ["#c0392b", "#7b2d26", "#27ae60", "#145a32", "#8a8a8a", "#d4af37"] }
 };
 var MUSIC_TRACKS = [
   { id: "piano-soft", name: "Soft Piano — a soft, gentle little song, slow and quiet", file: "piano-soft.mp3", local: true },
@@ -2054,7 +2215,61 @@ var baseCtx = baseCanvas.getContext("2d");
 var ANALYTICS_BOOK = "raven"; // this book's tab in the Sheet
 var ANALYTICS_SHEET_URL = "https://script.google.com/macros/s/AKfycbw9thcsuocQSPdmNltDsgS87CDlQknpD2mI20m-N80H5dqsoWIOOlJkp4T6Tyxl7fi-/exec"; // Live Apps Script web app — anonymous events are queued on the phone and sent to the "raven" tab of the Sheet (batched JSON POST — fetch / sendBeacon — on flush / hide / close; see the send notes above).
 var appReady = false; // true once the book has opened — the opening calls below are not reader usage
+/* ---- Owner visits — "Don't count my visits" (in More) ----
+   The book's owner opens the book herself to check pages, try
+   new pages and show people — and every one of those opens used
+   to land in the same anonymous counts as a reader's, skewing
+   the numbers she reads on the dashboard. The switch at the
+   bottom of the More section fixes that, on HER phone only: it
+   is remembered in this phone's own storage (the same store as
+   everything else here, key "ownerNoCount"), and while it is on,
+   trackEvent — the ONE funnel every count leaves through — does
+   nothing at all: no on-phone tally, nothing queued for the
+   Sheet, nothing forwarded. The visit bookkeeping (first /
+   return visit days) is skipped too, so an owner's day in the
+   book never becomes a "return visit" later. Turning the switch
+   on also drops anything from this phone still waiting unsent
+   in the Sheet queue and clears the on-phone tally, so this
+   visit cannot slip into the counts on a later flush; and
+   sendSheetQueue itself refuses to send while the switch is on,
+   so a stale queue can never leave an opted-out phone. Counts
+   already sent before the switch was first turned on cannot be
+   called back — from the moment it is on, this phone is simply
+   not counted. Feedback is NOT a count: a note the owner
+   deliberately writes and sends still sends, exactly as before.
+   Everyone else's phone has the switch off (it starts off) and
+   is counted exactly as before. */
+var OWNER_NO_COUNT_KEY = "ownerNoCount";
+function isOwnerNoCount() {
+  try { return storeGet(OWNER_NO_COUNT_KEY) === "1"; } catch (e) { return false; }
+}
+function clearQueuedAnalytics() {
+  try {
+    sheetQueue = [];
+    persistSheetQueue();
+    if (sheetFlushTimer) { clearTimeout(sheetFlushTimer); sheetFlushTimer = null; }
+    if (sheetEarlyFlushTimer) { clearTimeout(sheetEarlyFlushTimer); sheetEarlyFlushTimer = null; }
+  } catch (e) {}
+}
+function setOwnerNoCount(on) {
+  try { storeSet(OWNER_NO_COUNT_KEY, on ? "1" : "0"); } catch (e) {}
+  if (on) {
+    clearQueuedAnalytics();
+    try { storeRemove("analytics"); } catch (e) {}
+  }
+  syncOwnerNoCountSwitch();
+}
+function syncOwnerNoCountSwitch() {
+  var sw = document.getElementById("owner-nocount-switch");
+  var status = document.getElementById("owner-nocount-status");
+  var on = isOwnerNoCount();
+  if (sw) sw.setAttribute("aria-checked", String(on));
+  if (status) status.textContent = on
+    ? "On — your visits on this phone aren't counted."
+    : "Off — your visits are counted, like everyone else's.";
+}
 function trackEvent(name, props) {
+  if (isOwnerNoCount()) return; // owner's own phone, switch on in More — this visit is not counted at all
   try {
     var tally = {};
     var raw = storeGet("analytics");
@@ -2169,6 +2384,12 @@ function sheetEventFor(ev) {
 function sendSheetQueue(useBeacon) {
   if (!ANALYTICS_SHEET_URL) return;
   var q = loadSheetQueue();
+  if (isOwnerNoCount()) { // owner's switch is on — nothing from this phone is counted, so nothing is sent; drop any stale queue
+    sheetQueue = []; persistSheetQueue();
+    if (sheetFlushTimer) { clearTimeout(sheetFlushTimer); sheetFlushTimer = null; }
+    if (sheetEarlyFlushTimer) { clearTimeout(sheetEarlyFlushTimer); sheetEarlyFlushTimer = null; }
+    return;
+  }
   if (!q.length) return;
   if (sheetFlushTimer) { clearTimeout(sheetFlushTimer); sheetFlushTimer = null; }
   if (sheetEarlyFlushTimer) { clearTimeout(sheetEarlyFlushTimer); sheetEarlyFlushTimer = null; }
@@ -2267,7 +2488,7 @@ function storeRemove(key) {
   try { window.localStorage.removeItem(STORE_PREFIX + key); } catch (e) {}
 }
 function colourPages() {
-  // The 11 colouring pages (everything except the cover) — used by the
+  // The 12 colouring pages (everything except the cover) — used by the
   // Bookworm / All Pages badge.
   return PAGES.filter(function (p) { return p.id !== "cover"; });
 }
@@ -4405,20 +4626,31 @@ function luminance(r, g, b) { return 0.299 * r + 0.587 * g + 0.114 * b; }
 var STATUS_DEFAULT = "Undo takes back a step. Redo puts it back.";
 function setStatus(t) { $("status").textContent = t || STATUS_DEFAULT; }
 
-/* ---- Double dropdown page picker ----
-   First dropdown chooses a LEVEL only — Level 1 to Level 5, nothing
-   else in it (there is no "Cover" option: the cover is a page like
-   any other, listed under its own level). Choosing a level drops
-   down just that level's pages underneath, each as a tappable row
-   with the page's own picture and its name (e.g. "Page 8 — Raven on
-   the rose branch"). Tapping a page loads it and jumps straight to
-   the colouring canvas. The cover is unnumbered and listed simply
-   as "Cover": it belongs to Level 4 (Intricate — matching its
-   detailed raven-and-roses art) and, coming first in PAGES, it sits
-   at the start of Level 4's page list, still colourable like every
-   other page. The numbered pages are Page 1 to Page 11 only. */
-var currentPickerGroup = "level1";
+/* ---- Page picker ----
+   The dropdown's first choice is "All pages": every page in the
+   book — the Cover plus Page 1 to Page 12, in book order — listed
+   at once, so the whole book can always be seen and any page found
+   without guessing. The other choices are the 5 levels; choosing
+   one lists just that level's pages underneath. Every choice in
+   the dropdown carries its real page count (filled in from PAGES
+   by buildPagePicker), and a count line under the picker intro
+   states the book's total, so what the picker promises always
+   matches what it shows. Each page is a tappable row with its own
+   picture and name (e.g. "Page 8 — Raven on the rose branch");
+   tapping one loads it and jumps straight to the colouring canvas.
+   The cover is unnumbered and listed simply as "Cover": it belongs
+   to Level 4 (Intricate — matching its detailed raven-and-roses
+   art) and, coming first in PAGES, it sits at the top of the All
+   pages list and at the start of Level 4's list, still colourable
+   like every other page. */
+var currentPickerGroup = "all";
 function pickerGroupOf(page) { return (page && page.level && LEVELS[page.level]) ? page.level : "level1"; }
+function pickerCountFor(group) {
+  if (group === "all") return PAGES.length;
+  var n = 0;
+  PAGES.forEach(function (pg) { if (pickerGroupOf(pg) === group) n++; });
+  return n;
+}
 /* One tappable page row, used by the level list and by My favourite
    pages alike: the page's picture, its name, its % if it has been
    started, and a heart — tap the heart to keep the page in My
@@ -4434,10 +4666,19 @@ function makePagePickRow(pg, idx) {
   img.alt = "";
   img.loading = "lazy";
   b.appendChild(img);
+  var nameWrap = document.createElement("span");
+  nameWrap.className = "page-pick-text";
   var name = document.createElement("span");
   name.className = "page-pick-name";
   name.textContent = pg.id === "cover" ? "Cover" : pg.title;
-  b.appendChild(name);
+  nameWrap.appendChild(name);
+  if (isNewPage(pg)) {
+    var ribbon = document.createElement("span");
+    ribbon.className = "new-ribbon";
+    ribbon.textContent = "New page";
+    nameWrap.appendChild(ribbon);
+  }
+  b.appendChild(nameWrap);
   var st = pageStats[pg.id];
   if (st && st.touched) {
     var pct = document.createElement("span");
@@ -4478,6 +4719,25 @@ function makePagePickRow(pg, idx) {
   return b;
 }
 function renderLevelPages() {
+  // New pages — while a page is inside its 3-day new window it is
+  // listed HERE, at the very top of the picker, as well as under
+  // its own level below. The gold ribbon at the top of the book
+  // names the new page, so the picker must show that same page
+  // without the reader first having to pick the right level —
+  // otherwise they are told a page exists and then cannot find it.
+  // The section hides itself once no page is new any more.
+  var newSection = $("new-pages-section");
+  var newList = $("new-pages-list");
+  if (newSection && newList) {
+    newList.innerHTML = "";
+    var newCount = 0;
+    PAGES.forEach(function (pg, idx) {
+      if (!isNewPage(pg)) return;
+      newCount++;
+      newList.appendChild(makePagePickRow(pg, idx));
+    });
+    newSection.hidden = !newCount;
+  }
   // My favourite pages — hearted pages, kept at the TOP of the
   // picker so they can be found fast. The section hides itself when
   // nothing has been hearted yet.
@@ -4493,16 +4753,63 @@ function renderLevelPages() {
     });
     favSection.hidden = !favCount;
   }
+  // The count line and the step-2 heading always state, in plain
+  // numbers taken from PAGES itself, how many pages the current
+  // choice holds — so the list below can never quietly show fewer
+  // pages than the reader was told to expect.
+  var countLine = $("picker-count-line");
+  if (countLine) {
+    countLine.textContent = "This book has the Cover plus " + (PAGES.length - 1) + " colouring pages — " + PAGES.length + " pages in all, and every one of them is in the list below.";
+  }
+  var stepLabel = $("level-pages-label");
+  if (stepLabel) {
+    stepLabel.textContent = currentPickerGroup === "all"
+      ? "2 — Tap a page (all " + PAGES.length + " pages)"
+      : "2 — Tap a page (" + pickerCountFor(currentPickerGroup) + " pages in " + LEVELS[currentPickerGroup].short + ")";
+  }
   var wrap = $("level-pages");
   if (!wrap) return;
   wrap.innerHTML = "";
   PAGES.forEach(function (pg, idx) {
-    if (pickerGroupOf(pg) !== currentPickerGroup) return;
+    if (currentPickerGroup !== "all" && pickerGroupOf(pg) !== currentPickerGroup) return;
     wrap.appendChild(makePagePickRow(pg, idx));
   });
 }
+/* The ribbon banner at the very top of the book. Shows only
+   while a page is inside its 3-day new window; names the newest
+   such page, and tapping the ribbon opens that page and jumps
+   straight to the colouring sheet. With no page in its window
+   (the usual state), the ribbon stays hidden entirely. */
+function renderTopNewRibbon() {
+  var wrap = $("top-new-ribbon");
+  if (!wrap) return;
+  var pg = newestNewPage();
+  if (!pg) { wrap.hidden = true; return; }
+  var nameEl = $("top-new-ribbon-name");
+  if (nameEl) nameEl.textContent = pg.title + " · " + LEVELS[pg.level].short;
+  wrap.hidden = false;
+  var btn = $("top-new-ribbon-btn");
+  if (btn) {
+    btn.onclick = function () {
+      loadPage(PAGES.indexOf(pg));
+      var sa = $("sheet-area");
+      if (sa) { try { sa.scrollIntoView({ block: "start" }); } catch (e) { window.scrollTo(0, 0); } }
+    };
+  }
+}
+
 function syncPickerToPage() {
-  currentPickerGroup = pickerGroupOf(PAGES[currentIndex]);
+  // While the reader is browsing "All pages", loading a page must
+  // NOT collapse the picker back to just that page's level — that
+  // is how pages seemed to disappear: tap one page and the rest of
+  // the book vanished from the list. In "All pages" the current
+  // page is already in the list, so the picker stays as it is.
+  // In a single-level view, stepping (Previous / Next) onto a page
+  // from another level still moves the picker to that page's
+  // level, so the list always contains the page being coloured.
+  if (currentPickerGroup !== "all") {
+    currentPickerGroup = pickerGroupOf(PAGES[currentIndex]);
+  }
   var sel = $("level-select");
   if (sel) sel.value = currentPickerGroup;
   renderLevelPages();
@@ -4531,13 +4838,15 @@ function loadPage(index) {
   updateUndoRedo();
   // Numbering: the cover is unnumbered — its heading is just "Cover"
   // and it has no "Page N of …" line. The colouring pages are the
-  // only numbered pages, Page 1 to Page 11 (PAGES[0] is the cover,
+  // only numbered pages, Page 1 to Page 12 (PAGES[0] is the cover,
   // so a colouring page's number is its index in PAGES), counted
-  // out of the 11 colouring pages. That way there is only one Page 1.
+  // out of the 12 colouring pages. That way there is only one Page 1.
   $("page-title").textContent = (page.id === "cover") ? "Cover" : page.title;
   $("page-count").textContent = (page.id === "cover")
-    ? "Cover · 11 colouring pages in this book"
+    ? "Cover · " + (PAGES.length - 1) + " colouring pages in this book"
     : "Page " + currentIndex + " of " + (PAGES.length - 1);
+  var newRibbonEl = $("page-new-ribbon");
+  if (newRibbonEl) newRibbonEl.hidden = !isNewPage(page);
   var diffEl = $("page-difficulty");
   if (diffEl) {
     var lvlTxt = levelLabel(page);
@@ -5048,21 +5357,33 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   setTool("pen");
 
-  // Page picker: the DOUBLE dropdown above the colouring page.
-  // The level dropdown holds the 5 levels only (Level 1 — Very easy,
-  // … Level 5 — Super intricate) — no page titles in it, and no
-  // "Cover" option: the cover is unnumbered, listed as "Cover" under its own level
-  // (Level 4) like every other page. Changing it only re-lists the
-  // pages underneath: just that level's pages, each with its picture
-  // and name. Tapping a page loads it and jumps straight to the
-  // colouring canvas (see renderLevelPages). The list is built from
-  // PAGES + LEVELS, so a page added to PAGES appears here
-  // automatically in its level. Previous / Next still walk the book
-  // in page order, and loadPage keeps this picker in sync via
-  // syncPickerToPage.
+  // Page picker above the colouring page. The dropdown's first
+  // choice is "All pages" — the whole book in one list — followed
+  // by the 5 levels (Level 1 — Very easy, … Level 5 — Super
+  // intricate). There is no separate "Cover" choice: the cover is
+  // unnumbered and listed as "Cover", in All pages and under its
+  // own level (Level 4), like every other page. Every choice is
+  // labelled here with its real page count, counted from PAGES, so
+  // the label can never promise pages the list does not hold (or
+  // hide pages it does). Changing the choice only re-lists the
+  // pages underneath. Tapping a page loads it and jumps straight
+  // to the colouring canvas (see renderLevelPages). The list is
+  // built from PAGES + LEVELS, so a page added to PAGES appears
+  // here automatically, in All pages and in its level. Previous /
+  // Next still walk the book in page order, and loadPage keeps
+  // this picker in sync via syncPickerToPage.
   (function buildPagePicker() {
     var sel = $("level-select");
     if (!sel) return;
+    for (var i = 0; i < sel.options.length; i++) {
+      var opt = sel.options[i];
+      if (opt.value === "all") {
+        opt.textContent = "All pages — Cover + " + (PAGES.length - 1) + " colouring pages (" + PAGES.length + " in all)";
+      } else if (LEVELS[opt.value]) {
+        var n = pickerCountFor(opt.value);
+        opt.textContent = LEVELS[opt.value].label + " (" + n + (n === 1 ? " page" : " pages") + ")";
+      }
+    }
     sel.value = currentPickerGroup;
     sel.addEventListener("change", function () {
       currentPickerGroup = this.value;
@@ -6117,6 +6438,13 @@ document.addEventListener("DOMContentLoaded", function () {
   for (var pb = 0; pb < paperBtns.length; pb++) {
     paperBtns[pb].addEventListener("click", function () { setAppBackground(this.getAttribute("data-paper")); });
   }
+  // "Don't count my visits" — the owner's switch at the bottom of
+  // More (see the note above trackEvent). It starts from whatever
+  // this phone remembered, and tapping it flips the setting on
+  // this phone only.
+  syncOwnerNoCountSwitch();
+  var ownerNoCountSwitch = $("owner-nocount-switch");
+  if (ownerNoCountSwitch) ownerNoCountSwitch.addEventListener("click", function () { setOwnerNoCount(!isOwnerNoCount()); });
   // The frame / plaque tiles in the frames section need no listener
   // here: tapping one picks it (and a plaque shows the optional name
   // line) — see buildFramesPreview. That section's Save button
@@ -6584,7 +6912,7 @@ document.addEventListener("DOMContentLoaded", function () {
   try {
     var todayKey = dayKey(new Date());
     var lastVisitDay = storeGet("lastVisitDay");
-    if (lastVisitDay !== todayKey) {
+    if (!isOwnerNoCount() && lastVisitDay !== todayKey) {
       var visitDayCount = (parseInt(storeGet("visitDays") || "0", 10) || 0) + 1;
       storeSet("visitDays", String(visitDayCount));
       if (lastVisitDay) {
@@ -6911,6 +7239,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // restored, so colouring picks up right where it left off.
   var startIndex = openingPageIndex();
   appReady = true; // the book is open — from here, picks and taps are the reader's own
+  renderTopNewRibbon();
   loadPage(startIndex);
   if (pageImg.complete && pageImg.naturalWidth) onImageReady();
 });
@@ -6918,7 +7247,7 @@ document.addEventListener("DOMContentLoaded", function () {
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
-      navigator.serviceWorker.register("assets/sw.js?v=38").catch(function () {});
+      navigator.serviceWorker.register("assets/sw.js?v=44").catch(function () {});
     });
   }
 </script>
