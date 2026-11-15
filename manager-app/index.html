@@ -1355,6 +1355,7 @@ function pullMgrBackendData() {
       });
       saveEmployees();
     }
+    if (d.locks) { lockedSignins = d.locks; }
     if (d.entries) entries = mgrMergeByKey(entries, d.entries.map(mgrNormEntry), function (e) { return [e.name, e.job, e.date, e.in].join("|"); });
     if (d.adjustments) adjustments = mgrMergeByKey(adjustments, d.adjustments.map(function (r) {
       return { name: r.Employee || r.name, job: r.Job || r.job, date: r.Date || r.date,
@@ -1496,7 +1497,7 @@ $("loginBtn").onclick = function () {
   var code = $("loginCode").value;
   if (!code) { $("loginError").textContent = "Enter your manager code."; return; }
   $("loginError").textContent = "Checking…";
-  mgrBackendJsonp("login", { name: "Krystal McGee", code: code }).then(function (d) {
+  mgrBackendJsonp("login", { name: "Krystal McGee", code: code, app: "manager" }).then(function (d) {
     if (d && d.ok) {
       loginClear();
       mgrSession = { name: "Krystal McGee", token: d.token, role: "Manager" };
@@ -1504,6 +1505,14 @@ $("loginBtn").onclick = function () {
       $("loginCode").value = "";
       hideMgrLogin();
       applyMgrSession();
+    } else if (d && d.error === "locked") {
+      // The backend locked this sign-in (5 wrong codes). Mirror it on this
+      // device so the button disables and the countdown shows.
+      var ls = loginLockRead();
+      ls.lockedUntil = d.lockedUntil || (Date.now() + LOGIN_LOCK_MS);
+      ls.fails = 0;
+      loginLockSave(ls);
+      loginLockApply();
     } else if (loginIsCodeError(d)) {
       var s = loginFail();
       if (!loginLockApply()) {
@@ -1649,8 +1658,31 @@ function renderMileageSubs() {
 // Employees tab (and the local fallback when the backend is not connected).
 // ============================================================================
 var empPickName = "";
+// Locked sign-ins (server-side lockout, Krystal 2026-11-15). The backend
+// sends the currently locked accounts in getData as d.locks (name +
+// lockedUntil). Krystal can unlock one early from here if the employee
+// contacts her and says it was an accident (screen bumped, etc.).
+var lockedSignins = [];
+function unlockSigninByIndex(idx) {
+  var lk = (lockedSignins || [])[idx];
+  if (!lk || !lk.name) return;
+  mgrBackendPost({ action: "unlockAccount", targetName: lk.name });
+  lockedSignins.splice(idx, 1);
+  renderEmployees();
+}
+function renderLockedSigninsHtml() {
+  if (!lockedSignins || !lockedSignins.length) return "";
+  return "<div class='locked-box'><strong>Locked sign-ins</strong><br>" +
+    lockedSignins.map(function (lk, idx) {
+      var until = lk.lockedUntil ? new Date(lk.lockedUntil) : null;
+      var t = until ? until.toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit" }) : "";
+      return "<div>" + esc(lk.name || "") + (t ? " \u2014 locked until " + esc(t) : "") +
+        " <button class='smallbtn secondary' onclick='unlockSigninByIndex(" + idx + ")'>Unlock</button></div>";
+    }).join("") + "</div>";
+}
 function renderEmployees() {
   var el = $("employeeList"); if (!el) return;
+  var lockHtml = renderLockedSigninsHtml();
   // Employees only — managers (Krystal) are never listed here. Pick one
   // employee from the dropdown to see and change their code, rate and access.
   var list = [];
@@ -1674,8 +1706,8 @@ function renderEmployees() {
   var toShow = [];
   if (empPickName === "__all__") toShow = list.slice();
   else if (empPickName) { var one = list.filter(function (x) { return x.emp.name === empPickName; })[0]; if (one) toShow = [one]; }
-  if (!toShow.length) { el.innerHTML = list.length ? "" : "<p class='small'>No employees yet.</p>"; return; }
-  el.innerHTML = toShow.map(function (picked) {
+  if (!toShow.length) { el.innerHTML = lockHtml + (list.length ? "" : "<p class='small'>No employees yet.</p>"); return; }
+  el.innerHTML = lockHtml + toShow.map(function (picked) {
     var emp = picked.emp, i = picked.idx;
     var rateLabel = (emp.rate === "" || emp.rate == null) ? "Rate not set" : "$" + Number(emp.rate).toFixed(2) + "/hr";
     var tempNote = emp.tempCode ? "<br><span class='warn'>Temporary code — they have not set their own code yet.</span>" : "";
