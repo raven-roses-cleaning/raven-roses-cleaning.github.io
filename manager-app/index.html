@@ -1409,6 +1409,7 @@ function showMgrLogin() {
     $("loginBackendNote").textContent = "Not connected to the shared backend yet — there is no manager code to check against. Use review mode below.";
     $("reviewModeBox").style.display = "block";
   }
+  loginLockApply();
 }
 function hideMgrLogin() { $("loginOverlay").style.display = "none"; }
 function updateMgrBanner() {
@@ -1451,17 +1452,64 @@ function applyMgrSession() {
   if (mgrSession && mgrSession.role !== "review") pullMgrBackendData();
   loadEmployerSignature();
 }
+// SIGN-IN LOCKOUT (Krystal, 2026-11-15): 5 wrong codes in a row locks sign-in
+// on this device for 15 minutes. A correct sign-in clears the count.
+// Connection problems do NOT count — only a code the backend checked and refused.
+var LOGIN_LOCK_KEY = "ravenMgrLoginLockV1";
+var LOGIN_MAX_TRIES = 5;
+var LOGIN_LOCK_MS = 15 * 60 * 1000;
+function loginLockRead() {
+  try { return JSON.parse(localStorage.getItem(LOGIN_LOCK_KEY) || "null") || { fails: 0, lockedUntil: 0 }; }
+  catch (e) { return { fails: 0, lockedUntil: 0 }; }
+}
+function loginLockSave(s) { try { localStorage.setItem(LOGIN_LOCK_KEY, JSON.stringify(s)); } catch (e) {} }
+function loginFail() {
+  var s = loginLockRead();
+  s.fails = (s.fails || 0) + 1;
+  if (s.fails >= LOGIN_MAX_TRIES) { s.lockedUntil = Date.now() + LOGIN_LOCK_MS; s.fails = 0; }
+  loginLockSave(s);
+  return s;
+}
+function loginClear() { loginLockSave({ fails: 0, lockedUntil: 0 }); }
+function loginIsCodeError(d) {
+  if (!d) return false;
+  var e = d.error || "";
+  return e !== "Backend not connected" && e !== "Could not reach the backend" && e !== "Backend timed out" && e !== "Empty reply from backend";
+}
+function loginLockApply() {
+  var s = loginLockRead();
+  var locked = !!(s.lockedUntil && Date.now() < s.lockedUntil);
+  var btn = $("loginBtn");
+  if (btn) btn.disabled = locked;
+  var err = $("loginError");
+  if (locked) {
+    var mins = Math.ceil((s.lockedUntil - Date.now()) / 60000);
+    if (err) err.textContent = "Too many wrong codes. Sign-in is locked on this device for " + mins + (mins === 1 ? " minute" : " minutes") + ". Try again later.";
+    setTimeout(loginLockApply, Math.min(Math.max(s.lockedUntil - Date.now(), 1000), LOGIN_LOCK_MS) + 1000);
+  } else if (err && err.textContent.indexOf("Too many wrong codes") === 0) {
+    err.textContent = "";
+  }
+  return locked;
+}
 $("loginBtn").onclick = function () {
+  if (loginLockApply()) return; // sign-in locked after too many wrong codes
   var code = $("loginCode").value;
   if (!code) { $("loginError").textContent = "Enter your manager code."; return; }
   $("loginError").textContent = "Checking…";
   mgrBackendJsonp("login", { name: "Krystal McGee", code: code }).then(function (d) {
     if (d && d.ok) {
+      loginClear();
       mgrSession = { name: "Krystal McGee", token: d.token, role: "Manager" };
       sessionStorage.setItem(MGR_SESSION_KEY, JSON.stringify(mgrSession));
       $("loginCode").value = "";
       hideMgrLogin();
       applyMgrSession();
+    } else if (loginIsCodeError(d)) {
+      var s = loginFail();
+      if (!loginLockApply()) {
+        var left = LOGIN_MAX_TRIES - (s.fails || 0);
+        $("loginError").textContent = ((d && d.error) || "Could not sign in. Check your manager code and try again.") + " (" + left + (left === 1 ? " try" : " tries") + " left before sign-in locks for 15 minutes.)";
+      }
     } else {
       $("loginError").textContent = (d && d.error) || "Could not sign in. Check your manager code and try again.";
     }
