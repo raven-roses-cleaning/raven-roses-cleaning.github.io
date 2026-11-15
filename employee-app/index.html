@@ -2551,6 +2551,7 @@ function showLogin() {
     $("loginBackendNote").textContent = "Not connected to the shared backend yet — there is no code to check against. Use review mode below.";
     $("reviewModeBox").style.display = "block";
   }
+  loginLockApply();
 }
 // First sign-in with a temporary code: show the "create your own code"
 // screen instead of opening the app. The app stays locked behind it
@@ -2609,19 +2610,66 @@ function dueThisMonth() {
   var label = now.toLocaleString("en-US", { month: "long" }) + " " + now.getFullYear();
   return (monthlyFocus.rotation || []).filter(function (r) { return String(r).indexOf(label) === 0; });
 }
+// SIGN-IN LOCKOUT (Krystal, 2026-11-15): 5 wrong codes in a row locks sign-in
+// on this device for 15 minutes. A correct sign-in clears the count.
+// Connection problems do NOT count — only a code the backend checked and refused.
+var LOGIN_LOCK_KEY = "ravenEmpLoginLockV1";
+var LOGIN_MAX_TRIES = 5;
+var LOGIN_LOCK_MS = 15 * 60 * 1000;
+function loginLockRead() {
+  try { return JSON.parse(localStorage.getItem(LOGIN_LOCK_KEY) || "null") || { fails: 0, lockedUntil: 0 }; }
+  catch (e) { return { fails: 0, lockedUntil: 0 }; }
+}
+function loginLockSave(s) { try { localStorage.setItem(LOGIN_LOCK_KEY, JSON.stringify(s)); } catch (e) {} }
+function loginFail() {
+  var s = loginLockRead();
+  s.fails = (s.fails || 0) + 1;
+  if (s.fails >= LOGIN_MAX_TRIES) { s.lockedUntil = Date.now() + LOGIN_LOCK_MS; s.fails = 0; }
+  loginLockSave(s);
+  return s;
+}
+function loginClear() { loginLockSave({ fails: 0, lockedUntil: 0 }); }
+function loginIsCodeError(d) {
+  if (!d) return false;
+  var e = d.error || "";
+  return e !== "Backend not connected" && e !== "Could not reach the backend" && e !== "Backend timed out" && e !== "Empty reply from backend";
+}
+function loginLockApply() {
+  var s = loginLockRead();
+  var locked = !!(s.lockedUntil && Date.now() < s.lockedUntil);
+  var btn = $("loginBtn");
+  if (btn) btn.disabled = locked;
+  var err = $("loginError");
+  if (locked) {
+    var mins = Math.ceil((s.lockedUntil - Date.now()) / 60000);
+    if (err) err.textContent = "Too many wrong codes. Sign-in is locked on this device for " + mins + (mins === 1 ? " minute" : " minutes") + ". Try again later.";
+    setTimeout(loginLockApply, Math.min(Math.max(s.lockedUntil - Date.now(), 1000), LOGIN_LOCK_MS) + 1000);
+  } else if (err && err.textContent.indexOf("Too many wrong codes") === 0) {
+    err.textContent = "";
+  }
+  return locked;
+}
 $("loginBtn").onclick = function () {
+  if (loginLockApply()) return; // sign-in locked after too many wrong codes
   var name = $("loginName").value.trim();
   var code = $("loginCode").value;
   if (!name || !code) { $("loginError").textContent = "Enter your name and your code."; return; }
   $("loginError").textContent = "Checking…";
   backendJsonp("login", { name: name, code: code }).then(function (d) {
     if (d && d.ok) {
+      loginClear();
       session = { name: d.name, token: d.token, role: d.role || "Employee", rate: d.rate || "", lastActive: Date.now(), signedInAt: Date.now() };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
       $("loginCode").value = "";
       if (d.mustChangeCode) { showChangeCode(); return; }
       hideLogin();
       applySession();
+    } else if (loginIsCodeError(d)) {
+      var s = loginFail();
+      if (!loginLockApply()) {
+        var left = LOGIN_MAX_TRIES - (s.fails || 0);
+        $("loginError").textContent = ((d && d.error) || "Could not sign in. Check your name and code and try again.") + " (" + left + (left === 1 ? " try" : " tries") + " left before sign-in locks for 15 minutes.)";
+      }
     } else {
       $("loginError").textContent = (d && d.error) || "Could not sign in. Check your name and code and try again.";
     }
