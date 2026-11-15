@@ -2,7 +2,13 @@
    Caches the app shell pieces that live alongside this file (images, icons,
    manifest) so repeat visits load fast. Everything is best-effort: if a
    cache step fails, the app still works straight from the network. */
-var CACHE = 'raven-colouring-v41';
+/* v44: bumped when Page 12 went in and the picker gained its
+   "New page — just added" section, so every phone still holding a
+   copy of the 11-page book drops that old cache on its next visit
+   (the activate handler deletes every cache that is not this one)
+   and can never be shown a book that is missing the announced
+   page. Bump this number on every future page addition too. */
+var CACHE = 'raven-colouring-v44';
 var FILES = [
   './manifest.json',
   './icons/icon-192.png',
@@ -19,7 +25,8 @@ var FILES = [
   './media-generation-raven-colouring-page-08-v6-ros-0-485c7240-a87a-4878-830d-395abf193888.webp',
   './media-generation-raven-colouring-page-09-v6-bir-0-d9f4e94c-097e-47dc-9a1c-ee5447a20393.webp',
   './media-generation-raven-lakeside-cabin-level2-re-0-8885449a-8330-49f8-a2ab-5ce83beeb2c4.webp',
-  './media-generation-raven-rugged-mountain-level4-0-11fc21e4-8630-4edf-b4c8-e94ae7543057.webp'
+  './media-generation-raven-rugged-mountain-level4-0-11fc21e4-8630-4edf-b4c8-e94ae7543057.webp',
+  './raven-page-12-garden-gate.webp'
 ];
 self.addEventListener('install', function (e) {
   e.waitUntil(
