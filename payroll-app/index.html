@@ -161,7 +161,7 @@
 </div>
 <div class="row">
   <div><label for="mileKm">Mileage payable (km, between clients only)</label><input id="mileKm" type="number" step="0.1" min="0" placeholder="e.g. 42.5"></div>
-  <div><label for="craRate">CRA mileage rate ($/km, Krystal to confirm)</label><input id="craRate" type="number" step="0.01" min="0" placeholder="Leave blank = no mileage dollars"></div>
+  <div><label for="craRate">CRA mileage rate ($/km)</label><input id="craRate" type="number" step="0.01" min="0" placeholder="0.73"></div>
 </div>
 <label for="otherDed">Other deductions this period ($, e.g. garnishment — 0 if none)</label><input id="otherDed" type="number" step="0.01" min="0" value="0">
 
@@ -246,7 +246,6 @@
 <h2>Saved pay runs + monthly remittance totals</h2>
 <div id="runs"></div>
 <button id="exportRunsBtn" class="secondary">Export saved runs as CSV</button>
-<button id="clearRunsBtn" class="secondary">Clear saved runs on this device</button>
 
 </section>
 
@@ -336,7 +335,7 @@
   <div><label for="filYear">Tax year</label><input id="filYear" type="number" min="2020" max="2100" placeholder="e.g. 2025"></div>
 </div>
 <div class="row">
-  <div><label for="filEmp">Employee (if it is about one person)</label><input id="filEmp" placeholder="e.g. Eva Rutzebeck"></div>
+  <div><label for="filEmp">Employee (if it is about one person)</label><input id="filEmp" placeholder="Employee name"></div>
   <div><label for="filDate">Date filed</label><input id="filDate" type="date"></div>
 </div>
 <label for="filConf">Confirmation number (from CRA Web Forms or ROE Web)</label><input id="filConf" placeholder="Leave blank until you have it">
@@ -350,7 +349,7 @@
 <h2>New hire — payroll checklist</h2>
 <p class="small">The payroll side of a new starter, in order. Type their name, open their checklist, and tick each step off as you do it. This is payroll only — the hiring paperwork (information package, confidentiality agreement) lives in the Hiring Paperwork folder in Drive. The SIN is collected on the paper TD1 only — never type it into this app.</p>
 <div class="row">
-  <div><label for="nhName">New employee</label><input id="nhName" placeholder="e.g. Ramona Cyre"></div>
+  <div><label for="nhName">New employee</label><input id="nhName" placeholder="Employee name"></div>
   <div><label>&nbsp;</label><button id="nhLoadBtn" class="secondary">Open their checklist</button></div>
 </div>
 <div id="nhList"></div>
@@ -450,7 +449,7 @@ let paystubSends = JSON.parse(localStorage.getItem(SENDKEY) || "[]");
 let remittances = JSON.parse(localStorage.getItem(REMITKEY) || "[]");
 let td1Saved = JSON.parse(localStorage.getItem(TD1KEY) || "null");
 let bnSaved = JSON.parse(localStorage.getItem(BNKEY) || "null");
-let craRateSaved = localStorage.getItem(CRAKEY) || "";
+let craRateSaved = localStorage.getItem(CRAKEY) || "0.73"; // CRA 2026 rate, first 5,000 km (verified Nov 15, 2026); $0.67/km after that.
 // Normalise any dates already saved on this phone, so an ISO date stored by
 // an earlier backend sync still matches the pay period — a clocked entry on
 // the last day of a pay period must never go missing from the pay run.
@@ -468,17 +467,17 @@ function localDateStr(){ const d = new Date(); return d.getFullYear() + "-" + St
 // Default pay period: the 14 days ending 1 week before payday (Krystal, 2026-11-11).
 // Cut-off is 1 week before payday so there is time to process paperwork.
 // Hours worked after the cut-off are paid on the next payday.
-// Bi-weekly, pay date = the coming Friday, e-transfer in the morning.
+// Bi-weekly, pay date = the next payday on or after today, on the 14-day cycle
+// anchored to Friday 27 November 2026 (the first payday on this cycle). E-transfer in the morning.
 function defaultPeriod(){
-  const d = new Date();
-  const add = (5 - d.getDay() + 7) % 7; // days until Friday (day 5); 0 if today is Friday
-  const fri = new Date(d.getFullYear(), d.getMonth(), d.getDate() + add);
-  const pay = fri.getFullYear() + "-" + String(fri.getMonth()+1).padStart(2,"0") + "-" + String(fri.getDate()).padStart(2,"0");
-  const en = new Date(fri); en.setDate(en.getDate() - 7);
-  const end = en.getFullYear() + "-" + String(en.getMonth()+1).padStart(2,"0") + "-" + String(en.getDate()).padStart(2,"0");
+  const fmt = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  const anchor = new Date(2026, 10, 27); // 27 Nov 2026, a Friday
+  const today = new Date(); today.setHours(0,0,0,0);
+  const pay = new Date(anchor);
+  while (pay < today) pay.setDate(pay.getDate() + 14);
+  const en = new Date(pay); en.setDate(en.getDate() - 7);
   const st = new Date(en); st.setDate(st.getDate() - 13);
-  const start = st.getFullYear() + "-" + String(st.getMonth()+1).padStart(2,"0") + "-" + String(st.getDate()).padStart(2,"0");
-  return { start: start, end: end, payDate: pay };
+  return { start: fmt(st), end: fmt(en), payDate: fmt(pay) };
 }
 function bracketTax(income, brackets){
   let tax = 0, prev = 0;
@@ -718,11 +717,11 @@ function initLoginGate() {
 function currentEmployee() {
   return $("empNameOther").value.trim() || $("empName").value || "";
 }
-// The time card stores first names ("Ramona"); the Employees tab stores
-// full names ("Ramona Cyre"). Match on the full name, or when one is the
-// first word of the other. (With one or two employees this is unambiguous;
-// if two employees ever share a first name, use full names everywhere and
-// this still matches exactly.)
+// The time card stores first names only; the Employees tab stores full
+// names. Match on the full name, or when one is the first word of the
+// other. (With one or two employees this is unambiguous; if two employees
+// ever share a first name, use full names everywhere and this still
+// matches exactly.)
 function samePerson(a, b) {
   var x = String(a || "").trim().toLowerCase(), y = String(b || "").trim().toLowerCase();
   if (!x || !y) return false;
@@ -1267,7 +1266,6 @@ $("exportRunsBtn").onclick = () => {
   const csv = [head, ...rows].join("\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"})); a.download = "raven-payroll-runs.csv"; a.click();
 };
-$("clearRunsBtn").onclick = () => { if (confirm("Clear all saved pay runs on this device?")) { runs = []; localStorage.setItem(KEY, JSON.stringify(runs)); renderRuns(); renderEmailList(); renderCraReport(); renderWhatsDue(); } };
 $("importBtn").onclick = () => $("importFile").click();
 $("importFile").addEventListener("change", async (e) => {
   const f = e.target.files[0]; if (!f) return;
@@ -1311,8 +1309,8 @@ function runsForPeriod() {
 }
 function employeeEmail(name) {
   // Same first-name/full-name matching as the time card (see samePerson):
-  // a run saved as "Ramona" must find the Employees-tab email for
-  // "Ramona Cyre", or the paystub would never send.
+  // a run saved under a first name must find the Employees-tab email for
+  // that person's full name, or the paystub would never send.
   var e = employees.find(function (x) { return samePerson(x.Name, name); });
   return e ? String(e.Email || "").trim() : "";
 }
@@ -1608,11 +1606,16 @@ function nextFridayStr(){
   var d = new Date(dp.payDate + "T12:00:00");
   return d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" }) + " (" + dp.payDate + ")";
 }
+function cutoffStr(){
+  var dp = defaultPeriod();
+  var d = new Date(dp.end + "T12:00:00");
+  return d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" }) + " (" + dp.end + ")";
+}
 function renderWhatsDue(){
   var el = $("whatsDueList"); if (!el) return;
   var items = [];
   // 1. Next payday.
-  items.push({ key: "payday", dot: "amber", title: "Next payday — " + nextFridayStr(), sub: "Bi-weekly, e-transfer in the morning. Cut-off is 1 week before payday. Run the pay run in section 1 first." });
+  items.push({ key: "payday", dot: "amber", title: "Next payday — " + nextFridayStr(), sub: "Bi-weekly, e-transfer in the morning. Cut-off: " + cutoffStr() + ". Run the pay run in section 1 first." });
   // 2. Next CRA remittance.
   var months = runs.map(function (r) { return String(r.ppEnd || r.payDate || "").slice(0, 7); }).filter(Boolean);
   var remMonth = months.sort().pop() || localDateStr().slice(0, 7);
@@ -1620,10 +1623,11 @@ function renderWhatsDue(){
   var already = remittances.some(function (r) { return r.month === remMonth; });
   items.push({ key: "remit", dot: already ? "green" : "red", title: already ? "CRA remittance for " + monthName(remMonth) + " — already paid" : "CRA remittance for " + monthName(remMonth) + " — due " + remDue, sub: already ? "Marked as remitted. Do not pay this month again unless it is a correction." : "Pay by the 15th of the following month (regular / new remitter)." });
   // 3. Business number.
-  var bn = bnSaved && bnSaved.bn ? bnSaved.bn : "";
+  // Verified numbers (Nov 11, 2026) as the fall-back, so a fresh phone never wrongly says they are missing.
+  var bn = (bnSaved && bnSaved.bn) ? bnSaved.bn : "722557212";
   items.push({ key: "bn", dot: bn ? "green" : "red", title: bn ? "Business number — entered" : "Business number — still missing", sub: bn ? "On file: " + bn : "Needed before you can remit to CRA." });
   // 4. RP account.
-  var rp = bnSaved && bnSaved.rp ? bnSaved.rp : "";
+  var rp = (bnSaved && bnSaved.rp) ? bnSaved.rp : "722557212RP0001";
   items.push({ key: "rp", dot: rp ? "green" : "red", title: rp ? "Payroll (RP) account — entered" : "Payroll (RP) account — still missing", sub: rp ? "On file." : "Enter it below so CRA can match the payment." });
   // 5. CRA mileage rate.
   var rate = (typeof $ !== "undefined" && $("craRate") && $("craRate").value) ? $("craRate").value : craRateSaved;
