@@ -8,7 +8,7 @@
    (the activate handler deletes every cache that is not this one)
    and can never be shown a book that is missing the announced
    page. Bump this number on every future page addition too. */
-var CACHE = 'raven-colouring-v44';
+var CACHE = 'raven-colouring-v45';
 var FILES = [
   './manifest.json',
   './icons/icon-192.png',
@@ -26,7 +26,8 @@ var FILES = [
   './media-generation-raven-colouring-page-09-v6-bir-0-d9f4e94c-097e-47dc-9a1c-ee5447a20393.webp',
   './media-generation-raven-lakeside-cabin-level2-re-0-8885449a-8330-49f8-a2ab-5ce83beeb2c4.webp',
   './media-generation-raven-rugged-mountain-level4-0-11fc21e4-8630-4edf-b4c8-e94ae7543057.webp',
-  './raven-page-12-garden-gate.webp'
+  './raven-page-12-garden-gate.webp',
+  './raven-page-13-garden-wall.webp'
 ];
 self.addEventListener('install', function (e) {
   e.waitUntil(
