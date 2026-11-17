@@ -1759,7 +1759,8 @@ var SCHED_CLIENTS = [
   ["Wendy Lim-Connoly", "718 Wentworth St Nanaimo"],
   ["Kevin & Katie", "234-1130 Resort Drive, Parksville"],
   ["Diane Kimba", ""],
-  ["Caledonia Fire Protection", "290 Fry St. Nanaimo"]
+  ["Caledonia Fire Protection", "290 Fry St. Nanaimo"],
+  ["Drop-in", ""]
 ];
 function schedClientNames() {
   var names = Object.keys(houseInstructions || {});
@@ -1850,7 +1851,7 @@ function schedClientOptions() {
   var extra = schedClientNames().filter(function (n) {
     return !SCHED_CLIENTS.some(function (c) { return c[0] === n; }) && listed.indexOf(n) < 0;
   });
-  var opts = SCHED_CLIENTS.map(function (c) {
+  var opts = "<option value=''>Pick a client</option>" + SCHED_CLIENTS.map(function (c) {
     var label = c[1] ? c[0] + " — " + c[1] : c[0];
     return "<option value='" + esc(label) + "'>" + esc(label) + "</option>";
   }).join("");
@@ -1887,7 +1888,6 @@ function showSchedCalDay(y, m, d) {
   html += "<h3 style='font-size:1rem'>Add a shift</h3>" +
     "<label>Employee</label><select id='schedDayEmp'>" + schedEmpOptions() + "</select>" +
     "<label>Client</label><select id='schedDayClient'>" + schedClientOptions() + "</select>" +
-    "<label>Or type a client name (if they are not in the list yet)</label><input id='schedDayClientOther' placeholder='e.g. Alex'>" +
     "<label>Start time</label><input id='schedDayStart' type='text' placeholder='e.g. 9:00am' value='9:00am'>" +
     "<label>End time</label><input id='schedDayEnd' type='text' placeholder='e.g. 12:00pm' value='12:00pm'>" +
     "<label>Kind of clean</label><select id='schedDayType'>" +
@@ -1905,12 +1905,12 @@ function closeSchedDetail() {
 function schedAddShiftForDay() {
   if (!schedDetailDate) return;
   var name = $("schedDayEmp").value;
-  var client = ($("schedDayClientOther").value || "").trim() || $("schedDayClient").value;
+  var client = $("schedDayClient").value;
   var start = ($("schedDayStart").value || "").trim();
   var end = ($("schedDayEnd").value || "").trim();
   var type = $("schedDayType").value;
   if (!name) { alert("Pick an employee first."); return; }
-  if (!client) { alert("Pick a client (or type one)."); return; }
+  if (!client) { alert("Pick a client."); return; }
   if (!start || !end) { alert("Type in a start and end time."); return; }
   schedDraft.push({ Employee: name, Date: schedDetailDate, Client: client, Start: start, End: end, Type: type });
   renderSchedCal();
@@ -1979,7 +1979,7 @@ $("schedSaveBtn").onclick = function () {
   Object.keys(byEmp).forEach(function (name) {
     mgrBackendPost({ action: "scheduleSave", employee: name, schedule: byEmp[name] });
   });
-  $("schedStatus").innerHTML = '<span class="ok">Schedule saved — ' + esc(String(schedDraft.length)) + ' shift' + (schedDraft.length === 1 ? '' : 's') + '.</span>';
+  $("schedStatus").innerHTML = '<span class="ok">Schedule saved.</span>';
   renderScheduleMgr();
 };
 // Random first-time code: 4 digits, 1000–9999, never 0000 or 1234.
