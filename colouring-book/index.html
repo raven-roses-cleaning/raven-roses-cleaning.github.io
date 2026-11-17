@@ -377,8 +377,10 @@
   /* New-page ribbon — a small, real ribbon banner in Raven black
      & gold, for a page that has just been added. Nothing huge: a
      short gold strip with notched ribbon ends and little folded
-     tails underneath, sitting under the page name in the picker
-     and under the title on the colouring page itself. */
+     tails underneath, sitting under the page name in the picker.
+     On the colouring page itself the announcement is a flat
+     black-and-gold banner strip directly ABOVE the sheet — never
+     on the picture (see #page-new-ribbon below). */
   .page-pick-text{flex:1 1 auto;display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
   .page-pick-text .page-pick-name{flex:none}
   .new-ribbon{
@@ -394,9 +396,20 @@
   }
   .new-ribbon::before{left:2px;transform:rotate(45deg)}
   .new-ribbon::after{right:2px;transform:rotate(45deg)}
-  .new-ribbon--large{font-size:.8rem;padding:6px 18px 7px;letter-spacing:.08em}
-  .sheet-new-ribbon{margin:8px 0 0;text-align:center}
-  .sheet-new-ribbon[hidden]{display:none}
+  /* New page banner for the current sheet — sits ABOVE the
+     picture, between the double-tap hint and the sheet, so it
+     never covers or ruins any of the artwork. Same black-and-gold
+     as the title band, laid flat as a banner strip with
+     ribbon-cut ends instead of a small tag under the title. */
+  #page-new-ribbon{
+    text-align:center;margin:0 auto 8px;max-width:520px;pointer-events:none;
+    background:linear-gradient(180deg,var(--band),#0f0d08);color:var(--band-ink);
+    font-family:"EB Garamond",Georgia,serif;font-size:.78rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;line-height:1.4;
+    padding:7px 32px;box-shadow:0 2px 7px rgba(34,29,18,.35);
+    clip-path:polygon(0 0,100% 0,calc(100% - 10px) 50%,100% 100%,0 100%,10px 50%);
+  }
+  #page-new-ribbon[hidden]{display:none}
+  #sheet-area.enlarged #page-new-ribbon{flex:none;margin:0 auto 6px}
   /* Top new-page ribbon — a full-width gold ribbon banner pinned
      directly under the black title band, the first thing a reader
      sees. Same gold ribbon skin as the little .new-ribbon, sized
@@ -1517,7 +1530,6 @@
       <h2 id="page-title">Loading…</h2>
       <p id="page-count"></p>
       <p id="page-difficulty" class="difficulty-line"></p>
-      <p class="sheet-new-ribbon" id="page-new-ribbon" hidden><span class="new-ribbon new-ribbon--large">New page — just added</span></p>
     </div>
 
     <div class="music-mini">
@@ -1531,6 +1543,7 @@
       <button id="next-btn" type="button">Next page →</button>
     </div>
     <p class="dbltap-hint">Double-tap the page to enlarge it — double-tap again to go back.</p>
+    <div id="page-new-ribbon" hidden aria-hidden="true">✦ New page — just added ✦</div>
     <div id="enlarge-scroll">
       <div class="paper" id="paper-el">
         <div id="canvas-wrap">
