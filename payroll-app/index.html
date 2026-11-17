@@ -1293,12 +1293,22 @@ window.clearNh = function () {
 };
 $("nhLoadBtn").onclick = renderNhList;
 $("nhName").addEventListener("keydown", function (e) { if (e.key === "Enter") renderNhList(); });
+window.deleteRun = function (i) {
+  var r = runs[i]; if (!r) return;
+  if (!confirm("Delete this pay run for " + r.emp + " (" + (r.ppStart||"?") + " to " + (r.ppEnd||"?") + ", pay date " + (r.payDate||"?") + ")? This cannot be undone.")) return;
+  runs.splice(i, 1);
+  localStorage.setItem(KEY, JSON.stringify(runs));
+  renderRuns();
+  renderEmailList();
+  renderCraReport();
+  renderWhatsDue();
+};
 function renderRuns(){
   if (!runs.length) { $("runs").innerHTML = "<p class='small'>No saved pay runs yet.</p>"; renderT4(); fillPayoutDates(); return; }
   var byMonth = monthlyTotals();
   renderT4();
   fillPayoutDates();
-  $("runs").innerHTML = runs.map((r,i) => "<div class='card'><strong>" + esc(r.emp) + "</strong> — " + (r.ppStart||"?") + " to " + (r.ppEnd||"?") + ", pay date " + (r.payDate||"?") + "<br>Gross " + money(r.gross) + " | CPP " + money(r.cpp) + " | CPP2 " + money(r.cpp2) + " | EI " + money(r.ei) + " | Tax " + money(r.incomeTax) + " | Net " + money(r.net) + " | Remit " + money(r.remitTotal) + "</div>").join("") +
+  $("runs").innerHTML = runs.map((r,i) => "<div class='card'><strong>" + esc(r.emp) + "</strong> — " + (r.ppStart||"?") + " to " + (r.ppEnd||"?") + ", pay date " + (r.payDate||"?") + "<br>Gross " + money(r.gross) + " | CPP " + money(r.cpp) + " | CPP2 " + money(r.cpp2) + " | EI " + money(r.ei) + " | Tax " + money(r.incomeTax) + " | Net " + money(r.net) + " | Remit " + money(r.remitTotal) + "<br><button class='secondary smallbtn' onclick='deleteRun(" + i + ")'>Delete this run</button></div>").join("") +
     "<h3>Monthly remittance totals (for PD7A / CRA payment)</h3>" + Object.keys(byMonth).sort().map(m => { const b = byMonth[m]; return "<div class='card'><strong>" + m + "</strong> — " + b.runs + " run(s), gross " + money(b.gross) + ", net " + money(b.net) + "<br>Remit total " + money(b.remit) + " (tax " + money(b.tax) + " + employee CPP " + money(b.cpp) + " + CPP2 " + money(b.cpp2) + " + EI " + money(b.ei) + " + employer CPP " + money(b.empCpp) + " + employer EI " + money(b.empEi) + ")<br>Due (regular): 15th of the month after " + m + "</div>"; }).join("");
 }
 $("saveRunBtn").onclick = () => {
