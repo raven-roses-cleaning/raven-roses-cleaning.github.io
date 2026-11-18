@@ -1210,10 +1210,11 @@ const CLIENTS = [
   ["Caledonia Fire Protection", "290 Fry St. Nanaimo"]
 ];
 function clientOptions(){
+  const list = ownClientList();
   const extra = [...new Set([...entries.map(e => e.job), ...Object.keys(houseInstructions)])];
-  const listed = CLIENTS.map(c => c[0] + " — " + c[1]);
-  const extraOpts = extra.filter(j => !listed.some(l => l.startsWith(j + " ")) && !CLIENTS.some(c => c[0] === j)).map(j => "<option value='" + j + "'>" + j + "</option>").join("");
-  return "<option value=''>Pick a client…</option>" + CLIENTS.map(c => "<option value='" + c[0] + " — " + c[1] + "'>" + c[0] + " — " + c[1] + "</option>").join("") + extraOpts;
+  const listed = list.map(c => c[0] + " — " + c[1]);
+  const extraOpts = extra.filter(j => !listed.some(l => l.startsWith(j + " ")) && !list.some(c => c[0] === j)).map(j => "<option value='" + j + "'>" + j + "</option>").join("");
+  return "<option value=''>Pick a client…</option>" + list.map(c => "<option value='" + c[0] + " — " + c[1] + "'>" + c[0] + " — " + c[1] + "</option>").join("") + extraOpts;
 }
 function populateJobSelects(){
   populateClockInJobs();
@@ -1228,9 +1229,10 @@ function populateJobSelects(){
   if (curE) endSel.value = curE;
   const adjSel = $("adjJob");
   const curA = adjSel.value;
-  const extraJobs = [...new Set([...jobs, ...Object.keys(houseInstructions)])].filter(j => j && !CLIENTS.some(c => c[0] === j));
+  const list = ownClientList();
+  const extraJobs = [...new Set([...jobs, ...Object.keys(houseInstructions)])].filter(j => j && !list.some(c => c[0] === j));
   adjSel.innerHTML = "<option value=''>Pick a job…</option>" +
-    CLIENTS.map(c => "<option value='" + esc(c[0]) + "'>" + esc(c[0]) + "</option>").join("") +
+    list.map(c => "<option value='" + esc(c[0]) + "'>" + esc(c[0]) + "</option>").join("") +
     extraJobs.map(j => "<option value='" + esc(j) + "'>" + esc(j) + "</option>").join("");
   if (curA) adjSel.value = curA;
 }
@@ -1445,7 +1447,15 @@ function renderHouses(){
   const name = houseKeyForJob(currentJobName());
   const displayName = name || firstNameOf(currentJobName());
   renderHouseAddress(currentJobName());
-  if (!displayName) { $("houseTasks").textContent = "Pick a job above to see its instructions."; $("houseSpecial").textContent = "—"; renderHouseCodes(""); return; }
+  if (!displayName) {
+    var noClients = session && session.name && session.role !== "review" && session.role !== "Manager" && ownClientList().length === 0;
+    $("houseTasks").textContent = noClients ? "No clients assigned to you yet — Krystal will set your schedule." : "Pick a job above to see its instructions.";
+    $("houseSpecial").textContent = "—"; renderHouseCodes(""); return;
+  }
+  if (session && session.name && session.role !== "review" && session.role !== "Manager") {
+    var allowed = ownClientList().some(function (c) { return c[0] === currentJobName(); });
+    if (!allowed) { $("houseTasks").textContent = "This house is not one of your assigned clients."; $("houseSpecial").textContent = "—"; renderHouseCodes(""); return; }
+  }
   const h = name ? houseInstructions[name] : null;
   if (!h) { $("houseTasks").textContent = "No instructions added for " + displayName + " yet — Krystal adds these in her manager app."; $("houseSpecial").textContent = "No special instructions added yet."; renderHouseCodes(""); return; }
   $("houseTasks").innerHTML = linkSupplies(h.tasks || "No tasks listed for this house yet.");
@@ -2512,6 +2522,7 @@ function pullBackendData() {
       detectScheduleChanges(newSched);
       schedule = newSched;
       saveSchedule();
+      filterHousesToOwn(); saveHouses();
     }
     if (d.mileage) mileage = mergeByKey(mileage, d.mileage.map(function (r) {
       return { date: r.Date || r.date, start: r.Start || r.start, end: r.End || r.end,
@@ -2578,6 +2589,7 @@ function applySession() {
   // too, so the first sync after the fix does not banner other people's
   // shifts as "removed".
   schedule = ownShifts(schedule); saveSchedule();
+  filterHousesToOwn(); saveHouses();
   if (schedSeen) { schedSeen = ownShifts(schedSeen); saveSchedSeen(); }
   updateBanner();
   updateWatermark();
@@ -2822,6 +2834,28 @@ function ownShift(r) {
 }
 function ownShifts(rows) {
   return (rows || []).filter(ownShift);
+}
+// OWN CLIENTS (Krystal, 2026-11-18): an employee only opens houses for
+// clients they are scheduled for. The schedule is already filtered to the
+// signed-in employee's own shifts, so the clients in it are their own.
+// The manager (Krystal) and review mode still see every client.
+function ownClientList() {
+  if (!session || !session.name || session.role === "review" || session.role === "Manager") return CLIENTS.slice();
+  var names = {};
+  (schedule || []).forEach(function (r) {
+    var full = String(r.Client || r.client || "").split(" \u2014 ")[0].trim();
+    if (full) names[full] = true;
+  });
+  return CLIENTS.filter(function (c) { return !!names[c[0]]; });
+}
+function filterHousesToOwn() {
+  if (!session || !session.name || session.role === "review" || session.role === "Manager") return;
+  var keep = {};
+  ownClientList().forEach(function (c) {
+    var k = houseKeyForJob(c[0]);
+    if (k) keep[k] = true;
+  });
+  Object.keys(houseInstructions || {}).forEach(function (k) { if (!keep[k]) delete houseInstructions[k]; });
 }
 // ===========================================================================
 var CAL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -3200,8 +3234,9 @@ document.addEventListener("visibilitychange", function () {
 });
 
 // ============================================================================
-// JOB PICK-LIST for clocking in — pick from the route only. Krystal adds
-// clients in the manager app; the employee cannot type in a new name.
+// JOB PICK-LIST for clocking in — pick from your own assigned clients
+// only (Krystal, 2026-11-18). Krystal adds clients in the manager app;
+// the employee cannot type in a new name.
 // The CLIENTS list is the same one the mileage dropdowns use.
 // ============================================================================
 function currentJobName() {
@@ -3211,8 +3246,9 @@ function currentJobName() {
 function populateClockInJobs() {
   var sel = $("job"); if (!sel) return;
   var cur = sel.value;
+  var list = ownClientList();
   sel.innerHTML = "<option value=''>Pick a job…</option>" +
-    CLIENTS.map(function (c) { return "<option value='" + esc(c[0]) + "'>" + esc(c[0]) + "</option>"; }).join("");
+    list.map(function (c) { return "<option value='" + esc(c[0]) + "'>" + esc(c[0]) + "</option>"; }).join("");
   if (cur) sel.value = cur;
 }
 
