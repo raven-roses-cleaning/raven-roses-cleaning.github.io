@@ -7,7 +7,6 @@
 
   // Sheet column names per form (matches each tab's row-1 headers).
   var SHEET_FIELDS = {
-    waitlist: { name: "Name", phone: "Phone", email: "Email", area: "Area", service: "Service", frequency: "Frequency", notes: "Home size / notes" },
     quote: { name: "Name", phone: "Phone", email: "Email", area: "Area", service: "Service", frequency: "Frequency", size: "Home size", notes: "Notes" },
     contact: { name: "Name", email: "Email", phone: "Phone", subject: "Subject", message: "Message" },
     hiring: { name: "Name", phone: "Phone", email: "Email", availability: "Availability", vehicle: "Own vehicle", pets: "Comfortable around cats and dogs", experience: "Experience note" },
@@ -271,7 +270,6 @@
   }
 
   var FORMS = {
-    waitlist: { title: "Waitlist Signup", fields: ["name", "phone", "email", "area", "service", "frequency", "notes"] },
     quote: { title: "Quote Request", fields: ["name", "phone", "email", "area", "service", "frequency", "size", "notes"] },
     contact: { title: "General Contact", fields: ["name", "email", "phone", "subject", "message"] },
     hiring: { title: "Hiring / Resume", fields: ["name", "phone", "email", "availability", "vehicle", "pets", "experience"] },
@@ -297,7 +295,13 @@
   }
 
   document.querySelectorAll(".tab").forEach(function (tab) {
-    tab.addEventListener("click", function () { showPanel(tab.getAttribute("data-form")); });
+    tab.addEventListener("click", function () {
+      var key = tab.getAttribute("data-form");
+      // The waitlist is closed (Krystal, 2026-11-18): the Waitlist tab
+      // directs to the walkthrough request instead.
+      if (key === "waitlist") key = "quote";
+      showPanel(key);
+    });
   });
   $("back-to-forms").addEventListener("click", function () { $("confirmation").hidden = true; });
 
