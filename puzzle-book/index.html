@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="dark">
 <title>Raven &amp; Roses — A Puzzle Book</title>
 <meta name="description" content="A free puzzle book from Raven & Roses Cleaning. Sudoku, crosswords, word searches, mazes, scrambles and riddles — each in Easy, Medium, Hard and Very Hard, three of each — no payment, no signup.">
 <meta property="og:type" content="website">
@@ -24,31 +24,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Locked to the Raven & Roses black-and-gold look, always — the book
+     does not follow the phone's light/dark setting. */
   :root{
-    color-scheme: light;
-    --bg:#f4efe3; --panel:#fffdf7; --panel-line:#d9cba3;
-    --ink:#221d12; --ink-soft:#5c543f;
-    --gold:#a07d1c; --gold-deep:#7c5f10; --gold-bright:#d4af37;
-    --band:#1f1c17; --band-ink:#f5d76e; --band-soft:#cfc4a3;
-    --btn:#fffdf7; --btn-ink:#221d12; --btn-line:#b49b4a;
-    --btn-on:#33291a; --btn-on-ink:#f5d76e;
-    --paper:#ffffff; --paper-line:#c9bd97;
-    --good:#2e6b34; --bad:#a83226;
-    --shadow:0 10px 30px rgba(34,29,18,.16);
-  }
-  @media (prefers-color-scheme: dark){
-    :root{
-      color-scheme: dark;
-      --bg:#1b1814; --panel:#25221d; --panel-line:#7d6f4c;
-      --ink:#f1e8cd; --ink-soft:#cabd9f;
-      --gold:#d4af37; --gold-deep:#f5d76e;
-      --band:#12100d;
-      --btn:#332f28; --btn-ink:#f1e8cd; --btn-line:#96855a;
-      --btn-on:#4a3a10; --btn-on-ink:#fbeeae;
-      --paper:#ffffff; --paper-line:#6f5c24;
-      --good:#8fce96; --bad:#f0927f;
-      --shadow:0 10px 30px rgba(0,0,0,.5);
-    }
+    color-scheme: dark;
+    --bg:#1b1814; --panel:#25221d; --panel-line:#7d6f4c;
+    --ink:#f1e8cd; --ink-soft:#cabd9f;
+    --gold:#d4af37; --gold-deep:#f5d76e; --gold-bright:#d4af37;
+    --band:#12100d; --band-ink:#f5d76e; --band-soft:#cfc4a3;
+    --btn:#332f28; --btn-ink:#f1e8cd; --btn-line:#96855a;
+    --btn-on:#4a3a10; --btn-on-ink:#fbeeae;
+    --paper:#ffffff; --paper-line:#6f5c24;
+    --good:#8fce96; --bad:#f0927f;
+    --shadow:0 10px 30px rgba(0,0,0,.5);
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%;overflow-x:clip}
