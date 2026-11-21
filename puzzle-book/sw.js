@@ -4,7 +4,7 @@
    set reaches the phone on the FIRST open after it ships. Everything
    is best-effort: if a cache step fails, the app still works straight
    from the network. */
-var CACHE = 'raven-puzzle-v4';
+var CACHE = 'raven-puzzle-v5';
 var FILES = [
   './',
   './index.html',
