@@ -4870,7 +4870,7 @@ function renderTopNewRibbon() {
   var pg = newestNewPage();
   if (!pg) { wrap.hidden = true; return; }
   var nameEl = $("top-new-ribbon-name");
-  if (nameEl) nameEl.textContent = pg.title + " · " + LEVELS[pg.level].short;
+  if (nameEl) nameEl.textContent = pg.title + " · " + levelLabel(pg);
   wrap.hidden = false;
   var btn = $("top-new-ribbon-btn");
   if (btn) {
