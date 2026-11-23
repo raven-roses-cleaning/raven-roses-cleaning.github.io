@@ -1849,7 +1849,7 @@ function schedEmpOptions() {
 function schedClientOptions() {
   var listed = SCHED_CLIENTS.map(function (c) { return c[1] ? c[0] + " — " + c[1] : c[0]; });
   var extra = schedClientNames().filter(function (n) {
-    return !SCHED_CLIENTS.some(function (c) { return c[0] === n; }) && listed.indexOf(n) < 0;
+    return !SCHED_CLIENTS.some(function (c) { return c[0].indexOf(n) === 0; }) && listed.indexOf(n) < 0;
   });
   var opts = "<option value=''>Pick a client</option>" + SCHED_CLIENTS.map(function (c) {
     var label = c[1] ? c[0] + " — " + c[1] : c[0];
