@@ -2062,7 +2062,7 @@ var LEVELS = {
   "level5": { "label": "Level 5 — Super intricate", "short": "Level 5 · Super intricate", "dots": "●●●●●", "blurb": "Lots of tiny detail — for a long, absorbing colour." }
 };
 var LEVEL_ORDER = ["level1", "level2", "level3", "level4", "level5"];
-function levelLabel(page) { return page && page.level && LEVELS[page.level] ? LEVELS[page.level].label : ""; }
+function levelLabel(page) { if (page && page.levelLabel) return page.levelLabel; return page && page.level && LEVELS[page.level] ? LEVELS[page.level].label : ""; }
 
 var PAGES = [
   { "id": "cover",   "title": "Cover — Raven & Roses",                    "file": "media-generation-raven-colouring-title-page-v3-0-d2080ffa-02d7-4d5f-aae8-37447f1e4be4.webp", "level": "level4" },
@@ -2079,7 +2079,7 @@ var PAGES = [
   { "id": "page-11", "title": "Page 11 — Raven in the rugged mountains", "file": "media-generation-raven-rugged-mountain-level4-0-11fc21e4-8630-4edf-b4c8-e94ae7543057.webp", "level": "level4" },
   { "id": "page-12", "title": "Page 12 — Raven at the garden gate",       "file": "raven-page-12-garden-gate.webp", "level": "level1", "addedOn": "2026-11-09" },
   { "id": "page-13", "title": "Page 13 — Raven on the garden wall",       "file": "raven-page-13-garden-wall.webp", "level": "level1", "addedOn": "2026-11-16" },
-  { "id": "page-14", "title": "Page 14 — Raven above the rose garden maze", "file": "raven-page-14-rose-garden-maze.webp", "level": "level3", "addedOn": "2026-11-23" }
+  { "id": "page-14", "title": "Page 14 — Raven above the rose garden maze", "file": "raven-page-14-rose-garden-maze.webp", "level": "level3", "levelLabel": "Level 3 — Hard", "addedOn": "2026-11-23" }
 ];
 
 /* ---- New-page ribbon, for 3 days only ----
