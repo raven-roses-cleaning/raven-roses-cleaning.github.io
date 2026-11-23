@@ -1472,7 +1472,7 @@
     </div>
   </section>
 
-  <section class="panel picker-compact" aria-label="Choose a page">
+  <section class="panel picker-compact" id="page-picker" aria-label="Choose a page">
     <div class="head-row">
       <h2>Choose a page</h2>
       <button class="info-btn" type="button" data-help-target="levels-help" aria-expanded="false" aria-controls="levels-help" aria-label="How the levels work">ⓘ</button>
@@ -2078,7 +2078,8 @@ var PAGES = [
   { "id": "page-10", "title": "Page 10 — Raven at the lakeside cabin",   "file": "media-generation-raven-lakeside-cabin-level2-re-0-8885449a-8330-49f8-a2ab-5ce83beeb2c4.webp", "level": "level2" },
   { "id": "page-11", "title": "Page 11 — Raven in the rugged mountains", "file": "media-generation-raven-rugged-mountain-level4-0-11fc21e4-8630-4edf-b4c8-e94ae7543057.webp", "level": "level4" },
   { "id": "page-12", "title": "Page 12 — Raven at the garden gate",       "file": "raven-page-12-garden-gate.webp", "level": "level1", "addedOn": "2026-11-09" },
-  { "id": "page-13", "title": "Page 13 — Raven on the garden wall",       "file": "raven-page-13-garden-wall.webp", "level": "level1", "addedOn": "2026-11-16" }
+  { "id": "page-13", "title": "Page 13 — Raven on the garden wall",       "file": "raven-page-13-garden-wall.webp", "level": "level1", "addedOn": "2026-11-16" },
+  { "id": "page-14", "title": "Page 14 — Raven above the rose garden maze", "file": "raven-page-14-rose-garden-maze.webp", "level": "level3", "addedOn": "2026-11-23" }
 ];
 
 /* ---- New-page ribbon, for 3 days only ----
@@ -4033,6 +4034,61 @@ function buildPlaqueEl(entry) {
   fillPlaqueEl(el, lines);
   return el;
 }
+/* ---- Phone back button — step back INSIDE the book ----
+   Without this, the phone's back button (and the browser's) left
+   the whole book the moment a reader was colouring a page: the
+   book is one long page, so the browser had nowhere inside it to
+   go back TO. Now every step into the book adds one step to the
+   browser history, and stepping back (see the popstate handler in
+   the start-up code below) undoes exactly that one step:
+     colouring page  → back to the page picker ("Choose a page")
+     enlarged view   → back to the normal colouring view
+     saved picture   → back to the Gallery wall
+   Only when the reader is already at the picker does back leave
+   the book, exactly as it always did — the reader is never
+   trapped. On-screen closes for the enlarged view and the saved
+   picture go through rbNavRequestPop, so the history step they
+   used is handed back too and the two never drift apart. */
+var rbNavView = "home"; // "home" (the picker) | "colouring" | "enlarged" | "lightbox"
+var rbNavPopping = false; // true while a popstate step is being carried out
+var rbNavAfterPop = null; // one follow-up to run once a requested pop has closed its view
+function rbNavReplace(view) {
+  rbNavView = view;
+  try { history.replaceState({ rbView: view }, ""); } catch (e) {}
+}
+function rbNavEnter(view) {
+  if (rbNavView === view) { rbNavReplace(view); return; }
+  rbNavView = view;
+  try { history.pushState({ rbView: view }, ""); } catch (e) {}
+}
+function rbNavEnterColouring() { rbNavEnter("colouring"); }
+/* Mark the entry the book opened on as "home" — WITHOUT adding a
+   step — so the first Back from inside the book lands here and
+   stops, instead of leaving. */
+function rbNavInit() {
+  var cur = null;
+  try { cur = history.state && history.state.rbView; } catch (e) {}
+  if (cur === "home") { rbNavView = "home"; return; }
+  rbNavReplace("home");
+}
+/* An on-screen close for a view that Back also closes: hand its
+   history step back and let the popstate handler close the view
+   (then run `after`, if given). Returns false when there is no
+   step to hand back — the caller then closes the view itself,
+   exactly as it did before. */
+function rbNavRequestPop(after) {
+  if (rbNavPopping || rbNavView === "home") return false;
+  rbNavAfterPop = after || null;
+  try { history.back(); } catch (e) { rbNavAfterPop = null; return false; }
+  return true;
+}
+/* Back from a colouring page lands here: the page picker at the
+   top of the book — the list the page was picked from. */
+function rbNavGoHome() {
+  var picker = document.getElementById("page-picker");
+  if (picker) { try { picker.scrollIntoView({ block: "start" }); return; } catch (e) {} }
+  try { window.scrollTo(0, 0); } catch (e) {}
+}
 /* ---- Gallery large view ---- */
 var lightboxEntryId = "";
 /* How many pictures hang on the Gallery wall by default — the
@@ -4081,7 +4137,15 @@ function openGalleryLightbox(entryId) {
   var openBtn = document.getElementById("lb-open-btn");
   if (openBtn) {
     openBtn.style.display = pageIdx >= 0 ? "" : "none";
-    openBtn.onclick = function () { closeGalleryLightbox(); loadPage(pageIdx); window.scrollTo(0, 0); };
+    openBtn.onclick = function () {
+      // Leaving this picture for its colouring page: hand the
+      // picture's history step back first (the popstate handler
+      // closes the picture), then open the page as a colouring
+      // step of its own, so Back from the page still returns to
+      // the picker. With no step to hand back, close directly.
+      var openIt = function () { loadPage(pageIdx); window.scrollTo(0, 0); rbNavEnterColouring(); };
+      if (!rbNavRequestPop(openIt)) { closeGalleryLightbox(); openIt(); }
+    };
   }
   // Arm this picture's download links — the two pictures —
   // with their finished files now, while the
@@ -4091,14 +4155,19 @@ function openGalleryLightbox(entryId) {
   var delBtn = document.getElementById("lb-delete-btn");
   if (delBtn) delBtn.onclick = function () {
     var id = entry.id, ttl = entry.title;
-    closeGalleryLightbox();
-    pendingGalleryDelete = { mode: "single", entryId: id, title: ttl };
-    setGalleryStatus("");
-    updateGalleryConfirmUI();
-    var panel = document.getElementById("gallery-confirm");
-    if (panel) { try { panel.scrollIntoView({ block: "nearest" }); } catch (e) {} }
+    var askDelete = function () {
+      pendingGalleryDelete = { mode: "single", entryId: id, title: ttl };
+      setGalleryStatus("");
+      updateGalleryConfirmUI();
+      var panel = document.getElementById("gallery-confirm");
+      if (panel) { try { panel.scrollIntoView({ block: "nearest" }); } catch (e) {} }
+    };
+    // Same hand-back as the Close button: the popstate handler
+    // closes the picture, then the delete question appears.
+    if (!rbNavRequestPop(askDelete)) { closeGalleryLightbox(); askDelete(); }
   };
   box.hidden = false;
+  rbNavEnter("lightbox");
   document.documentElement.classList.add("lb-lock");
   document.body.classList.add("lb-lock");
   try { box.scrollTop = 0; } catch (e) {}
@@ -4726,6 +4795,7 @@ function makePagePickRow(pg, idx) {
   (function (i) {
     b.addEventListener("click", function () {
       loadPage(i);
+      rbNavEnterColouring();
       var sa = $("sheet-area");
       if (sa) { try { sa.scrollIntoView({ block: "start" }); } catch (e) { window.scrollTo(0, 0); } }
     });
@@ -4806,6 +4876,7 @@ function renderTopNewRibbon() {
   if (btn) {
     btn.onclick = function () {
       loadPage(PAGES.indexOf(pg));
+      rbNavEnterColouring();
       var sa = $("sheet-area");
       if (sa) { try { sa.scrollIntoView({ block: "start" }); } catch (e) { window.scrollTo(0, 0); } }
     };
@@ -5405,8 +5476,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     renderLevelPages();
   })();
-  $("prev-btn").addEventListener("click", function () { if (currentIndex > 0) loadPage(currentIndex - 1); });
-  $("next-btn").addEventListener("click", function () { if (currentIndex < PAGES.length - 1) loadPage(currentIndex + 1); });
+  $("prev-btn").addEventListener("click", function () { if (currentIndex > 0) { loadPage(currentIndex - 1); rbNavEnterColouring(); } });
+  $("next-btn").addEventListener("click", function () { if (currentIndex < PAGES.length - 1) { loadPage(currentIndex + 1); rbNavEnterColouring(); } });
 
   // Enlarge: show the current page bigger, IN the page. The sheet
   // itself is never copied — so the colouring, undo history, tool
@@ -5500,6 +5571,7 @@ document.addEventListener("DOMContentLoaded", function () {
       : "Move around is off — tap to fill, or drag to draw, as usual.");
   }
   function openEnlarged() {
+    rbNavEnter("enlarged");
     trackEvent("enlarge_open", { page: PAGES[currentIndex].id });
     // The enlarged sheet is laid out 135% of the stage width (see the
     // CSS), so 100% here is already clearly bigger than the normal
@@ -5554,13 +5626,20 @@ document.addEventListener("DOMContentLoaded", function () {
     setStatus("Back to the normal view — your colouring is still on the page.");
     try { colourCanvas.focus({ preventScroll: true }); } catch (e) {}
   }
-  $("close-enlarge-btn").addEventListener("click", closeEnlarged);
-  $("close-enlarge-fab").addEventListener("click", closeEnlarged);
+  /* Closing the enlarged view from on screen hands its history
+     step back, so the phone's Back and these buttons stay in
+     step: the popstate handler does the actual closing. With no
+     step to hand back, close directly, as before. */
+  function requestCloseEnlarged() {
+    if (!rbNavRequestPop(null)) closeEnlarged();
+  }
+  $("close-enlarge-btn").addEventListener("click", requestCloseEnlarged);
+  $("close-enlarge-fab").addEventListener("click", requestCloseEnlarged);
   $("zoom-in-btn").addEventListener("click", function () { var c = stageCentreClient(); applyZoomAt(zoomPct + 25, c.x, c.y); });
   $("zoom-out-btn").addEventListener("click", function () { var c = stageCentreClient(); applyZoomAt(zoomPct - 25, c.x, c.y); });
   window.addEventListener("resize", function () { if (isEnlarged()) applyViewTransform(); });
   $("pan-toggle-btn").addEventListener("click", function () { setPanMode(!panMode); });
-  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") closeEnlarged(); });
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && isEnlarged()) requestCloseEnlarged(); });
   // Ctrl+wheel over the big picture zooms at the pointer (desktop twin
   // of pinch).
   enlargeScroll.addEventListener("wheel", function (ev) {
@@ -5600,7 +5679,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var lastDotTap = null;        // a mouse/pen draw-tool dot just drawn: {clientX, clientY, at}
   function toggleEnlarged() {
     lastEnlargeToggleAt = Date.now();
-    if (isEnlarged()) closeEnlarged(); else openEnlarged();
+    if (isEnlarged()) requestCloseEnlarged(); else openEnlarged();
   }
   function runTapAction(a) {
     if (!a || !pageReady) return;
@@ -6515,8 +6594,14 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   // Gallery large view — Back to wall closes it; tapping the dark
   // area outside the panel or pressing Escape closes it too.
+  // Closing from on screen hands the picture's history step back
+  // (the popstate handler does the actual closing), so the
+  // phone's Back and these controls stay in step.
+  function requestCloseLightbox() {
+    if (!rbNavRequestPop(null)) closeGalleryLightbox();
+  }
   var lbCloseBtn = $("lb-close-btn");
-  if (lbCloseBtn) lbCloseBtn.addEventListener("click", function () { closeGalleryLightbox(); });
+  if (lbCloseBtn) lbCloseBtn.addEventListener("click", function () { requestCloseLightbox(); });
   // The download links: once a picture's file is made and
   // still matches this picture's saved frame / plaque, the tap
   // is the browser's own download of that file — this handler
@@ -6557,8 +6642,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
   var lbBox = $("gallery-lightbox");
-  if (lbBox) lbBox.addEventListener("click", function (ev) { if (ev.target === lbBox) closeGalleryLightbox(); });
-  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") closeGalleryLightbox(); });
+  if (lbBox) lbBox.addEventListener("click", function (ev) { if (ev.target === lbBox) requestCloseLightbox(); });
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && lbBox && !lbBox.hidden) requestCloseLightbox(); });
   /* ---- Share my page, with options ----
      Tapping "Share my page" opens this options panel IMMEDIATELY,
      in a "Preparing your page…" state with animated dots, and only
@@ -7247,6 +7332,43 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  /* ---- Phone back button: one step back INSIDE the book ----
+     Each step into the book (a colouring page, the enlarged view,
+     a saved picture) pushed one history step — see rbNavEnter
+     above. This handler is what a Back press lands on: it undoes
+     exactly the step that was on top, and nothing more. A saved
+     picture closes back to the Gallery wall, the enlarged view
+     closes back to the normal colouring view, and a colouring
+     page goes back to the page picker at the top of the book —
+     the reader stays in the book. Back at the picker itself is
+     left alone, so leaving the book from there works as always. */
+  window.addEventListener("popstate", function (ev) {
+    var landed = "home";
+    try {
+      if (ev.state && ev.state.rbView) landed = ev.state.rbView;
+      else if (history.state && history.state.rbView) landed = history.state.rbView;
+    } catch (e) {}
+    var was = rbNavView;
+    rbNavView = landed;
+    rbNavPopping = true;
+    var lb = $("gallery-lightbox");
+    if (lb && !lb.hidden) {
+      closeGalleryLightbox();
+    } else if (isEnlarged()) {
+      closeEnlarged();
+    } else if (was === "colouring" && landed === "home") {
+      rbNavGoHome();
+    } else if (was === "home" && landed === "colouring") {
+      // Forward again, back into the colouring page.
+      var sa = $("sheet-area");
+      if (sa) { try { sa.scrollIntoView({ block: "start" }); } catch (e) {} }
+    }
+    rbNavPopping = false;
+    var after = rbNavAfterPop;
+    rbNavAfterPop = null;
+    if (after) { try { after(); } catch (e) {} }
+  });
+
   showNoColour();
   // Open on the cover, unless this phone was already working
   // on a page — then reopen on that page, with its saved colouring
@@ -7254,6 +7376,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var startIndex = openingPageIndex();
   appReady = true; // the book is open — from here, picks and taps are the reader's own
   renderTopNewRibbon();
+  rbNavInit();
   loadPage(startIndex);
   if (pageImg.complete && pageImg.naturalWidth) onImageReady();
 });
