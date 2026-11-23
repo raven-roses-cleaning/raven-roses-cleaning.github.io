@@ -1843,7 +1843,7 @@ function schedShiftsOn(dateStr) {
 function schedEmpOptions() {
   var actives = employees.filter(function (e) { return e.active && String(e.role || "Employee").toLowerCase() !== "manager"; });
   return actives.length
-    ? actives.map(function (e) { return "<option value='" + esc(e.name) + "'>" + esc(e.name) + "</option>"; }).join("")
+    ? "<option value=''>Pick an employee</option>" + actives.map(function (e) { return "<option value='" + esc(e.name) + "'>" + esc(e.name) + "</option>"; }).join("")
     : "<option value=''>No active employees yet</option>";
 }
 function schedClientOptions() {
