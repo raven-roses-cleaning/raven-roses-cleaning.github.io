@@ -573,7 +573,7 @@ function payNormMonth(v){
   if (m) return m[1] + "-" + m[2];
   return s;
 }
-function normEntry(r) {
+/* Entries-only last-wins merge: the backend Entries Sheet writes two rows per shift -- an empty clock-in row followed by the complete clock-out row (same name/job/date/clock-in). Last wins keeps the complete row. Other callers (mileage, timeOff, paystubSends, remittances) keep first-wins mergeByKey above, so a stale local copy can never overwrite the backend copy. Local entries are merged first, then backend entries, so the backend (and, within it, the later complete row) wins for the same key. */ function mergeByKeyLastWins(localArr, remoteArr, keyFn) { var seen = {}; var out = []; (localArr || []).concat(remoteArr || []).forEach(function (r) { var k = keyFn(r); if (seen[k] === undefined) { seen[k] = out.length; out.push(r); } else { out[seen[k]] = r; } }); return out; } /* Krystal's pay rule: a shift of more than 2.5 hours but less than 3.0 hours counts as 3.00 hours. Applied per shift, before any daily or weekly overtime split, so training and regular shifts are treated alike. */ function roundUpHours(h) { h = h || 0; return (h > 2.5 && h < 3.0) ? 3 : h; } function normEntry(r) {
   return {
     name: r.Employee || r.name, job: r.Job || r.job, date: payNormDate(r.Date || r.date),
     in: r.ClockIn ? Number(r.ClockIn) : r.in, out: r.ClockOut ? Number(r.ClockOut) : (r.out || null),
@@ -591,7 +591,7 @@ function pullBackendData() {
   if (!BACKEND_ENABLED || !mgrSession || !mgrSession.token) return Promise.resolve();
   return backendJsonp("getData", { name: mgrSession.name, token: mgrSession.token }).then(function (d) {
     if (!d || !d.ok) { $("backendStatus").innerHTML = "Could not pull from the backend: " + esc((d && d.error) || "no reply") + ". The manual JSON import below still works."; return; }
-    if (d.entries) entries = mergeByKey(entries, d.entries.map(normEntry), function (e) { return [e.name, e.job, e.date, e.in].join("|"); });
+    if (d.entries) entries = mergeByKeyLastWins(entries, d.entries.map(normEntry), function (e) { return [e.name, e.job, e.date, e.in].join("|"); });
     if (d.mileage) mileage = mergeByKey(mileage, d.mileage.map(function (r) {
       return { date: payNormDate(r.Date || r.date), start: r.Start || r.start, end: r.End || r.end,
         km: Number(r.Km || r.km), type: "between", name: r.Employee || r.name };
@@ -846,14 +846,14 @@ $("pullRunBtn").onclick = function () {
   var training = inPeriod.filter(function (e) { return e.training; });
   var regular = inPeriod.filter(function (e) { return !e.training; });
   var dayHours = {};
-  regular.forEach(function (e) { dayHours[e.date] = (dayHours[e.date] || 0) + (e.hours || 0); });
+  regular.forEach(function (e) { dayHours[e.date] = (dayHours[e.date] || 0) + roundUpHours(e.hours); });
   var days = Object.keys(dayHours).sort().map(function (d) { return { date: d, hours: dayHours[d] }; });
   var split = splitOvertime(days);
   $("hours").value = split.regular.toFixed(2);
   $("ot15").value = split.ot15.toFixed(2);
   $("ot20").value = split.ot20.toFixed(2);
   $("otNote").textContent = split.note + " Check it, then Calculate — the fields stay editable.";
-  var trainingHours = training.reduce(function (s, e) { return s + (e.hours || 0); }, 0);
+  var trainingHours = training.reduce(function (s, e) { return s + roundUpHours(e.hours); }, 0);
   $("trainHours").value = trainingHours.toFixed(2);
   if (training.length) {
     $("trainingNote").textContent = "TRAINING in this period: " + trainingHours.toFixed(2) + " hrs at $20/hr — pulled in below at $20, in the same pay run as the regular hours.";
