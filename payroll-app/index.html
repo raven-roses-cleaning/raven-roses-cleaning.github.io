@@ -482,11 +482,41 @@ let entries = JSON.parse(localStorage.getItem(ENTRYKEY) || "[]");
 let mileage = JSON.parse(localStorage.getItem(MILEKEY) || "[]");
 let employeeRates = JSON.parse(localStorage.getItem(RATEKEY) || "{}");
 let employees = [];                          // from backend: [{Name, Role, Rate, Active, Code, Email}]
+// Canonicalise one Employees-tab row: the backend keys rows by the Sheet's
+// exact headers, so match keys case-insensitively and accept common variants
+// (Name/name, Email/email, "Email Address", ...). Without this, a header
+// spelled differently makes the email lookup silently find nothing.
+function normEmployee(r) {
+  if (!r || typeof r !== "object") return null;
+  function pick() {
+    for (var a = 0; a < arguments.length; a++) {
+      var want = String(arguments[a]).toLowerCase();
+      for (var k in r) { if (String(k).toLowerCase() === want && r[k] !== "" && r[k] != null) return r[k]; }
+    }
+    return "";
+  }
+  return {
+    Name: pick("Name", "Employee", "Employee Name"),
+    Email: pick("Email", "E-mail", "Email Address"),
+    Role: pick("Role"),
+    Active: pick("Active"),
+    Rate: pick("Rate", "Hourly Rate"),
+    Code: pick("Code", "Employee Code"),
+    Address: pick("Address", "Home Address"),
+    address: pick("Address", "Home Address"),
+    emergencyContact: pick("EmergencyContact", "Emergency Contact")
+  };
+}
 let timeOff = JSON.parse(localStorage.getItem("ravenTimeOffV1") || "[]");
 let paystubSends = JSON.parse(localStorage.getItem(SENDKEY) || "[]");
 let remittances = JSON.parse(localStorage.getItem(REMITKEY) || "[]");
 let td1Saved = JSON.parse(localStorage.getItem(TD1KEY) || "null");
 let bnSaved = JSON.parse(localStorage.getItem(BNKEY) || "null");
+// Verified CRA numbers (Nov 11, 2026) as the fall-back, so a fresh phone or
+// an empty backend settings reply never wrongly says they are missing.
+// A number Krystal saves herself always wins over the fall-back.
+function effBn() { return (bnSaved && bnSaved.bn) ? bnSaved.bn : "722557212"; }
+function effRp() { return (bnSaved && bnSaved.rp) ? bnSaved.rp : "722557212RP0001"; }
 let craRateSaved = localStorage.getItem(CRAKEY) || "0.73"; // CRA 2026 rate, first 5,000 km (verified Nov 15, 2026); $0.67/km after that.
 // Normalise any dates already saved on this phone, so an ISO date stored by
 // an earlier backend sync still matches the pay period — a clocked entry on
@@ -639,12 +669,20 @@ function pullBackendData() {
         reason: r.Reason || r.reason || "", status: r.Status || r.status || "PENDING",
         declineReason: r.DeclineReason || r.declineReason || "", created: Date.now() };
     }), function (r) { return [r.name, r.date, r.type].join("|"); });
-    if (d.employees) employees = d.employees;
+    if (d.employees) employees = (Array.isArray(d.employees) ? d.employees : Object.keys(d.employees).map(function (k) { return d.employees[k]; })).map(normEmployee).filter(Boolean);
     if (d.rates) employeeRates = d.rates;
     if (d.craRate !== undefined && d.craRate !== "") { craRateSaved = String(d.craRate); localStorage.setItem(CRAKEY, craRateSaved); }
     if (d.td1Fed) { td1Saved = { fed: Number(d.td1Fed), bc: Number(d.td1Bc || 13216) }; localStorage.setItem(TD1KEY, JSON.stringify(td1Saved)); }
-    if (d.businessNumber !== undefined || d.rpAccount !== undefined) {
-      bnSaved = { bn: d.businessNumber || "", rp: d.rpAccount || "" };
+    // Never let an empty backend settings reply wipe numbers already saved
+    // on this phone: only take a value the backend actually provides, and
+    // keep the saved one for the other. (An empty reply used to blank both
+    // numbers, which is why the CRA report said "(not entered)" while
+    // "What's due" still showed them via its own fall-back.)
+    if ((d.businessNumber !== undefined && d.businessNumber !== "") || (d.rpAccount !== undefined && d.rpAccount !== "")) {
+      bnSaved = {
+        bn: (d.businessNumber !== undefined && d.businessNumber !== "") ? d.businessNumber : ((bnSaved && bnSaved.bn) || ""),
+        rp: (d.rpAccount !== undefined && d.rpAccount !== "") ? d.rpAccount : ((bnSaved && bnSaved.rp) || "")
+      };
       localStorage.setItem(BNKEY, JSON.stringify(bnSaved));
     }
     if (d.paystubSends) paystubSends = mergeByKey(paystubSends, d.paystubSends.map(function (r) {
@@ -666,6 +704,7 @@ function pullBackendData() {
     $("backendStatus").innerHTML = '<span class="ok">Connected to the shared backend.</span> Pulled ' + entries.length + ' time entries, ' + mileage.length + ' mileage trips, ' + employees.length + ' employee(s)' + (craRateSaved ? ', CRA rate $' + craRateSaved + '/km' : ', CRA rate not set yet — mileage shows km only') + '.';
     $("pullStatus").textContent = "";
     renderEmailList();
+    renderRuns(); // also refreshes the payout list (fillPayoutDates), which otherwise keeps the pre-login "NO EMAIL ON FILE"
     renderRemitList();
     renderWhatsDue();
     renderTimecard();
@@ -1522,27 +1561,56 @@ window.clearNh = function () {
 };
 $("nhLoadBtn").onclick = renderNhList;
 $("nhName").addEventListener("keydown", function (e) { if (e.key === "Enter") renderNhList(); });
-window.deleteRun = function (i, btn) {
+// Load a saved pay run back into the pay run form, exactly as saved, and
+// show its paystub — so Krystal can see, print or email a saved paystub
+// without re-pulling or re-entering anything. Saved runs are financial
+// records: there is deliberately no way to delete one from this app.
+// YTD-before is derived (YTD-after minus this run) so the CPP/EI caps
+// recompute exactly as they did when the run was saved.
+window.viewRun = function (i) {
   var r = runs[i]; if (!r) return;
-  // Two-tap in-page confirm (no native popup, so it works on phones and in any browser):
-  // first tap arms the button, second tap deletes that one run only.
-  if (!btn || btn.getAttribute("data-armed") !== "1") {
-    if (btn) { btn.setAttribute("data-armed", "1"); btn.textContent = "Tap again to confirm delete"; btn.style.background = "#8b0000"; btn.style.color = "#fff"; }
-    return;
-  }
-  runs.splice(i, 1);
-  localStorage.setItem(KEY, JSON.stringify(runs));
-  renderRuns();
+  var n2 = function (v) { return (v == null || isNaN(Number(v))) ? "" : String(Number(v)); };
+  // Employee: pick the matching dropdown option, or type it in the
+  // free-text box when it is not in the list.
+  var sel = $("empName"), found = null;
+  for (var o = 0; o < sel.options.length; o++) { if (samePerson(sel.options[o].value, r.emp)) { found = sel.options[o].value; break; } }
+  if (found) { sel.value = found; $("empNameOther").value = ""; }
+  else { sel.value = ""; $("empNameOther").value = r.emp || ""; }
+  $("ppStart").value = r.ppStart || "";
+  $("ppEnd").value = r.ppEnd || "";
+  $("payDate").value = r.payDate || "";
+  $("freq").value = String(r.freq || 26);
+  $("hours").value = n2(r.hours);
+  $("rate").value = n2(r.rate);
+  $("trainHours").value = n2(r.trainHours);
+  $("ot15").value = n2(r.ot15);
+  $("ot20").value = n2(r.ot20);
+  $("statPay").value = n2(r.statPay);
+  $("sickHours").value = n2(r.sickHours);
+  $("refillHours").value = n2(r.refillHours);
+  $("vacPct").value = n2(r.vacPct);
+  $("mileKm").value = n2(r.mileKm);
+  if (r.craRate != null) $("craRate").value = String(r.craRate);
+  $("otherDed").value = n2(r.otherDed);
+  $("ytdGross").value = n2((r.ytdGrossAfter || 0) - (r.gross || 0));
+  $("ytdCpp").value = n2((r.ytdCppAfter || 0) - (r.cpp || 0));
+  $("ytdCpp2").value = n2((r.ytdCpp2After || 0) - (r.cpp2 || 0));
+  $("ytdEi").value = n2((r.ytdEiAfter || 0) - (r.ei || 0));
+  $("ytdTax").value = n2((r.ytdTaxAfter || 0) - (r.incomeTax || 0));
+  // TD1 stays as saved in settings — the run does not store it.
+  calculate();
+  renderTimecard();
+  updateVacPayAmt();
   renderEmailList();
-  renderCraReport();
-  renderWhatsDue();
+  var sec = document.querySelector('section[data-section="paystub"]');
+  if (sec) sec.scrollIntoView({behavior:"smooth"});
 };
 function renderRuns(){
   if (!runs.length) { $("runs").innerHTML = "<p class='small'>No saved pay runs yet.</p>"; renderT4(); fillPayoutDates(); return; }
   var byMonth = monthlyTotals();
   renderT4();
   fillPayoutDates();
-  $("runs").innerHTML = runs.map((r,i) => "<div class='card'><strong>" + esc(r.emp) + "</strong> — " + (r.ppStart||"?") + " to " + (r.ppEnd||"?") + ", pay date " + (r.payDate||"?") + "<br>Gross " + money(r.gross) + " | CPP " + money(r.cpp) + " | CPP2 " + money(r.cpp2) + " | EI " + money(r.ei) + " | Tax " + money(r.incomeTax) + " | Net " + money(r.net) + " | Remit " + money(r.remitTotal) + "<br><button class='secondary smallbtn' onclick='deleteRun(" + i + ", this)'>Delete this run</button></div>").join("") +
+  $("runs").innerHTML = runs.map((r,i) => "<div class='card'><strong>" + esc(r.emp) + "</strong> — " + (r.ppStart||"?") + " to " + (r.ppEnd||"?") + ", pay date " + (r.payDate||"?") + "<br>Gross " + money(r.gross) + " | CPP " + money(r.cpp) + " | CPP2 " + money(r.cpp2) + " | EI " + money(r.ei) + " | Tax " + money(r.incomeTax) + " | Net " + money(r.net) + " | Remit " + money(r.remitTotal) + "<br><button class='secondary smallbtn' onclick='viewRun(" + i + ")'>View paystub</button></div>").join("") +
     "<h3>Monthly remittance totals (for PD7A / CRA payment)</h3>" + Object.keys(byMonth).sort().map(m => { const b = byMonth[m]; return "<div class='card'><strong>" + m + "</strong> — " + b.runs + " run(s), gross " + money(b.gross) + ", net " + money(b.net) + "<br>Remit total " + money(b.remit) + " (tax " + money(b.tax) + " + employee CPP " + money(b.cpp) + " + CPP2 " + money(b.cpp2) + " + EI " + money(b.ei) + " + employer CPP " + money(b.empCpp) + " + employer EI " + money(b.empEi) + ")<br>Due (regular): 15th of the month after " + m + "</div>"; }).join("");
 }
 $("saveRunBtn").onclick = () => {
@@ -1611,8 +1679,8 @@ function employeeEmail(name) {
   // Same first-name/full-name matching as the time card (see samePerson):
   // a run saved under a first name must find the Employees-tab email for
   // that person's full name, or the paystub would never send.
-  var e = employees.find(function (x) { return samePerson(x.Name, name); });
-  return e ? String(e.Email || "").trim() : "";
+  var e = employees.find(function (x) { return samePerson(x.Name || x.name, name); });
+  return e ? String(e.Email || e.email || "").trim() : "";
 }
 function sendRecordFor(emp, start, end) {
   return paystubSends.find(function (s) { return s.employee === emp && s.periodStart === start && s.periodEnd === end; });
@@ -1707,8 +1775,8 @@ function craReportText(month, b, rpBlank) {
     "Raven & Roses Cleaning Co. — CRA Source Deductions Remittance",
     "Remittance period: " + monthName(month) + " (" + month + ")",
     "Due date: " + dueDateForMonth(month) + " (15th of the following month — regular / new remitter; confirm your remitter type with CRA)",
-    "Business number: " + ((bnSaved && bnSaved.bn) ? bnSaved.bn : "(not entered)"),
-    "Payroll (RP) account number: " + ((bnSaved && bnSaved.rp) ? bnSaved.rp : "(not entered)"),
+    "Business number: " + effBn(),
+    "Payroll (RP) account number: " + effRp(),
     ""
   ];
   if (rpBlank) lines.push("*** Payroll (RP) account number not entered yet — enter 722557212RP0001 in “Monthly CRA remittance report” so CRA can match the payment. ***", "");
@@ -1751,7 +1819,7 @@ function renderCraReport() {
   if (!b) {
     box.innerHTML = "<p class='small'>No saved pay runs for " + esc(monthName(month)) + " yet — save the month's pay runs first, then this report fills in from them.</p>";
   } else {
-    var rpBlank = !(bnSaved && bnSaved.rp);
+    var rpBlank = !effRp();
     var txt = craReportText(month, b, rpBlank);
     box.innerHTML =
       (rpBlank ? "<p class='warn' style='border:2px solid #b00020;border-radius:8px;padding:10px'><strong>Payroll (RP) account number not entered yet.</strong> Enter 722557212RP0001 in “Your CRA numbers” below so CRA can match the payment.</p>" : "") +
@@ -1924,10 +1992,10 @@ function renderWhatsDue(){
   items.push({ key: "remit", dot: already ? "green" : "red", title: already ? "CRA remittance for " + monthName(remMonth) + " — already paid" : "CRA remittance for " + monthName(remMonth) + " — due " + remDue, sub: already ? "Marked as remitted. Do not pay this month again unless it is a correction." : "Pay by the 15th of the following month (regular / new remitter)." });
   // 3. Business number.
   // Verified numbers (Nov 11, 2026) as the fall-back, so a fresh phone never wrongly says they are missing.
-  var bn = (bnSaved && bnSaved.bn) ? bnSaved.bn : "722557212";
+  var bn = effBn();
   items.push({ key: "bn", dot: bn ? "green" : "red", title: bn ? "Business number — entered" : "Business number — still missing", sub: bn ? "On file: " + bn : "Needed before you can remit to CRA." });
   // 4. RP account.
-  var rp = (bnSaved && bnSaved.rp) ? bnSaved.rp : "722557212RP0001";
+  var rp = effRp();
   items.push({ key: "rp", dot: rp ? "green" : "red", title: rp ? "Payroll (RP) account — entered" : "Payroll (RP) account — still missing", sub: rp ? "On file." : "Enter it below so CRA can match the payment." });
   // 5. CRA mileage rate.
   var rate = (typeof $ !== "undefined" && $("craRate") && $("craRate").value) ? $("craRate").value : craRateSaved;
