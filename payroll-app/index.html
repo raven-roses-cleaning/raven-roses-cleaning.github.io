@@ -43,7 +43,33 @@
   #dueModal .modal-card{max-width:520px;margin:8vh auto 0;background:#fffdf7;border:2px solid #b58900;border-radius:16px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,.35)}
   #dueModal h3{font-family:"Cormorant Garamond",serif;color:#221f1a;margin-top:0}
   #dueModal ol{padding-left:1.2em} #dueModal li{margin:.5em 0}
-  @media print { button, input, select, textarea, .noprint, #loginOverlay, #signOutBtn { display:none !important; } }
+  /* Print: hide the app chrome. The Print paystub / Print report buttons
+     add a body class first (see printOnly), so only that one section prints. */
+  @media print {
+    button, input, select, textarea, .noprint, #loginOverlay, #signOutBtn, #sectionNav, #watermark { display:none !important; }
+    body { background:#fff !important; }
+    body::before { display:none !important; }
+    body.app-hidden #appContent { filter:none !important; }
+    body.print-paystub section.pay-section { display:none !important; }
+    body.print-paystub section[data-section="paystub"] { display:block !important; }
+    body.print-paystub section[data-section="paystub"] > h2 { display:none !important; }
+    body.print-cra section.pay-section { display:none !important; }
+    body.print-cra section[data-section="crareport"] { display:block !important; }
+  }
+  /* Formatted paystub card — black on white, prints cleanly on one page. */
+  #paystubCard{background:#fff;color:#111;border:1.5px solid #111;border-radius:4px;padding:20px 22px;max-width:640px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.45}
+  #paystubCard .stub-head{text-align:center;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:12px}
+  #paystubCard .stub-co{font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700}
+  #paystubCard .stub-title{font-size:15px;font-weight:700;letter-spacing:.18em;margin-top:2px}
+  #paystubCard .stub-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
+  #paystubCard table{width:100%;border-collapse:collapse;margin:0 0 10px}
+  #paystubCard th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#444;border-bottom:1px solid #111;padding:4px 6px;text-align:left}
+  #paystubCard th.num,#paystubCard td.num{text-align:right}
+  #paystubCard td{padding:5px 6px;border-bottom:1px solid #ddd;vertical-align:top}
+  #paystubCard tr.total td{font-weight:700;border-top:2px solid #111;border-bottom:2px solid #111;background:#f5f5f5}
+  #paystubCard .stub-net{display:flex;justify-content:space-between;align-items:baseline;border:2px solid #111;border-radius:4px;padding:10px 14px;margin:12px 0;font-size:18px;font-weight:700;background:#f5f5f5}
+  #paystubCard .stub-line{margin:8px 0}
+  #paystubCard .stub-note{font-size:11.5px;color:#444;line-height:1.5;margin:8px 0 0}
   #loginOverlay{position:fixed;inset:0;background:linear-gradient(rgba(247,241,227,.72),rgba(247,241,227,.72)),url('../cream-velvet-roses.jpg') center/cover fixed;z-index:9999;padding:24px;overflow:auto}
   #loginOverlay .login-box{max-width:420px;margin:8vh auto 0;border:2px solid #b58900;border-radius:16px;padding:24px;background:rgba(255,253,247,.97);box-shadow:0 0 0 4px rgba(212,175,55,.25),0 6px 24px rgba(122,92,20,.3)}
   #loginOverlay h1{border-bottom:0;text-align:center;font-size:1.8rem;margin-bottom:.1em}
@@ -203,9 +229,10 @@
 
 <section class="pay-section" data-section="paystub">
 <h2>Paystub — for the employee (copy / print / email)</h2>
-<pre id="paystub">Calculate a pay run above to see the paystub here.</pre>
+<div id="paystubCard"><p class="small">Calculate a pay run above to see the paystub here.</p></div>
+<pre id="paystub" style="display:none">Calculate a pay run above to see the paystub here.</pre>
 <button id="copyStubBtn" class="secondary">Copy paystub as text (for email)</button>
-<button id="printStubBtn" class="secondary" onclick="window.print()">Print paystub</button>
+<button id="printStubBtn" class="secondary" onclick="printOnly('print-paystub')">Print paystub</button>
 
 </section>
 
@@ -996,6 +1023,7 @@ function calculate(){
     ytdGrossAfter: r2(ytdGross + gross), ytdCppAfter: r2(ytdCpp + cpp), ytdCpp2After: r2(ytdCpp2 + cpp2), ytdEiAfter: r2(ytdEi + ei), ytdTaxAfter: r2(ytdTax + incomeTax)
   };
   $("paystub").textContent = paystubText(lastCalc);
+  $("paystubCard").innerHTML = paystubHTML(lastCalc);
   $("remit").textContent = [
     "Remittance for this pay run — to CRA, NOT submitted by this app:",
     "  Employee income tax withheld: " + money(incomeTax) + " (federal " + money(fed) + " + BC " + money(bc) + ")",
@@ -1011,39 +1039,120 @@ function calculate(){
   renderEmailList();
   return lastCalc;
 }
-// One paystub-text builder, used by the on-screen paystub AND by the
-// paystub emails — so what Krystal sees is exactly what the employee gets.
+// Print one section only: add a body class, print, then remove the class
+// when the print dialog closes (afterprint), with a 60s fallback so the
+// class can never stick and hide the rest of the app on screen.
+function printOnly(cls) {
+  document.body.classList.add(cls);
+  var done = function () { document.body.classList.remove(cls); window.removeEventListener("afterprint", done); };
+  window.addEventListener("afterprint", done);
+  setTimeout(function () { document.body.classList.remove(cls); }, 60000);
+  window.print();
+}
+// Plain-text paystub, used by "Copy paystub as text" AND by the paystub
+// emails (backend text field + mailto body) — email can only carry plain
+// text, so this is what the employee receives by email. Same figures as
+// the formatted card below; the estimate note is a footnote, not a header.
 // Built per employee from that employee's own saved run only: no other
 // employee's name, hours or pay ever appears in it.
 function paystubText(c) {
-  return [
-    "Raven & Roses Cleaning Co. — PAYSTUB (DRAFT — verify against CRA PDOC before paying)",
-    "Employee: " + c.emp,
-    (c.address ? "Address: " + c.address : ""),
-    "Pay period: " + (c.ppStart || "?") + " to " + (c.ppEnd || "?") + "  |  Pay date: " + (c.payDate || "?"),
-    "",
-    "Hours: " + c.hours.toFixed(2) + " regular × $" + c.rate.toFixed(2) + (c.trainHours ? " + " + c.trainHours.toFixed(2) + " hrs training × $20.00" : "") + (c.ot15 ? " + " + c.ot15.toFixed(2) + " hrs overtime at 1.5×" : "") + (c.ot20 ? " + " + c.ot20.toFixed(2) + " hrs overtime at 2×" : "") + (c.sickHours ? " + " + c.sickHours.toFixed(2) + " hrs paid sick" : "") + (c.statPay ? " + stat holiday pay " + money(c.statPay) : "") + " = " + money(c.hoursPay),
-    "Paid by: e-transfer, morning of payday",
-    "Supply-refill pay: " + c.refillHours.toFixed(2) + " hrs × $1.00 = " + money(c.refillPay),
-    (c.vacPct ? "Vacation pay, paid on every cheque (" + c.vacPct + "%): " + money(c.vacPay) : ""),
-    "GROSS PAY: " + money(c.gross),
-    "",
-    "Deductions:",
-    "  CPP: " + money(c.cpp),
-    "  CPP2: " + money(c.cpp2),
-    "  EI: " + money(c.ei),
-    "  Federal income tax (est.): " + money(c.fed),
-    "  BC income tax (est.): " + money(c.bc),
-    "  Total income tax (est.): " + money(c.incomeTax),
-    (c.otherDed ? "  Other deductions: " + money(c.otherDed) : ""),
-    "",
-    "NET PAY: " + money(c.net),
-    (c.milePay ? "Mileage reimbursement (separate, non-taxable at CRA rate): " + c.mileKm.toFixed(1) + " km = " + money(c.milePay) + " — included in net above, NOT in gross / CPP / EI / tax." : "Mileage: none this run, or CRA rate not entered."),
-    "",
-    "Year-to-date after this run: Gross " + money(c.ytdGrossAfter) + " | CPP " + money(c.ytdCppAfter) + " | CPP2 " + money(c.ytdCpp2After) + " | EI " + money(c.ytdEiAfter) + " | Income tax " + money(c.ytdTaxAfter),
-    "",
-    "This is an estimate. Income tax uses 2026 federal + BC brackets, basic TD1 claims entered, Canada employment amount, and base CPP/EI credits. It does not include other TD1 credits, bonuses, or taxable benefits. Check it against CRA PDOC before paying."
-  ].filter(function (x) { return x !== ""; }).join("\n");
+  function pad(s, w) { s = String(s); while (s.length < w) s += " "; return s; }
+  function row(label, amt) { return pad(label, 40) + money(amt); }
+  var lines = [];
+  lines.push("RAVEN & ROSES CLEANING CO. — PAYSTUB");
+  lines.push("Employee: " + c.emp);
+  if (c.address) lines.push("Address: " + c.address);
+  lines.push("Pay period: " + (c.ppStart || "?") + " to " + (c.ppEnd || "?") + "  |  Pay date: " + (c.payDate || "?"));
+  lines.push("");
+  lines.push("EARNINGS");
+  if (c.hours) lines.push(row("  Regular (" + c.hours.toFixed(2) + " hrs x $" + c.rate.toFixed(2) + ")", r2(c.hours * c.rate)));
+  if (c.trainHours) lines.push(row("  Training (" + c.trainHours.toFixed(2) + " hrs x $20.00)", r2(c.trainHours * 20)));
+  if (c.ot15) lines.push(row("  Overtime 1.5x (" + c.ot15.toFixed(2) + " hrs)", r2(c.ot15 * c.rate * 1.5)));
+  if (c.ot20) lines.push(row("  Overtime 2x (" + c.ot20.toFixed(2) + " hrs)", r2(c.ot20 * c.rate * 2)));
+  if (c.sickHours) lines.push(row("  Paid sick (" + c.sickHours.toFixed(2) + " hrs)", r2(c.sickHours * c.rate)));
+  if (c.statPay) lines.push(row("  Statutory holiday pay", c.statPay));
+  if (c.refillPay) lines.push(row("  Supply-refill pay (" + c.refillHours.toFixed(2) + " hrs x $1.00)", c.refillPay));
+  if (c.vacPay) lines.push(row("  Vacation pay (" + c.vacPct + "%)", c.vacPay));
+  lines.push(row("  GROSS PAY", c.gross));
+  lines.push("");
+  lines.push("DEDUCTIONS");
+  lines.push(row("  CPP", c.cpp));
+  lines.push(row("  CPP2", c.cpp2));
+  lines.push(row("  EI", c.ei));
+  lines.push(row("  Federal income tax (est.)", c.fed));
+  lines.push(row("  BC income tax (est.)", c.bc));
+  lines.push(row("  Total income tax (est.)", c.incomeTax));
+  if (c.otherDed) lines.push(row("  Other deductions", c.otherDed));
+  lines.push(row("  Total deductions", r2(c.cpp + c.cpp2 + c.ei + c.incomeTax + (c.otherDed || 0))));
+  lines.push("");
+  lines.push(row("NET PAY", c.net));
+  lines.push("");
+  lines.push("Paid by: e-transfer, morning of payday");
+  lines.push(c.milePay ? ("Mileage reimbursement: " + c.mileKm.toFixed(1) + " km x " + money(c.craRate) + " = " + money(c.milePay) + " — included in net pay above, NOT in gross / CPP / EI / tax.") : "Mileage: none this run, or CRA rate not entered.");
+  lines.push("");
+  lines.push("Year-to-date after this run: Gross " + money(c.ytdGrossAfter) + " | CPP " + money(c.ytdCppAfter) + " | CPP2 " + money(c.ytdCpp2After) + " | EI " + money(c.ytdEiAfter) + " | Income tax " + money(c.ytdTaxAfter));
+  lines.push("");
+  lines.push("Note: This is an estimate. Income tax uses 2026 federal + BC brackets, basic TD1 claims entered, Canada employment amount, and base CPP/EI credits. It does not include other TD1 credits, bonuses, or taxable benefits. Check it against CRA PDOC before paying.");
+  return lines.join("\n");
+}
+// Formatted HTML paystub — what the employee sees on screen and in print.
+// Built from one employee's own saved run only: no other employee's name,
+// hours or pay ever appears. Year-to-date is tracked by the app for gross
+// pay, CPP, CPP2, EI and total income tax only — other lines show "—".
+function paystubHTML(c) {
+  var regPay = r2(c.hours * c.rate);
+  var trainPay = r2(c.trainHours * 20);
+  var ot15Pay = r2(c.ot15 * c.rate * 1.5);
+  var ot20Pay = r2(c.ot20 * c.rate * 2);
+  var sickPay = r2(c.sickHours * c.rate);
+  var statPay = r2(c.statPay || 0);
+  var totalDed = r2(c.cpp + c.cpp2 + c.ei + c.incomeTax + (c.otherDed || 0));
+  var e = "";
+  function erow(label, hrs, rate, amt) {
+    e += "<tr><td>" + label + "</td><td class=\"num\">" + hrs + "</td><td class=\"num\">" + rate + "</td><td class=\"num\">" + money(amt) + "</td><td class=\"num\">\u2014</td></tr>";
+  }
+  if (c.hours) erow("Regular", c.hours.toFixed(2) + " hrs", money(c.rate), regPay);
+  if (c.trainHours) erow("Training", c.trainHours.toFixed(2) + " hrs", "$20.00", trainPay);
+  if (c.ot15) erow("Overtime (1.5\u00d7)", c.ot15.toFixed(2) + " hrs", money(c.rate * 1.5), ot15Pay);
+  if (c.ot20) erow("Overtime (2\u00d7)", c.ot20.toFixed(2) + " hrs", money(c.rate * 2), ot20Pay);
+  if (c.sickHours) erow("Paid sick", c.sickHours.toFixed(2) + " hrs", money(c.rate), sickPay);
+  if (c.statPay) erow("Statutory holiday pay", "\u2014", "\u2014", statPay);
+  if (c.refillPay) erow("Supply-refill pay", c.refillHours.toFixed(2) + " hrs", "$1.00", c.refillPay);
+  if (c.vacPay) erow("Vacation pay (" + c.vacPct + "%)", "\u2014", "\u2014", c.vacPay);
+  var d = "";
+  function drow(label, amt, ytd) {
+    d += "<tr><td>" + label + "</td><td class=\"num\">" + money(amt) + "</td><td class=\"num\">" + ytd + "</td></tr>";
+  }
+  drow("CPP", c.cpp, money(c.ytdCppAfter));
+  drow("CPP2", c.cpp2, money(c.ytdCpp2After));
+  drow("EI", c.ei, money(c.ytdEiAfter));
+  drow("Federal income tax", c.fed, "\u2014");
+  drow("BC income tax", c.bc, "\u2014");
+  drow("Total income tax", c.incomeTax, money(c.ytdTaxAfter));
+  if (c.otherDed) drow("Other deductions", c.otherDed, "\u2014");
+  var mile = c.milePay
+    ? "Mileage reimbursement: " + c.mileKm.toFixed(1) + " km \u00d7 " + money(c.craRate) + " = " + money(c.milePay) + " \u2014 included in net pay above, not in gross pay, CPP, EI or tax."
+    : "Mileage: none this run, or CRA rate not entered.";
+  return "" +
+  "<div class=\"stub-head\">" +
+    "<div class=\"stub-co\">Raven &amp; Roses Cleaning Co.</div>" +
+    "<div class=\"stub-title\">PAYSTUB</div>" +
+  "</div>" +
+  "<div class=\"stub-meta\">" +
+    "<div><strong>Employee:</strong> " + esc(c.emp) + (c.address ? "<br><strong>Address:</strong> " + esc(c.address) : "") + "</div>" +
+    "<div><strong>Pay period:</strong> " + esc(c.ppStart || "?") + " to " + esc(c.ppEnd || "?") + "<br><strong>Pay date:</strong> " + esc(c.payDate || "?") + "</div>" +
+  "</div>" +
+  "<table><thead><tr><th>Earnings</th><th class=\"num\">Hours</th><th class=\"num\">Rate</th><th class=\"num\">Current</th><th class=\"num\">Year-to-date</th></tr></thead><tbody>" +
+    e +
+    "<tr class=\"total\"><td>Gross pay</td><td class=\"num\"></td><td class=\"num\"></td><td class=\"num\">" + money(c.gross) + "</td><td class=\"num\">" + money(c.ytdGrossAfter) + "</td></tr>" +
+  "</tbody></table>" +
+  "<table><thead><tr><th>Deductions</th><th class=\"num\">Current</th><th class=\"num\">Year-to-date</th></tr></thead><tbody>" +
+    d +
+    "<tr class=\"total\"><td>Total deductions</td><td class=\"num\">" + money(totalDed) + "</td><td class=\"num\"></td></tr>" +
+  "</tbody></table>" +
+  "<div class=\"stub-net\"><span>NET PAY</span><span>" + money(c.net) + "</span></div>" +
+  "<p class=\"stub-line\">Paid by e-transfer, morning of payday. " + esc(mile) + "</p>" +
+  "<p class=\"stub-note\">Year-to-date is tracked for gross pay, CPP, CPP2, EI and total income tax. This is an estimate. Income tax uses 2026 federal + BC brackets, basic TD1 claims entered, Canada employment amount, and base CPP/EI credits. It does not include other TD1 credits, bonuses, or taxable benefits. Check it against CRA PDOC before paying.</p>";
 }
 $("calcBtn").onclick = calculate;
 $("copyStubBtn").onclick = async () => {
@@ -1508,7 +1617,7 @@ window.craCopyReport = function () {
     navigator.clipboard.writeText(t).then(function () { alert("Remittance report copied."); }, function () { alert("Copy not available — select the report above and copy it manually."); });
   } else { alert("Copy not available — select the report above and copy it manually."); }
 };
-window.craPrintReport = function () { window.print(); };
+window.craPrintReport = function () { printOnly('print-cra'); };
 function renderCraReport() {
   var month = $("craMonth").value;
   var box = $("craReport");
