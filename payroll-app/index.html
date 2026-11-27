@@ -50,11 +50,16 @@
     body { background:#fff !important; }
     body::before { display:none !important; }
     body.app-hidden #appContent { filter:none !important; }
-    body.print-paystub section.pay-section { display:none !important; }
-    body.print-paystub section[data-section="paystub"] { display:block !important; }
-    body.print-paystub section[data-section="paystub"] > h2 { display:none !important; }
-    body.print-paystub #draftBanner { display:none !important; }
-    body.print-cra section.pay-section { display:none !important; }
+    /* Default print from this app is the paystub + hours only (Krystal's
+       record). This applies to the browser's own print too, so ANY print
+       from the app gives just the paystub — no JS timing involved, which
+       is what kept failing on her Android phone. */
+    section.pay-section { display:none !important; }
+    section[data-section="paystub"] { display:block !important; }
+    section[data-section="paystub"] > h2 { display:none !important; }
+    #draftBanner { display:none !important; }
+    /* CRA report mode (Print this report button): print only the CRA report. */
+    body.print-cra section[data-section="paystub"] { display:none !important; }
     body.print-cra section[data-section="crareport"] { display:block !important; }
   }
   /* Formatted paystub card — black on white, prints cleanly on one page. */
