@@ -53,6 +53,7 @@
     body.print-paystub section.pay-section { display:none !important; }
     body.print-paystub section[data-section="paystub"] { display:block !important; }
     body.print-paystub section[data-section="paystub"] > h2 { display:none !important; }
+    body.print-paystub #draftBanner { display:none !important; }
     body.print-cra section.pay-section { display:none !important; }
     body.print-cra section[data-section="crareport"] { display:block !important; }
   }
@@ -105,7 +106,7 @@
   </div>
 </div>
 
-<p style="background:#fff3cd;border:2px solid #b58900;border-radius:8px;padding:12px;font-weight:700">DRAFT — Krystal only, NOT a filing tool yet. Do NOT use this to pay or remit until you check the first pay run against CRA’s Payroll Deductions Online Calculator (PDOC) / T4032 tables and White Rapids Books confirms it. This file does NOT submit anything to CRA, and does NOT store SINs — never enter a SIN here.</p>
+<p id="draftBanner" style="background:#fff3cd;border:2px solid #b58900;border-radius:8px;padding:12px;font-weight:700">DRAFT — Krystal only, NOT a filing tool yet. Do NOT use this to pay or remit until you check the first pay run against CRA’s Payroll Deductions Online Calculator (PDOC) / T4032 tables and White Rapids Books confirms it. This file does NOT submit anything to CRA, and does NOT store SINs — never enter a SIN here.</p>
 <h1><img src="/icon-payroll-192.png" alt="" style="height:40px;width:40px;vertical-align:middle;border-radius:8px;margin-right:6px"> Raven &amp; Roses — Payroll</h1>
 <p class="small">Hours and mileage show up here on their own — no re-typing — once this app is connected to the shared Sheet. Employee apps show <strong>hours, mileage and supplies only — no pay</strong>. Pay is calculated here, and the employee gets a paystub by email from you.</p>
 <div id="backendBanner"></div>
@@ -235,6 +236,11 @@
 <section class="pay-section" data-section="paystub">
 <h2>Paystub — for the employee (copy / print / email)</h2>
 <div id="paystubCard"><p class="small">Calculate a pay run above to see the paystub here.</p></div>
+<div id="stubHoursWrap" style="display:none">
+  <h3>Submitted hours — for your records</h3>
+  <p class="small">The hours this paystub is based on. Read-only — same as the time-card list in section 1.</p>
+  <div id="stubHoursList"></div>
+</div>
 <pre id="paystub" style="display:none">Calculate a pay run above to see the paystub here.</pre>
 <button id="copyStubBtn" class="secondary">Copy paystub as text (for email)</button>
 <button id="printStubBtn" class="secondary" onclick="printOnly('print-paystub')">Print paystub</button>
@@ -912,25 +918,37 @@ function renderTimecard() {
   if (!wrap || !list) return;
   var emp = currentEmployee();
   var start = $("ppStart").value, end = $("ppEnd").value;
-  if (!emp || !start || !end) { wrap.style.display = "none"; list.innerHTML = ""; return; }
+  // The paystub section carries the same submitted-hours list so it prints
+  // with the paystub (Krystal's records). Both lists are fed from this one
+  // function, so they always agree.
+  var stubWrap = $("stubHoursWrap"), stubList = $("stubHoursList");
+  if (!emp || !start || !end) {
+    wrap.style.display = "none"; list.innerHTML = "";
+    if (stubWrap) stubWrap.style.display = "none";
+    if (stubList) stubList.innerHTML = "";
+    return;
+  }
   var rows = entries.filter(function (e) {
     return samePerson(e.name, emp) && e.date >= start && e.date <= end && e.out && (e.hours || 0) > 0;
   }).sort(function (a, b) { return (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.in || 0) - (b.in || 0)); });
+  var html;
   if (!rows.length) {
-    wrap.style.display = "";
-    list.innerHTML = "<p class='small'>No submitted hours for " + esc(emp) + " in " + esc(start) + " to " + esc(end) + " yet.</p>";
-    return;
+    html = "<p class='small'>No submitted hours for " + esc(emp) + " in " + esc(start) + " to " + esc(end) + " yet.</p>";
+  } else {
+    var regH = 0, trnH = 0;
+    var body = rows.map(function (e) {
+      var h = e.hours || 0;
+      if (e.training) trnH += h; else regH += h;
+      return "<tr><td>" + esc(fmtDay(e.date)) + "</td><td>" + esc(e.job || "") + "</td><td>" + esc(fmtClock(e.in)) + "</td><td>" + esc(fmtClock(e.out)) + "</td><td style='text-align:right'>" + h.toFixed(2) + "</td><td>" + (e.training ? "Training" : "Regular") + "</td></tr>";
+    }).join("");
+    var tot = regH + trnH;
+    var splitTxt = (regH ? regH.toFixed(2) + " regular" : "") + (regH && trnH ? " + " : "") + (trnH ? trnH.toFixed(2) + " training" : "");
+    html = "<table><thead><tr><th>Date</th><th>Job</th><th>In</th><th>Out</th><th style='text-align:right'>Hours</th><th>Type</th></tr></thead><tbody>" + body + "</tbody><tfoot><tr><td colspan='4'><strong>Total submitted</strong></td><td style='text-align:right'><strong>" + tot.toFixed(2) + "</strong></td><td><strong>" + splitTxt + "</strong></td></tr></tfoot></table>";
   }
-  var regH = 0, trnH = 0;
-  var body = rows.map(function (e) {
-    var h = e.hours || 0;
-    if (e.training) trnH += h; else regH += h;
-    return "<tr><td>" + esc(fmtDay(e.date)) + "</td><td>" + esc(e.job || "") + "</td><td>" + esc(fmtClock(e.in)) + "</td><td>" + esc(fmtClock(e.out)) + "</td><td style='text-align:right'>" + h.toFixed(2) + "</td><td>" + (e.training ? "Training" : "Regular") + "</td></tr>";
-  }).join("");
-  var tot = regH + trnH;
-  var splitTxt = (regH ? regH.toFixed(2) + " regular" : "") + (regH && trnH ? " + " : "") + (trnH ? trnH.toFixed(2) + " training" : "");
-  list.innerHTML = "<table><thead><tr><th>Date</th><th>Job</th><th>In</th><th>Out</th><th style='text-align:right'>Hours</th><th>Type</th></tr></thead><tbody>" + body + "</tbody><tfoot><tr><td colspan='4'><strong>Total submitted</strong></td><td style='text-align:right'><strong>" + tot.toFixed(2) + "</strong></td><td><strong>" + splitTxt + "</strong></td></tr></tfoot></table>";
+  list.innerHTML = html;
   wrap.style.display = "";
+  if (stubWrap) stubWrap.style.display = "";
+  if (stubList) stubList.innerHTML = html;
 }
 $("pullRunBtn").onclick = function () {
   var emp = currentEmployee();
