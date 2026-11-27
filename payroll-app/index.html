@@ -1157,7 +1157,7 @@ function printOnly(cls) {
 // Plain-text paystub, used by "Copy paystub as text" AND by the paystub
 // emails (backend text field + mailto body) — email can only carry plain
 // text, so this is what the employee receives by email. Same figures as
-// the formatted card below; the estimate note is a footnote, not a header.
+// the formatted card below.
 // Built per employee from that employee's own saved run only: no other
 // employee's name, hours or pay ever appears in it.
 function paystubText(c) {
@@ -1193,11 +1193,9 @@ function paystubText(c) {
   lines.push(row("NET PAY", c.net));
   lines.push("");
   lines.push("Paid by: e-transfer, morning of payday");
-  lines.push(c.milePay ? ("Mileage reimbursement: " + c.mileKm.toFixed(1) + " km x " + money(c.craRate) + " = " + money(c.milePay) + " — included in net pay above, NOT in gross / CPP / EI / tax.") : "Mileage: none this run, or CRA rate not entered.");
+  if (c.milePay) lines.push("Mileage reimbursement: " + c.mileKm.toFixed(1) + " km x " + money(c.craRate) + " = " + money(c.milePay) + " — included in net pay above, NOT in gross / CPP / EI / tax.");
   lines.push("");
   lines.push("Year-to-date after this run: Gross " + money(c.ytdGrossAfter) + " | CPP " + money(c.ytdCppAfter) + " | CPP2 " + money(c.ytdCpp2After) + " | EI " + money(c.ytdEiAfter) + " | Income tax " + money(c.ytdTaxAfter));
-  lines.push("");
-  lines.push("Note: This is an estimate. Income tax uses 2026 federal + BC brackets, basic TD1 claims entered, Canada employment amount, and base CPP/EI credits. It does not include other TD1 credits, bonuses, or taxable benefits. Check it against CRA PDOC before paying.");
   return lines.join("\n");
 }
 // Formatted HTML paystub — what the employee sees on screen and in print.
@@ -1237,7 +1235,7 @@ function paystubHTML(c) {
   if (c.otherDed) drow("Other deductions", c.otherDed, "\u2014");
   var mile = c.milePay
     ? "Mileage reimbursement: " + c.mileKm.toFixed(1) + " km \u00d7 " + money(c.craRate) + " = " + money(c.milePay) + " \u2014 included in net pay above, not in gross pay, CPP, EI or tax."
-    : "Mileage: none this run, or CRA rate not entered.";
+    : "";
   return "" +
   "<div class=\"stub-head\">" +
     "<div class=\"stub-co\">Raven &amp; Roses Cleaning Co.</div>" +
@@ -1256,8 +1254,7 @@ function paystubHTML(c) {
     "<tr class=\"total\"><td>Total deductions</td><td class=\"num\">" + money(totalDed) + "</td><td class=\"num\"></td></tr>" +
   "</tbody></table>" +
   "<div class=\"stub-net\"><span>NET PAY</span><span>" + money(c.net) + "</span></div>" +
-  "<p class=\"stub-line\">Paid by e-transfer, morning of payday. " + esc(mile) + "</p>" +
-  "<p class=\"stub-note\">Year-to-date is tracked for gross pay, CPP, CPP2, EI and total income tax. This is an estimate. Income tax uses 2026 federal + BC brackets, basic TD1 claims entered, Canada employment amount, and base CPP/EI credits. It does not include other TD1 credits, bonuses, or taxable benefits. Check it against CRA PDOC before paying.</p>";
+  "<p class=\"stub-line\">Paid by e-transfer, morning of payday." + (mile ? " " + esc(mile) : "") + "</p>";
 }
 $("calcBtn").onclick = calculate;
 $("copyStubBtn").onclick = async () => {
