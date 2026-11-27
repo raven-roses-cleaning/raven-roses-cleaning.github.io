@@ -164,6 +164,11 @@
 <button id="pullRunBtn" class="secondary">Pull this employee + period into the pay run</button>
 <p id="otNote" class="small"></p>
 <p id="trainingNote" class="small" style="font-weight:700"></p>
+<div id="timecardWrap" style="display:none">
+  <h3>Time card — submitted hours</h3>
+  <p class="small">What this employee submitted for this pay period. Read-only — check it before you calculate.</p>
+  <div id="timecardList"></div>
+</div>
 <div class="row">
   <div><label for="hours">Regular hours worked this period (not counting overtime or sick hours below)</label><input id="hours" type="number" step="0.01" min="0" placeholder="e.g. 24"></div>
   <div><label for="rate">Hourly rate ($) — for regular hours</label><select id="rate"><option value="20">Training — $20</option><option value="23" selected>Starting — $23</option><option value="24">After probation — $24</option><option value="24.5">$24.50</option><option value="25">$25</option><option value="25.5">$25.50</option><option value="26">Cap — $26</option></select></div>
@@ -183,7 +188,7 @@
 <p id="sickHint" class="small"></p>
 <div class="row">
   <div><label for="refillHours">Hours where supplies were refilled ($1/hr)</label><input id="refillHours" type="number" step="0.01" min="0" placeholder="Same as hours if refilled every job"></div>
-  <div><label for="vacPct">Vacation pay % — paid on every cheque (default 4%)</label><input id="vacPct" type="number" step="0.1" min="0" value="4"></div>
+  <div><label for="vacPct">Vacation pay % — paid on every cheque (default 4%)</label><input id="vacPct" type="number" step="0.1" min="0" value="4"><p class="small" id="vacPayAmt" style="margin:.2em 0">Vacation pay: $0.00</p></div>
 </div>
 <div class="row">
   <div><label for="mileKm">Mileage payable (km, between clients only)</label><input id="mileKm" type="number" step="0.1" min="0" placeholder="e.g. 42.5"></div>
@@ -657,6 +662,7 @@ function pullBackendData() {
     renderEmailList();
     renderRemitList();
     renderWhatsDue();
+    renderTimecard();
   });
 }
 function showLogin() {
@@ -862,6 +868,70 @@ function splitOvertime(dayHoursList) {
   return { regular: r2(regular), ot15: r2(ot15), ot20: r2(ot20),
     note: "Split from the time card: " + perDay.map(function (d) { return d.date + " " + (d.regular + d.ot15 + d.ot20).toFixed(2) + "h (reg " + d.regular.toFixed(2) + ", 1.5× " + d.ot15.toFixed(2) + ", 2× " + d.ot20.toFixed(2) + ")"; }).join("; ") + "." + weeklyNote };
 }
+// Format a clock-in/out value as a readable time. Backend values are epoch
+// milliseconds (numbers or numeric strings); older imports may be "8:57 AM"
+// strings or Sheets serial fractions. Anything unparseable is shown as-is.
+function fmtClock(v) {
+  if (v == null || v === "") return "—";
+  if (typeof v === "number" || /^\d+(\.\d+)?$/.test(String(v).trim())) {
+    var n = Number(v);
+    if (n > 1e12) { // epoch ms
+      var d = new Date(n);
+      if (!isNaN(d.getTime())) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
+    if (n > 0 && n < 1) { // Sheets serial fraction of a day
+      var mins = Math.round(n * 24 * 60);
+      var h = Math.floor(mins / 60), m = mins % 60;
+      var ap = h >= 12 ? "PM" : "AM"; var hh = h % 12; if (hh === 0) hh = 12;
+      return hh + ":" + String(m).padStart(2, "0") + " " + ap;
+    }
+    return String(v);
+  }
+  var s = String(v).trim();
+  var m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)?/i);
+  if (m) { var hh2 = parseInt(m[1], 10); var ap2 = m[3] ? m[3].toUpperCase() : (hh2 >= 12 ? "PM" : "AM"); if (!m[3]) { if (hh2 > 12) hh2 -= 12; if (hh2 === 0) hh2 = 12; } return hh2 + ":" + m[2] + " " + ap2; }
+  var d2 = new Date(s);
+  if (!isNaN(d2.getTime())) return d2.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return s;
+}
+// Short day label for the time-card list, e.g. "Thu Nov 12".
+function fmtDay(iso) {
+  var d = new Date(String(iso) + "T12:00:00");
+  if (isNaN(d.getTime())) return String(iso);
+  var days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return days[d.getDay()] + " " + months[d.getMonth()] + " " + d.getDate();
+}
+// Time-card review list — shows the submitted shifts for the picked employee
+// and period so Krystal can confirm them before calculating. Read-only.
+// Only complete rows (clock-out present, hours > 0) are shown; the empty
+// clock-in rows the backend writes are never listed. Reads the same
+// `entries` array the pull uses, so the totals match the pull exactly.
+function renderTimecard() {
+  var wrap = $("timecardWrap"), list = $("timecardList");
+  if (!wrap || !list) return;
+  var emp = currentEmployee();
+  var start = $("ppStart").value, end = $("ppEnd").value;
+  if (!emp || !start || !end) { wrap.style.display = "none"; list.innerHTML = ""; return; }
+  var rows = entries.filter(function (e) {
+    return samePerson(e.name, emp) && e.date >= start && e.date <= end && e.out && (e.hours || 0) > 0;
+  }).sort(function (a, b) { return (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.in || 0) - (b.in || 0)); });
+  if (!rows.length) {
+    wrap.style.display = "";
+    list.innerHTML = "<p class='small'>No submitted hours for " + esc(emp) + " in " + esc(start) + " to " + esc(end) + " yet.</p>";
+    return;
+  }
+  var regH = 0, trnH = 0;
+  var body = rows.map(function (e) {
+    var h = e.hours || 0;
+    if (e.training) trnH += h; else regH += h;
+    return "<tr><td>" + esc(fmtDay(e.date)) + "</td><td>" + esc(e.job || "") + "</td><td>" + esc(fmtClock(e.in)) + "</td><td>" + esc(fmtClock(e.out)) + "</td><td style='text-align:right'>" + h.toFixed(2) + "</td><td>" + (e.training ? "Training" : "Regular") + "</td></tr>";
+  }).join("");
+  var tot = regH + trnH;
+  var splitTxt = (regH ? regH.toFixed(2) + " regular" : "") + (regH && trnH ? " + " : "") + (trnH ? trnH.toFixed(2) + " training" : "");
+  list.innerHTML = "<table><thead><tr><th>Date</th><th>Job</th><th>In</th><th>Out</th><th style='text-align:right'>Hours</th><th>Type</th></tr></thead><tbody>" + body + "</tbody><tfoot><tr><td colspan='4'><strong>Total submitted</strong></td><td style='text-align:right'><strong>" + tot.toFixed(2) + "</strong></td><td><strong>" + splitTxt + "</strong></td></tr></tfoot></table>";
+  wrap.style.display = "";
+}
 $("pullRunBtn").onclick = function () {
   var emp = currentEmployee();
   var start = $("ppStart").value, end = $("ppEnd").value;
@@ -898,6 +968,8 @@ $("pullRunBtn").onclick = function () {
     ? sickDays.length + " approved paid sick day(s) in this period (" + sickDays.map(function (r) { return r.date; }).join(", ") + "). Enter the paid sick hours above at the regular rate — a sick day is paid at the employee's usual shift hours, so check how many hours that day would have been."
     : "No approved paid sick days in this period.";
   $("pullStatus").textContent = "Pulled for " + emp + ": " + inPeriod.length + " clocked entries (" + split.regular.toFixed(2) + " regular hrs, " + split.ot15.toFixed(2) + " hrs at 1.5×, " + split.ot20.toFixed(2) + " hrs at 2×), " + km.toFixed(1) + " payable km. Check the fields, then Calculate.";
+  renderTimecard();
+  updateVacPayAmt();
 };
 $("pullBtn").onclick = function () {
   if (!BACKEND_ENABLED) { $("pullStatus").textContent = "The backend is not connected yet — use the time-card JSON import below instead."; return; }
@@ -909,7 +981,12 @@ $("empName").addEventListener("change", function () {
   var rate = rateFor($("empName").value);
   if (rate) $("rate").value = String(rate);
   fillYtdFromRuns();
+  renderTimecard();
 });
+// Keep the time-card list in step when the employee or period changes.
+$("ppStart").addEventListener("change", renderTimecard);
+$("ppEnd").addEventListener("change", renderTimecard);
+$("empNameOther").addEventListener("input", renderTimecard);
 function applySavedSettings() {
   if (td1Saved) { $("td1Fed").value = td1Saved.fed; $("td1Bc").value = td1Saved.bc; }
   // Business number + RP account, verified Nov 11, 2026 (Krystal's CRA screenshots):
@@ -943,6 +1020,33 @@ $("td1SaveBtn").onclick = function () {
   $("td1Status").innerHTML = '<span class="ok">TD1 claim amounts saved: federal $' + fed.toLocaleString() + ', BC $' + bc.toLocaleString() + '.</span>';
 };
 
+// Vacation-pay dollar display next to the % field — read-only, so Krystal
+// can see what the % works out to while filling in the run. Same maths as
+// calculate(); this only displays, it never changes a figure. Shows $0.00
+// until there are hours to pay on.
+function updateVacPayAmt() {
+  var el = $("vacPayAmt"); if (!el) return;
+  var hours = parseFloat($("hours").value) || 0;
+  var rate = parseFloat($("rate").value) || 0;
+  var trainHours = parseFloat($("trainHours").value) || 0;
+  var ot15 = parseFloat($("ot15").value) || 0;
+  var ot20 = parseFloat($("ot20").value) || 0;
+  var statPayIn = parseFloat($("statPay").value) || 0;
+  var sickHours = parseFloat($("sickHours").value) || 0;
+  var refillH = parseFloat($("refillHours").value);
+  var refillHours = isNaN(refillH) ? hours : refillH;
+  var vacPct = parseFloat($("vacPct").value) || 0;
+  var hoursPay = hours * rate + trainHours * 20 + ot15 * rate * 1.5 + ot20 * rate * 2 + sickHours * rate + statPayIn;
+  var vacPay = (hoursPay + refillHours * 1) * vacPct / 100;
+  el.textContent = "Vacation pay: " + money(vacPay);
+}
+// Keep the display live as the pay fields are edited.
+["hours","rate","trainHours","ot15","ot20","statPay","sickHours","refillHours","vacPct"].forEach(function (id) {
+  var el = $(id); if (!el) return;
+  el.addEventListener("input", updateVacPayAmt);
+  el.addEventListener("change", updateVacPayAmt);
+});
+
 // ============================================================================
 // CALCULATE — the draft's maths, unchanged (2026 rates from the draft +
 // checklist section F). Verified against the draft file line by line.
@@ -962,6 +1066,7 @@ function calculate(){
   const hoursPay = hours * rate + trainHours * 20 + ot15 * rate * 1.5 + ot20 * rate * 2 + sickHours * rate + statPayIn;
   const refillPay = refillHours * 1;
   const vacPay = (hoursPay + refillPay) * vacPct / 100;
+  updateVacPayAmt();
   const gross = r2(hoursPay + refillPay + vacPay);
   const ytdGross = parseFloat($("ytdGross").value) || 0;
   const ytdCpp = parseFloat($("ytdCpp").value) || 0;
