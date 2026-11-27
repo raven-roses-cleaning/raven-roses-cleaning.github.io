@@ -1201,14 +1201,34 @@ function calculate(){
   renderEmailList();
   return lastCalc;
 }
-// Print one section only: add a body class, print, then remove the class
-// when the print dialog closes (afterprint), with a 60s fallback so the
-// class can never stick and hide the rest of the app on screen.
+// Print one section only. The body class alone was NOT enough on Krystal's
+// Android phone — the print dialog still captured all 17 sections (8 pages).
+// So this now hides every other section with an inline style (a direct DOM
+// change, not just a class) and forces a synchronous reflow before calling
+// window.print(), so the print snapshot really only contains the one section.
+// Restores everything when the print dialog closes (afterprint), with a 60s
+// fallback so the hiding can never stick and blank the app on screen.
 function printOnly(cls) {
+  var target = cls === "print-paystub" ? "paystub" : "crareport";
+  var secs = document.querySelectorAll("section.pay-section");
+  var hidden = [];
+  secs.forEach(function (s) {
+    if (s.getAttribute("data-section") !== target) {
+      hidden.push(s);
+      s.style.display = "none";
+    }
+  });
   document.body.classList.add(cls);
-  var done = function () { document.body.classList.remove(cls); window.removeEventListener("afterprint", done); };
+  // Force a synchronous reflow so the hidden sections are really gone
+  // before the print dialog snapshots the page (Android Chrome).
+  void document.body.offsetHeight;
+  var done = function () {
+    document.body.classList.remove(cls);
+    hidden.forEach(function (s) { s.style.display = ""; });
+    window.removeEventListener("afterprint", done);
+  };
   window.addEventListener("afterprint", done);
-  setTimeout(function () { document.body.classList.remove(cls); }, 60000);
+  setTimeout(done, 60000);
   window.print();
 }
 // Plain-text paystub, used by "Copy paystub as text" AND by the paystub
